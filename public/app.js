@@ -1893,21 +1893,44 @@ async function initializeTelnyx() {
                     call.state
                 ) {
 
-                    case "ringing":
+                    
 
-                        status.textContent =
-                            "Ringing...";
+                      case "ringing":
 
+    status.textContent =
+        "Incoming call...";
 
-                        callButton.disabled =
-                            true;
+    callButton.disabled =
+        true;
 
+    hangupButton.disabled =
+        false;
 
-                        hangupButton.disabled =
-                            false;
+    console.log(
+        "Incoming call detected. Answering..."
+    );
 
+    call.answer()
+        .then(() => {
 
-                        break;
+            console.log(
+                "Incoming call answered."
+            );
+
+        })
+        .catch(error => {
+
+            console.error(
+                "Could not answer incoming call:",
+                error
+            );
+
+            status.textContent =
+                "Unable to answer";
+
+        });
+
+    break;
 
 
                     case "active":
