@@ -1702,28 +1702,49 @@ client.on("telnyx.socket.close", () => {
         // READY
         // =================================================
 
-        client.on(
-            "telnyx.ready",
-            () => {
+        client.on("telnyx.ready", async () => {
+    console.log("Telnyx WebRTC is ready");
 
-                console.log(
-                    "Telnyx WebRTC is ready"
-                );
+    status.textContent = "Connected";
+    callButton.disabled = false;
+    hangupButton.disabled = true;
 
-
-                status.textContent =
-                    "Connected";
-
-
-                callButton.disabled =
-                    false;
-
-
-                hangupButton.disabled =
-                    true;
-
+    // Register this Dialeaze agent with our backend
+    try {
+        const registerResponse = await authFetch(
+            "/api/webrtc/register",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+    sipUsername: data.sipUsername
+})
             }
         );
+
+        const registerData = await registerResponse.json();
+
+        if (!registerResponse.ok || !registerData.success) {
+            throw new Error(
+                registerData.error ||
+                "WebRTC agent registration failed."
+            );
+        }
+
+        console.log(
+            "Dialeaze WebRTC agent registered:",
+            registerData
+        );
+
+    } catch (error) {
+        console.error(
+            "Dialeaze WebRTC agent registration error:",
+            error
+        );
+    }
+});
 
 
         // =================================================

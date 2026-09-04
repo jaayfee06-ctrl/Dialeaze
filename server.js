@@ -592,6 +592,24 @@ app.get("/api/telnyx-token", async (req, res) => {
         }
 
         // Create Telnyx WebRTC token
+       
+        const credential =
+    await telnyx.telephonyCredentials.retrieve(
+        TELNYX_WEBRTC_CREDENTIAL_ID
+    );
+
+const sipUsername =
+    credential?.data?.sip_username ||
+    credential?.sip_username ||
+    null;
+
+if (!sipUsername) {
+    return res.status(500).json({
+        success: false,
+        error: "Telnyx SIP username was not found."
+    });
+}
+       
         const response =
             await telnyx.telephonyCredentials.createToken(
                 TELNYX_WEBRTC_CREDENTIAL_ID
@@ -617,10 +635,11 @@ if (!token) {
 }
 
         return res.json({
-            success: true,
-            token,
-            phoneNumber: customerPhone
-        });
+    success: true,
+    token,
+    phoneNumber: customerPhone,
+    sipUsername
+});
     } catch (error) {
         console.error("Telnyx token error:", error);
 
@@ -629,6 +648,157 @@ if (!token) {
             error:
                 error?.message ||
                 "Unable to create Telnyx WebRTC token."
+        });
+    }
+});
+
+// =========================================================
+// WEBRTC AGENT PRESENCE
+// =========================================================
+
+const registeredAgents = new Map();
+
+function registerAgent(userId, phoneNumber, sipUsername) {
+    registeredAgents.set(userId, {
+        userId,
+        phoneNumber,
+        sipUsername,
+        registeredAt: new Date().toISOString(),
+        lastSeen: Date.now()
+    });
+
+    console.log(
+        "Dialeaze agent registered:",
+        userId,
+        phoneNumber
+    );
+}
+
+function unregisterAgent(userId) {
+    if (registeredAgents.has(userId)) {
+        registeredAgents.delete(userId);
+
+        console.log(
+            "Dialeaze agent unregistered:",
+            userId
+        );
+    }
+}
+
+function findRegisteredAgent(phoneNumber) {
+    for (const agent of registeredAgents.values()) {
+        if (agent.phoneNumber === phoneNumber) {
+            return agent;
+        }
+    }
+
+    return null;
+}
+
+// =========================================================
+// WEBRTC AGENT REGISTRATION
+// =========================================================
+
+app.post("/api/webrtc/register", async (req, res) => {
+    try {
+        const auth = await authenticateRequest(req);
+
+        if (!auth.success) {
+            return res.status(auth.status).json({
+                success: false,
+                error: auth.error
+            });
+        }
+
+        const profile = await getProfile(
+            auth.token,
+            auth.user.id
+        );
+
+        if (!profile) {
+            return res.status(404).json({
+                success: false,
+                error: "Customer profile was not found."
+            });
+        }
+
+        const phoneNumber =
+            profile.telnyx_phone_number ||
+            "";
+
+        if (!phoneNumber) {
+            return res.status(400).json({
+                success: false,
+                error:
+                    "No Telnyx phone number is assigned to this customer."
+            });
+        }
+
+        const {
+            sipUsername
+        } = req.body || {};
+
+        registerAgent(
+            auth.user.id,
+            phoneNumber,
+            sipUsername || null
+        );
+
+        return res.json({
+            success: true,
+            registered: true,
+            phoneNumber
+        });
+
+    } catch (error) {
+        console.error(
+            "WebRTC registration error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            error:
+                error?.message ||
+                "Unable to register WebRTC agent."
+        });
+    }
+});
+
+
+// =========================================================
+// WEBRTC AGENT UNREGISTRATION
+// =========================================================
+
+app.post("/api/webrtc/unregister", async (req, res) => {
+    try {
+        const auth = await authenticateRequest(req);
+
+        if (!auth.success) {
+            return res.status(auth.status).json({
+                success: false,
+                error: auth.error
+            });
+        }
+
+        unregisterAgent(auth.user.id);
+
+        return res.json({
+            success: true,
+            registered: false
+        });
+
+    } catch (error) {
+        console.error(
+            "WebRTC unregistration error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            error:
+                error?.message ||
+                "Unable to unregister WebRTC agent."
         });
     }
 });
