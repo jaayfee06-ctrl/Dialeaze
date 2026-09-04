@@ -965,6 +965,10 @@ app.get("/api/messages", async (req, res) => {
 // TELNYX WEBHOOK
 // =========================================================
 
+// =========================================================
+// TELNYX WEBHOOK
+// =========================================================
+
 app.post("/api/telnyx/webhook", async (req, res) => {
     try {
         const event = req.body;
@@ -984,9 +988,14 @@ app.post("/api/telnyx/webhook", async (req, res) => {
             event?.payload ||
             {};
 
-        // -----------------------------------------------------
+        console.log(
+            "TELNYX EVENT TYPE:",
+            eventType
+        );
+
+        // =====================================================
         // INBOUND SMS
-        // -----------------------------------------------------
+        // =====================================================
 
         if (
             eventType === "message.received" ||
@@ -1014,13 +1023,9 @@ app.post("/api/telnyx/webhook", async (req, res) => {
                 userId: null,
 
                 from,
-
                 to,
-
                 text,
-
                 direction: "inbound",
-
                 createdAt: new Date().toISOString()
             };
 
@@ -1032,37 +1037,163 @@ app.post("/api/telnyx/webhook", async (req, res) => {
             );
         }
 
-        // -----------------------------------------------------
-        // VOICE EVENTS
-        // -----------------------------------------------------
+        // =====================================================
+        // INBOUND VOICE CALL
+        // =====================================================
+
+        if (eventType === "call.initiated") {
+
+            const callControlId =
+                payload?.call_control_id ||
+                "";
+
+            const calledNumber =
+                payload?.to ||
+                payload?.called_party_number ||
+                "";
+
+            const callerNumber =
+                payload?.from ||
+                payload?.calling_party_number ||
+                "";
+
+            console.log(
+                "INBOUND CALL:",
+                {
+                    callControlId,
+                    callerNumber,
+                    calledNumber
+                }
+            );
+
+            if (!callControlId) {
+                console.error(
+                    "Inbound call has no call_control_id."
+                );
+
+                return res.json({
+                    success: true
+                });
+            }
+
+            // -------------------------------------------------
+            // Find the Dialeaze agent registered for this number
+            // -------------------------------------------------
+
+            const agent =
+                findRegisteredAgent(calledNumber);
+
+            if (!agent) {
+
+                console.log(
+                    "No registered Dialeaze agent found for:",
+                    calledNumber
+                );
+
+                return res.json({
+                    success: true,
+                    routed: false,
+                    reason: "No registered agent"
+                });
+            }
+
+            console.log(
+                "Registered Dialeaze agent found:",
+                agent
+            );
+
+            // -------------------------------------------------
+            // Build the Telnyx SIP URI
+            // -------------------------------------------------
+
+            if (!agent.sipUsername) {
+
+                console.error(
+                    "Registered agent has no SIP username."
+                );
+
+                return res.json({
+                    success: true,
+                    routed: false,
+                    reason: "Agent has no SIP username"
+                });
+            }
+
+            const sipUri =
+                `${agent.sipUsername}@sip.telnyx.com`;
+
+            console.log(
+                "Routing inbound call to SIP URI:",
+                sipUri
+            );
+
+            // -------------------------------------------------
+            // Transfer the incoming call to the WebRTC agent
+            // -------------------------------------------------
+
+            try {
+
+                await telnyx.calls.actions.transfer(
+                    callControlId,
+                    {
+                        to: sipUri,
+                        from: calledNumber
+                    }
+                );
+
+                console.log(
+                    "INBOUND CALL TRANSFERRED SUCCESSFULLY:",
+                    sipUri
+                );
+
+            } catch (transferError) {
+
+                console.error(
+                    "INBOUND CALL TRANSFER FAILED:",
+                    transferError?.message ||
+                    transferError
+                );
+
+            }
+        }
+
+        // =====================================================
+        // OTHER VOICE EVENTS
+        // =====================================================
 
         if (
-            eventType.startsWith("call.") ||
-            eventType.includes("call")
+            eventType.startsWith("call.") &&
+            eventType !== "call.initiated"
         ) {
             console.log(
                 "Telnyx voice event:",
-                eventType
+                eventType,
+                payload
             );
         }
 
-        return res.status(200).json({
+        return res.json({
             success: true
         });
+
     } catch (error) {
+
         console.error(
             "Telnyx webhook error:",
             error
         );
 
-        // Always return 200 to avoid repeated webhook retries
-        return res.status(200).json({
+        return res.status(500).json({
             success: false,
-            error: error.message
+            error:
+                error?.message ||
+                "Webhook processing failed."
         });
     }
 });
 
+        
+        
 // =========================================================
 // FRONTEND FALLBACK
 // =========================================================
