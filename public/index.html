@@ -1,66 +1,457 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>MyDialer</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    <link rel="stylesheet" href="style.css">
+    <title>Dialeaze Dialer</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
 </head>
+
 
 <body>
 
-    <div class="app">
+    <div class="app-shell">
 
-        <header>
-            <h1>MyDialer</h1>
-            <span id="status">Connecting...</span>
+
+        <!-- =====================================
+             HEADER
+        ====================================== -->
+
+        <header class="topbar">
+
+            <div class="brand-area">
+
+                <span class="brand-dot"></span>
+
+                <span class="brand-name">
+                    Dialeaze Dialer
+                </span>
+
+            </div>
+
+
+            <div class="user-area">
+
+                <div
+                    class="connection-status"
+                    id="connectionStatus"
+                >
+
+                    <span class="status-dot"></span>
+
+                    <span id="status">
+                        Connecting...
+                    </span>
+
+                </div>
+
+
+                <div class="avatar">
+
+                    <span id="userInitials">
+                        AC
+                    </span>
+
+                </div>
+
+
+                <span
+                    class="user-name"
+                    id="userName"
+                >
+                    Loading...
+                </span>
+
+            </div>
+
         </header>
 
-        <main>
 
-            <section class="dialer">
 
-                <h2>Business Dialer</h2>
+        <!-- =====================================
+             MAIN
+        ====================================== -->
 
-                <input
-                    id="phoneNumber"
-                    type="tel"
-                    placeholder="+1 555 123 4567"
+        <main class="main-content">
+
+
+            <!-- =================================
+                 LEFT SIDE
+            ================================== -->
+
+            <section class="left-column">
+
+
+                <!-- BUSINESS NUMBER -->
+
+                <div class="business-card">
+
+                    <div class="business-label">
+                        BUSINESS NUMBER
+                    </div>
+
+                    <div
+                        class="business-number"
+                        id="businessNumber"
+                    >
+                        Loading...
+                    </div>
+
+
+                    <div class="business-bottom">
+
+                        <div class="on-call-status">
+
+                            <span
+                                class="small-green-dot"
+                            ></span>
+
+                            <span id="callTimerText">
+                                Ready
+                            </span>
+
+                        </div>
+
+
+                        <div class="audio-buttons">
+
+                            <button
+                                class="circle-button"
+                                type="button"
+                                title="Microphone"
+                            >
+                                🎙
+                            </button>
+
+
+                            <button
+                                class="circle-button mute-button"
+                                type="button"
+                                title="Mute"
+                            >
+                                🎙
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- =================================
+                     RECENT CALLS
+                ================================== -->
+
+                <div class="recent-card">
+
+                    <div class="recent-header">
+
+                        <h2>
+                            Recent calls
+                        </h2>
+
+                        <span>
+                            Today
+                        </span>
+
+                    </div>
+
+
+                    <div
+                        id="recentCallsList"
+                        class="recent-calls-list"
+                    >
+
+                        <div class="empty-recent">
+                            No recent calls
+                        </div>
+
+                    </div>
+
+
+                    <button
+                        id="historyToggleButton"
+                        class="history-button"
+                        type="button"
+                    >
+                        CALL HISTORY
+                    </button>
+
+
+                    <div
+                        id="callHistoryPanel"
+                        class="call-history-panel"
+                    >
+
+                        <div class="history-title">
+                            All call history
+                        </div>
+
+
+                        <div id="callHistoryList">
+
+                            <p class="empty-history">
+                                No calls yet
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- =================================
+                     MESSAGES CARD
+                ================================== -->
+
+                <div
+                    class="messages-card"
+                    id="messagesCard"
                 >
+
+                    <div class="messages-card-icon">
+                        💬
+                    </div>
+
+
+                    <div class="messages-card-content">
+
+                        <div class="messages-card-title">
+                            Messages
+                        </div>
+
+                        <div class="messages-card-subtitle">
+                            Send and receive SMS
+                        </div>
+
+                    </div>
+
+
+                    <div class="messages-card-arrow">
+                        ›
+                    </div>
+
+                </div>
+
+
+
+                <!-- =================================
+                     CONTACTS CARD
+                ================================== -->
+
+                <div class="contacts-card">
+
+                    <div class="contacts-icon">
+                        👥
+                    </div>
+
+                    <div>
+
+                        <div class="contacts-title">
+                            Business contacts
+                        </div>
+
+                        <div class="contacts-subtitle">
+                            Manage your contacts
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+
+            <!-- =================================
+                 RIGHT SIDE DIALER
+            ================================== -->
+
+            <section class="dialer-card">
+
+
+                <!-- NUMBER INPUT -->
+
+                <div class="number-display">
+
+                    <input
+                        id="phoneNumber"
+                        type="tel"
+                        autocomplete="off"
+                        placeholder="+1 555 123 4567"
+                    >
+
+
+                    <button
+                        id="clearButton"
+                        class="input-clear"
+                        type="button"
+                        title="Clear"
+                    >
+                        ⌫
+                    </button>
+
+                </div>
+
+
+
+                <!-- =================================
+                     DIALPAD
+                ================================== -->
 
                 <div class="dialpad">
 
-                    <button>1</button>
-                    <button>2</button>
-                    <button>3</button>
 
-                    <button>4</button>
-                    <button>5</button>
-                    <button>6</button>
+                    <button type="button">
+                        <span>1</span>
+                    </button>
 
-                    <button>7</button>
-                    <button>8</button>
-                    <button>9</button>
 
-                    <button>*</button>
-                    <button>0</button>
-                    <button>#</button>
+                    <button type="button">
+                        <span>2</span>
+                        <small>ABC</small>
+                    </button>
+
+
+                    <button type="button">
+                        <span>3</span>
+                        <small>DEF</small>
+                    </button>
+
+
+                    <button type="button">
+                        <span>4</span>
+                        <small>GHI</small>
+                    </button>
+
+
+                    <button type="button">
+                        <span>5</span>
+                        <small>JKL</small>
+                    </button>
+
+
+                    <button type="button">
+                        <span>6</span>
+                        <small>MNO</small>
+                    </button>
+
+
+                    <button type="button">
+                        <span>7</span>
+                        <small>PQRS</small>
+                    </button>
+
+
+                    <button type="button">
+                        <span>8</span>
+                        <small>TUV</small>
+                    </button>
+
+
+                    <button type="button">
+                        <span>9</span>
+                        <small>WXYZ</small>
+                    </button>
+
+
+                    <button type="button">
+                        <span>*</span>
+                    </button>
+
+
+                    <button type="button">
+                        <span>0</span>
+                    </button>
+
+
+                    <button type="button">
+                        <span>#</span>
+                    </button>
+
+
+                    <button
+                        type="button"
+                        class="extra-key"
+                    >
+                        <span>+</span>
+                    </button>
+
+
+                    <button
+                        id="backspaceButton"
+                        type="button"
+                        class="extra-key"
+                    >
+                        <span>⌫</span>
+                    </button>
+
+
+                    <button
+                        id="clearKeyButton"
+                        type="button"
+                        class="extra-key"
+                    >
+                        <span>C</span>
+                    </button>
 
                 </div>
 
-                <div class="controls">
 
-                    <button id="callButton" class="call">
-                        CALL
+
+                <!-- =================================
+                     CALL CONTROLS
+                ================================== -->
+
+                <div class="call-controls">
+
+                    <button
+                        id="callButton"
+                        class="call-button"
+                        type="button"
+                    >
+
+                        <span class="phone-icon">
+                            ☎
+                        </span>
+
+                        Call
+
                     </button>
 
-                    <button id="hangupButton" class="hangup">
-                        HANG UP
+
+                    <button
+                        id="hangupButton"
+                        class="hangup-button"
+                        type="button"
+                    >
+
+                        <span>
+                            ☎
+                        </span>
+
+                        Hang up
+
                     </button>
 
                 </div>
+
 
             </section>
 
@@ -68,16 +459,146 @@
 
     </div>
 
-    <!-- Remote call audio -->
+
+
+    <!-- =====================================
+         MESSAGES MODAL
+    ====================================== -->
+
+    <div
+        id="messagesOverlay"
+        class="messages-overlay"
+    >
+
+        <div class="messages-window">
+
+
+            <!-- MESSAGES HEADER -->
+
+            <div class="messages-header">
+
+                <div>
+
+                    <div class="messages-title">
+                        Messages
+                    </div>
+
+                    <div
+                        class="messages-number"
+                        id="messagesBusinessNumber"
+                    >
+                        Loading...
+                    </div>
+
+                </div>
+
+
+                <button
+                    id="closeMessagesButton"
+                    class="messages-close"
+                    type="button"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+
+            <!-- RECIPIENT -->
+
+            <div class="messages-recipient-area">
+
+                <label for="messageRecipient">
+                    To
+                </label>
+
+                <input
+                    id="messageRecipient"
+                    type="tel"
+                    placeholder="+1 555 123 4567"
+                    autocomplete="off"
+                >
+
+            </div>
+
+
+
+            <!-- CONVERSATION -->
+
+            <div
+                id="messagesConversation"
+                class="messages-conversation"
+            >
+
+                <div class="messages-empty">
+                    Enter a phone number to start messaging.
+                </div>
+
+            </div>
+
+
+
+            <!-- COMPOSER -->
+
+            <div class="message-composer">
+
+                <textarea
+                    id="messageText"
+                    rows="2"
+                    maxlength="1600"
+                    placeholder="Type your message..."
+                ></textarea>
+
+
+                <div class="message-composer-bottom">
+
+                    <span
+                        id="messageCharacterCount"
+                        class="message-character-count"
+                    >
+                        0 / 1600
+                    </span>
+
+
+                    <button
+                        id="sendMessageButton"
+                        class="send-message-button"
+                        type="button"
+                    >
+
+                        <span>
+                            ➤
+                        </span>
+
+                        Send
+
+                    </button>
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+
+
+    <!-- Remote WebRTC Audio -->
+
     <audio
         id="remoteMedia"
-        autoplay>
-    </audio>
+        autoplay
+    ></audio>
 
-    <!-- Telnyx WebRTC -->
-    
-<script type="module" src="app.js"></script>
-    
+
+    <script
+        type="module"
+        src="app.js"
+    ></script>
 
 </body>
+
 </html>
