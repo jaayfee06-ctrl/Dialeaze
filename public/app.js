@@ -135,79 +135,7 @@ window.addEventListener(
 // from https://dialeaze.com
 // =========================================================
 
-window.addEventListener("message", async function (event) {
 
-    // Only accept authentication messages from our website
-    if (event.origin !== "https://dialeaze.com") {
-        return;
-    }
-
-    // Only accept messages from the window that opened this dialer
-    if (event.source !== window.opener) {
-        return;
-    }
-
-    const data = event.data;
-
-    if (!data || data.type !== "DIALEAZE_AUTH") {
-        return;
-    }
-
-    if (!data.accessToken) {
-        console.error(
-            "Dialeaze authentication failed: access token missing."
-        );
-        return;
-    }
-
-    console.log(
-        "Dialeaze dashboard authentication received."
-    );
-
-    try {
-
-        const sessionResult =
-            await supabase.auth.setSession({
-
-                access_token:
-                    data.accessToken,
-
-                refresh_token:
-                    data.refreshToken || ""
-
-            });
-
-        if (sessionResult.error) {
-
-            throw sessionResult.error;
-
-        }
-
-        console.log(
-            "Dialeaze Supabase session established."
-        );
-
-        // Now load this customer's account
-        await initializeApp();
-
-    }
-    catch (error) {
-
-        console.error(
-            "Dialeaze authentication error:",
-            error
-        );
-
-        alert(
-            "Unable to connect your Dialeaze account. Please log in again."
-        );
-
-    }
-
-});
-// =========================================================
-// AUTH HELPERS
-// =========================================================
 
 async function getCurrentSession() {
 
@@ -359,71 +287,7 @@ async function getCurrentSession() {
 
 }
 
-// =========================================================
-// DASHBOARD → RENDER AUTH BRIDGE
-// =========================================================
 
-window.addEventListener("message", async (event) => {
-
-    // Only accept authentication messages from
-    // the official Dialeaze dashboard.
-    if (event.origin !== "https://dialeaze.com") {
-        return;
-    }
-
-    // Only accept messages from the window that
-    // opened this dialer.
-    if (window.opener && event.source !== window.opener) {
-        return;
-    }
-
-    const data = event.data;
-
-    if (!data || data.type !== "DIALEAZE_AUTH") {
-        return;
-    }
-
-    if (!data.accessToken) {
-        console.error("Dialeaze authentication token missing.");
-        return;
-    }
-
-    console.log("Dialeaze dashboard authentication received.");
-
-    try {
-
-        const sessionResult =
-            await supabase.auth.setSession({
-                access_token: data.accessToken,
-                refresh_token: data.refreshToken || ""
-            });
-
-        if (sessionResult.error) {
-            throw sessionResult.error;
-        }
-
-        console.log(
-            "Dialeaze Supabase session established."
-        );
-
-        // Now load the customer's account.
-        await initializeApp();
-
-    } catch (error) {
-
-        console.error(
-            "Dialeaze authentication bridge failed:",
-            error
-        );
-
-        if (status) {
-            status.textContent =
-                "Login connection failed";
-        }
-
-    }
-
-});
 
 // =========================================================
 // ACCESS TOKEN
