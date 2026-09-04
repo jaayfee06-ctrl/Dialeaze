@@ -1686,7 +1686,13 @@ async function initializeTelnyx() {
                 login_token:
                     data.token
             });
+client.on("telnyx.socket.open", () => {
+    console.log("TELNYX SOCKET OPEN");
+});
 
+client.on("telnyx.socket.close", () => {
+    console.log("TELNYX SOCKET CLOSED");
+});
 
         client.remoteElement =
             "remoteMedia";
