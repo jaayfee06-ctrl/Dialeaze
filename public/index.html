@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>MyDialer</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="app">
+
+        <header>
+            <h1>MyDialer</h1>
+            <span id="status">Connecting...</span>
+        </header>
+
+        <main>
+
+            <section class="dialer">
+
+                <h2>Business Dialer</h2>
+
+                <input
+                    id="phoneNumber"
+                    type="tel"
+                    placeholder="+1 555 123 4567"
+                >
+
+                <div class="dialpad">
+
+                    <button>1</button>
+                    <button>2</button>
+                    <button>3</button>
+
+                    <button>4</button>
+                    <button>5</button>
+                    <button>6</button>
+
+                    <button>7</button>
+                    <button>8</button>
+                    <button>9</button>
+
+                    <button>*</button>
+                    <button>0</button>
+                    <button>#</button>
+
+                </div>
+
+                <div class="controls">
+
+                    <button id="callButton" class="call">
+                        CALL
+                    </button>
+
+                    <button id="hangupButton" class="hangup">
+                        HANG UP
+                    </button>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+    <!-- Remote call audio -->
+    <audio
+        id="remoteMedia"
+        autoplay>
+    </audio>
+
+    <!-- Telnyx WebRTC -->
+    
+<script type="module" src="app.js"></script>
+    
+
+</body>
+</html>
