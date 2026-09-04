@@ -1682,10 +1682,10 @@ async function initializeTelnyx() {
 
 
         client =
-            new TelnyxRTC({
-                login_token:
-                    data.token
-            });
+    new TelnyxRTC({
+        login_token: data.token,
+        debug: true
+    });
 client.on("telnyx.socket.open", () => {
     console.log("TELNYX SOCKET OPEN");
 });
