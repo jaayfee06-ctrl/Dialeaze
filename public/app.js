@@ -338,7 +338,7 @@ async function authFetch(
 
 }
 
-window.dialeazeAuthFetch = authFetch;
+
 
 // =========================================================
 // DOM ELEMENTS
