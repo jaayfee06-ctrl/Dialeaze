@@ -16,7 +16,7 @@ const supabase =
         SUPABASE_URL,
         SUPABASE_PUBLISHABLE_KEY
     );
-
+window.dialeazeSupabase = supabase;
     // =========================================================
 // DIALEAZE DASHBOARD AUTHENTICATION BRIDGE
 // =========================================================
