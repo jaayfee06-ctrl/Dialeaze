@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 3000;
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
-
+const SUPABASE_SECRET_KEY =   process.env.SUPABASE_SECRET_KEY;
 const TELNYX_API_KEY = process.env.TELNYX_API_KEY;
 const TELNYX_WEBRTC_CREDENTIAL_ID =
     process.env.TELNYX_WEBRTC_CREDENTIAL_ID;
@@ -968,6 +968,63 @@ app.get("/api/messages", async (req, res) => {
 // =========================================================
 // TELNYX WEBHOOK
 // =========================================================
+// =========================================================
+// CALL USAGE LIFECYCLE HELPERS
+// =========================================================
+
+async function updateCallUsageByProviderId(
+    providerCallId,
+    updates
+) {
+    if (!providerCallId) {
+        return;
+    }
+
+    try {
+        const query =
+            `${SUPABASE_URL}/rest/v1/customer_call_usage` +
+            `?provider_call_id=eq.${encodeURIComponent(providerCallId)}`;
+
+        const response = await fetch(query, {
+            method: "PATCH",
+            headers: {
+                Authorization:
+                    `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                apikey:
+                    SUPABASE_SECRET_KEY,
+
+                "Content-Type":
+                    "application/json",
+
+                Prefer:
+                    "return=representation"
+            },
+            body: JSON.stringify(updates)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error(
+                "❌ Failed to update call usage:",
+                data
+            );
+            return;
+        }
+
+        console.log(
+            "✅ Call usage updated:",
+            data
+        );
+
+    } catch (error) {
+        console.error(
+            "❌ Call usage update error:",
+            error
+        );
+    }
+}
 
 app.post("/api/telnyx/webhook", async (req, res) => {
     try {
@@ -1696,6 +1753,99 @@ app.post("/api/outbound-call/authorize", async (req, res) => {
 
     }
 
+});
+
+
+// =========================================================
+// LINK OUTBOUND USAGE TO PROVIDER CALL
+// =========================================================
+
+app.post("/api/outbound-call/link", async (req, res) => {
+    try {
+        const auth = await authenticateRequest(req);
+
+        if (!auth.success) {
+            return res.status(auth.status).json({
+                success: false,
+                error: auth.error
+            });
+        }
+
+        const userId = auth.user.id;
+        const { usageId, providerCallId } = req.body;
+
+        if (!usageId || !providerCallId) {
+            return res.status(400).json({
+                success: false,
+                error: "usageId and providerCallId are required."
+            });
+        }
+
+        const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/customer_call_usage` +
+            `?id=eq.${encodeURIComponent(usageId)}` +
+            `&user_id=eq.${encodeURIComponent(userId)}`,
+            {
+                method: "PATCH",
+                headers: {
+                    Authorization:
+                        `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                    apikey:
+                        SUPABASE_SECRET_KEY,
+
+                    "Content-Type":
+                        "application/json",
+
+                    Prefer:
+                        "return=representation"
+                },
+                body: JSON.stringify({
+                    provider_call_id: providerCallId
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error(
+                "❌ Failed to link provider call:",
+                data
+            );
+
+            return res.status(500).json({
+                success: false,
+                error: "Unable to link provider call."
+            });
+        }
+
+        console.log(
+            "✅ Provider call linked to usage:",
+            {
+                userId,
+                usageId,
+                providerCallId
+            }
+        );
+
+        return res.json({
+            success: true,
+            usageId,
+            providerCallId
+        });
+
+    } catch (error) {
+        console.error(
+            "❌ Provider call link error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            error: "Unable to link provider call."
+        });
+    }
 });
         
 // =========================================================

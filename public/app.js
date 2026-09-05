@@ -11,7 +11,6 @@ const SUPABASE_URL =
 
 const SUPABASE_PUBLISHABLE_KEY =
     "sb_publishable_45kBWskrAeltQsVHAtyWmQ__npKIYvd";
-
 const supabase =
     createClient(
         SUPABASE_URL,
@@ -2281,11 +2280,16 @@ if (
 console.log(
     "✅ Server authorized outbound call."
 );
+const authorizedUsageId =
+    authorizationData.usageId;
 
+console.log(
+    "📌 Authorized usage ID:",
+    authorizedUsageId
+);
 
 const remoteMedia =
     document.getElementById("remoteMedia");
-
 
 currentCall =
     client.newCall({
@@ -2299,22 +2303,92 @@ currentCall =
             remoteMedia
     });
 
-            console.log(
-                "Outgoing call created."
+// =========================================================
+// LINK PROVIDER CALL TO USAGE RECORD
+// =========================================================
+
+console.log(
+    "📞 Provider call created:",
+    currentCall
+);
+
+const providerCallId =
+    currentCall?.callControlId ||
+    currentCall?.call_control_id ||
+    currentCall?.id ||
+    null;
+
+console.log(
+    "🔗 Provider Call ID:",
+    providerCallId
+);
+
+if (authorizedUsageId && providerCallId) {
+
+    try {
+
+        const linkResponse =
+            await authFetch(
+                "/api/outbound-call/link",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        usageId:
+                            authorizedUsageId,
+
+                        providerCallId:
+                            providerCallId
+                    })
+                }
             );
 
+        const linkData =
+            await linkResponse.json();
 
-            console.log(
-                "Destination:",
-                number
-            );
+        console.log(
+            "🔗 Usage link response:",
+            linkResponse.status,
+            linkData
+        );
 
+    } catch (linkError) {
 
-            console.log(
-                "Caller ID:",
-                customerAccount.phoneNumber
-            );
+        console.error(
+            "❌ Failed to link provider call to usage:",
+            linkError
+        );
+    }
 
+} else {
+
+    console.warn(
+        "⚠️ Could not link usage record. Missing:",
+        {
+            authorizedUsageId,
+            providerCallId
+        }
+    );
+}
+
+console.log(
+    "Outgoing call created."
+);
+
+console.log(
+    "Destination:",
+    number
+);
+
+console.log(
+    "Caller ID:",
+    customerAccount.phoneNumber
+);
         }
 
 
@@ -2349,6 +2423,7 @@ currentCall =
 
     }
 );
+
 
 
 // =========================================================
