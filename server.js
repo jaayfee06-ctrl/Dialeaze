@@ -19,6 +19,17 @@ const SUPABASE_SECRET_KEY =   process.env.SUPABASE_SECRET_KEY;
 const TELNYX_API_KEY = process.env.TELNYX_API_KEY;
 const TELNYX_WEBRTC_CREDENTIAL_ID =
     process.env.TELNYX_WEBRTC_CREDENTIAL_ID;
+const SIGNALWIRE_SPACE_NAME =
+    process.env.SIGNALWIRE_SPACE_NAME;
+
+const SIGNALWIRE_PROJECT_ID =
+    process.env.SIGNALWIRE_PROJECT_ID;
+
+const SIGNALWIRE_API_TOKEN =
+    process.env.SIGNALWIRE_API_TOKEN;
+
+const SIGNALWIRE_PHONE_NUMBER =
+    process.env.SIGNALWIRE_PHONE_NUMBER;
 
 if (!SUPABASE_URL) {
     console.warn("WARNING: SUPABASE_URL is missing from .env");
@@ -179,6 +190,97 @@ async function getProfile(token, userId) {
         throw error;
     }
 }
+
+// =========================================================
+// SIGNALWIRE SUBSCRIBER ACCESS TOKEN
+// =========================================================
+
+app.post("/api/signalwire-token", async (req, res) => {
+    try {
+        const auth = await authenticateRequest(req);
+
+        if (!auth.success) {
+            return res.status(auth.status).json({
+                success: false,
+                error: auth.error
+            });
+        }
+
+        if (
+            !SIGNALWIRE_SPACE_NAME ||
+            !SIGNALWIRE_PROJECT_ID ||
+            !SIGNALWIRE_API_TOKEN
+        ) {
+            return res.status(500).json({
+                success: false,
+                error: "SignalWire configuration is missing on the server."
+            });
+        }
+
+        const user = auth.user;
+
+        // Use a stable reference for this Dialeaze customer.
+        const reference = `dialeaze_${user.id}`;
+
+        const basicAuth = Buffer.from(
+            `${SIGNALWIRE_PROJECT_ID}:${SIGNALWIRE_API_TOKEN}`
+        ).toString("base64");
+
+        const response = await fetch(
+            `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/fabric/subscribers/tokens`,
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Basic ${basicAuth}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    reference,
+                    display_name:
+                        user.user_metadata?.full_name ||
+                        user.email ||
+                        "Dialeaze User"
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error(
+                "SignalWire SAT creation failed:",
+                response.status,
+                data
+            );
+
+            return res.status(502).json({
+                success: false,
+                error:
+                    data?.message ||
+                    data?.error ||
+                    "Unable to create SignalWire access token."
+            });
+        }
+
+        return res.json({
+            success: true,
+            token: data.token,
+            expiresAt: Date.now() + (2 * 60 * 60 * 1000),
+            subscriberId: data.subscriber_id
+        });
+
+    } catch (error) {
+        console.error(
+            "SignalWire token endpoint error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            error: "Unable to create SignalWire access token."
+        });
+    }
+});
 
 // =========================================================
 // HEALTH CHECK
