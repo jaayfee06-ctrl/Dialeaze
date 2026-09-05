@@ -1040,132 +1040,205 @@ app.post("/api/telnyx/webhook", async (req, res) => {
         // =====================================================
         // INBOUND VOICE CALL
         // =====================================================
+if (eventType === "call.initiated") {
+    const callControlId = payload?.call_control_id || "";
+    const calledNumber = payload?.to || payload?.called_party_number || "";
+    const callerNumber = payload?.from || payload?.calling_party_number || "";
+    const connectionId = payload?.connection_id || "";
 
-        if (eventType === "call.initiated") {
-
-            const callControlId =
-                payload?.call_control_id ||
-                "";
-
-            const calledNumber =
-                payload?.to ||
-                payload?.called_party_number ||
-                "";
-
-            const callerNumber =
-                payload?.from ||
-                payload?.calling_party_number ||
-                "";
-
-            console.log(
-                "INBOUND CALL:",
-                {
-                    callControlId,
-                    callerNumber,
-                    calledNumber
-                }
-            );
-
-            if (!callControlId) {
-                console.error(
-                    "Inbound call has no call_control_id."
-                );
-
-                return res.json({
-                    success: true
-                });
-            }
-
-            // -------------------------------------------------
-            // Find the Dialeaze agent registered for this number
-            // -------------------------------------------------
-
-            const agent =
-                findRegisteredAgent(calledNumber);
-
-            if (!agent) {
-
-                console.log(
-                    "No registered Dialeaze agent found for:",
-                    calledNumber
-                );
-
-                return res.json({
-                    success: true,
-                    routed: false,
-                    reason: "No registered agent"
-                });
-            }
-
-            console.log(
-                "Registered Dialeaze agent found:",
-                agent
-            );
-
-            // -------------------------------------------------
-            // Build the Telnyx SIP URI
-            // -------------------------------------------------
-
-            if (!agent.sipUsername) {
-
-                console.error(
-                    "Registered agent has no SIP username."
-                );
-
-                return res.json({
-                    success: true,
-                    routed: false,
-                    reason: "Agent has no SIP username"
-                });
-            }
-
-            const sipUri =
-                `${agent.sipUsername}@sip.telnyx.com`;
-
-            console.log(
-                "Routing inbound call to SIP URI:",
-                sipUri
-            );
-
-            // -------------------------------------------------
-            // Transfer the incoming call to the WebRTC agent
-            // -------------------------------------------------
-
-            // -------------------------------------------------
-// Dial the registered WebRTC agent and bridge the call
-// -------------------------------------------------
-
-try {
-
-    const agentCall = await telnyx.calls.dial({
-        connection_id: process.env.TELNYX_CALL_CONTROL_APP_ID,
-        to: `sip:${agent.sipUsername}@sip.telnyx.com`,
-        from: calledNumber,
-        link_to: callControlId,
-        bridge_intent: true,
-        bridge_on_answer: true,
-        timeout_secs: 30
+    console.log("TELNYX CALL INITIATED:", {
+        callControlId,
+        callerNumber,
+        calledNumber,
+        connectionId
     });
 
-    console.log(
-        "WEBRTC AGENT CALL CREATED:",
-        agentCall?.data?.call_control_id
-    );
+    if (!callControlId) {
+        return res.json({ success: true });
+    }
+
+    /*
+     * IMPORTANT:
+     * There are TWO call legs:
+     *
+     * 1. Customer -> Dialeaze phone number
+     *    Connection: Dialeaze WebRTC connection
+     *
+     * 2. Backend -> WebRTC agent SIP URI
+     *    Connection: Dialeaze Call Control application
+     *
+     * We only route the ORIGINAL customer call here.
+     */
+
+    if (
+        process.env.TELNYX_WEBRTC_CONNECTION_ID &&
+        connectionId !== process.env.TELNYX_WEBRTC_CONNECTION_ID
+    ) {
+        console.log(
+            "Ignoring non-customer call leg:",
+            connectionId
+        );
+
+        return res.json({
+            success: true,
+            routed: false,
+            reason: "Not original customer call"
+        });
+    }
+
+    /*
+     * Ignore SIP URI destinations.
+     * These belong to the WebRTC agent leg, not the customer's
+     * incoming PSTN call.
+     */
+    if (
+        typeof calledNumber === "string" &&
+        calledNumber.startsWith("sip:")
+    ) {
+        console.log(
+            "Ignoring SIP URI call leg:",
+            calledNumber
+        );
+
+        return res.json({
+            success: true,
+            routed: false,
+            reason: "SIP URI agent leg"
+        });
+    }
+
+    console.log("INBOUND CUSTOMER CALL:", {
+        callControlId,
+        callerNumber,
+        calledNumber
+    });
+
+    /*
+     * Find the Dialeaze agent that owns the called phone number.
+     */
+    const agent = findRegisteredAgent(calledNumber);
+
+    if (!agent) {
+        console.log(
+            "No registered Dialeaze agent found for:",
+            calledNumber
+        );
+
+        return res.json({
+            success: true,
+            routed: false,
+            reason: "No registered agent"
+        });
+    }
 
     console.log(
-        "INBOUND CALL LINKED TO WEBRTC AGENT:",
+        "Registered Dialeaze agent found:",
+        agent
+    );
+
+    if (!agent.sipUsername) {
+        console.log(
+            "Agent has no SIP username."
+        );
+
+        return res.json({
+            success: true,
+            routed: false,
+            reason: "Agent has no SIP username"
+        });
+    }
+
+    /*
+     * STEP 1:
+     * Answer the original customer call.
+     *
+     * Telnyx requires an incoming call to be answered before
+     * subsequent Call Control commands are executed.
+     */
+    try {
+        await telnyx.calls.actions.answer(callControlId);
+
+        console.log(
+            "ORIGINAL CUSTOMER CALL ANSWERED:",
+            callControlId
+        );
+    } catch (answerError) {
+        console.error(
+            "FAILED TO ANSWER ORIGINAL CUSTOMER CALL:",
+            answerError?.message || answerError
+        );
+
+        return res.json({
+            success: true,
+            routed: false,
+            reason: "Failed to answer customer call"
+        });
+    }
+
+    /*
+     * STEP 2:
+     * Dial the registered Dialeaze WebRTC agent.
+     *
+     * link_to = original customer call
+     * bridge_intent = tells Telnyx this is a bridge
+     * bridge_on_answer = automatically bridge when agent answers
+     */
+    const sipUri = `sip:${agent.sipUsername}@sip.telnyx.com`;
+
+    console.log(
+        "DIALING WEBRTC AGENT:",
         sipUri
     );
 
-} catch (dialError) {
+    try {
+        const agentCall = await telnyx.calls.dial({
+            connection_id: process.env.TELNYX_CALL_CONTROL_APP_ID,
+            to: sipUri,
+            from: calledNumber,
 
-    console.error(
-        "WEBRTC AGENT DIAL FAILED:",
-        dialError?.message ||
-        dialError
-    );
+            link_to: callControlId,
+            bridge_intent: true,
+            bridge_on_answer: true,
 
-}}
+            timeout_secs: 30
+        });
+
+        console.log(
+            "WEBRTC AGENT CALL CREATED:",
+            agentCall?.data?.call_control_id
+        );
+
+        console.log(
+            "WAITING FOR WEBRTC AGENT TO ANSWER..."
+        );
+
+    } catch (dialError) {
+        console.error(
+            "WEBRTC AGENT DIAL FAILED:",
+            dialError?.message || dialError
+        );
+
+        /*
+         * If the agent cannot be reached, cleanly end the
+         * customer call instead of leaving it hanging.
+         */
+        try {
+            await telnyx.calls.actions.hangup(callControlId);
+
+            console.log(
+                "ORIGINAL CUSTOMER CALL HUNG UP AFTER AGENT DIAL FAILURE."
+            );
+        } catch (hangupError) {
+            console.error(
+                "FAILED TO HANG UP CUSTOMER CALL:",
+                hangupError?.message || hangupError
+            );
+        }
+    }
+}
+
+        
+
         // =====================================================
         // OTHER VOICE EVENTS
         // =====================================================
