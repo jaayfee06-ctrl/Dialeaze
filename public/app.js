@@ -1756,9 +1756,9 @@ client.on("telnyx.socket.close", () => {
     notification => {
 
         console.log(
-            "🔥 TELNYX NOTIFICATION RECEIVED:",
-            JSON.stringify(notification, null, 2)
-        );
+    "Telnyx notification:",
+    notification
+);
 
         const call =
             notification?.call;
