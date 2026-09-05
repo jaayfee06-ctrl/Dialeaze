@@ -1797,6 +1797,7 @@ client.on(
         switch (call.state) {
 
            case "ringing": {
+
     if (call._dialeazeRinging) return;
 
     call._dialeazeRinging = true;
@@ -1806,9 +1807,29 @@ client.on(
     hangupButton.disabled = false;
 
     console.log("📞 Incoming call detected. Waiting for answer.");
+
+    // Get caller number
+    const callerNumber =
+        call.callerNumber ||
+        call.caller_id_number ||
+        call.remoteNumber ||
+        call.remote_number ||
+        "Unknown Number";
+
+    console.log("📞 Caller number:", callerNumber);
+
+    // Display caller number
+    const incomingCallerText =
+        document.getElementById("incomingCallerText");
+
+    if (incomingCallerText) {
+        incomingCallerText.textContent = callerNumber;
+    }
+
+    // Show incoming call panel
     if (incomingCallPanel) {
-    incomingCallPanel.style.display = "block";
-}
+        incomingCallPanel.style.display = "block";
+    }
 
     break;
 }
