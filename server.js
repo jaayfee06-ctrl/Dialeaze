@@ -1138,7 +1138,7 @@ app.post("/api/telnyx/webhook", async (req, res) => {
 try {
 
     const agentCall = await telnyx.calls.dial({
-        connection_id: process.env.TELNYX_WEBRTC_CONNECTION_ID,
+        connection_id: process.env.TELNYX_CALL_CONTROL_APP_ID,
         to: `sip:${agent.sipUsername}@sip.telnyx.com`,
         from: calledNumber,
         link_to: callControlId,
