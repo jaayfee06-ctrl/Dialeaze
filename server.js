@@ -1411,7 +1411,292 @@ app.get("/api/call-controls", async (req, res) => {
     }
 });
 
-        
+// =========================================================
+// OUTBOUND CALL AUTHORIZATION
+// ATOMIC SERVER-SIDE CALL LIMIT ENFORCEMENT
+// =========================================================
+
+app.post("/api/outbound-call/authorize", async (req, res) => {
+
+    try {
+
+        // -------------------------------------------------
+        // AUTHENTICATE CUSTOMER
+        // -------------------------------------------------
+
+        const auth = await authenticateRequest(req);
+
+        if (!auth.success) {
+
+            return res.status(auth.status).json({
+                success: false,
+                allowed: false,
+                error: auth.error
+            });
+
+        }
+
+
+        const userId = auth.user.id;
+
+        const {
+            destinationNumber,
+            callerNumber
+        } = req.body;
+
+
+        // -------------------------------------------------
+        // BASIC INPUT VALIDATION
+        // -------------------------------------------------
+
+        if (!destinationNumber) {
+
+            return res.status(400).json({
+                success: false,
+                allowed: false,
+                error: "Destination phone number is required."
+            });
+
+        }
+
+
+        if (!callerNumber) {
+
+            return res.status(400).json({
+                success: false,
+                allowed: false,
+                error: "Caller phone number is required."
+            });
+
+        }
+
+
+        // -------------------------------------------------
+        // BASIC E.164 VALIDATION
+        // Example:
+        // +14155551234
+        // -------------------------------------------------
+
+        const e164Pattern =
+            /^\+[1-9]\d{7,14}$/;
+
+
+        if (!e164Pattern.test(destinationNumber)) {
+
+            return res.status(400).json({
+                success: false,
+                allowed: false,
+                error:
+                    "Please enter a valid phone number in international format."
+            });
+
+        }
+
+
+        if (!e164Pattern.test(callerNumber)) {
+
+            return res.status(400).json({
+                success: false,
+                allowed: false,
+                error:
+                    "Invalid caller phone number."
+            });
+
+        }
+
+
+        // -------------------------------------------------
+        // CALL SUPABASE ATOMIC AUTHORIZATION FUNCTION
+        // -------------------------------------------------
+
+        console.log(
+            "🔐 Requesting atomic outbound authorization:",
+            {
+                userId,
+                destinationNumber
+            }
+        );
+
+
+        const rpcResponse = await fetch(
+            `${SUPABASE_URL}/rest/v1/rpc/authorize_outbound_call`,
+            {
+                method: "POST",
+
+                headers: {
+                    Authorization:
+                        `Bearer ${auth.token}`,
+
+                    apikey:
+                        SUPABASE_PUBLISHABLE_KEY,
+
+                    "Content-Type":
+                        "application/json"
+                },
+
+                body: JSON.stringify({
+                    p_user_id:
+                        userId,
+
+                    p_destination_number:
+                        destinationNumber,
+
+                    p_caller_number:
+                        callerNumber
+                })
+            }
+        );
+
+
+        const authorizationData =
+            await rpcResponse.json();
+
+
+        console.log(
+            "🔐 Supabase outbound authorization:",
+            authorizationData
+        );
+
+
+        // -------------------------------------------------
+        // SUPABASE/RPC ERROR
+        // -------------------------------------------------
+
+        if (!rpcResponse.ok) {
+
+            console.error(
+                "❌ Outbound authorization RPC error:",
+                authorizationData
+            );
+
+
+            return res.status(500).json({
+                success: false,
+                allowed: false,
+                error:
+                    "Unable to authorize this call."
+            });
+
+        }
+
+
+        // -------------------------------------------------
+        // CALL BLOCKED
+        // -------------------------------------------------
+
+        if (
+            !authorizationData.success ||
+            !authorizationData.allowed
+        ) {
+
+            console.warn(
+                "🚫 OUTBOUND CALL BLOCKED:",
+                {
+                    userId,
+                    reason:
+                        authorizationData.reason,
+                    error:
+                        authorizationData.error
+                }
+            );
+
+
+            return res.status(
+                authorizationData.reason === "account_status"
+                    ? 403
+                    : 429
+            ).json({
+
+                success: true,
+
+                allowed: false,
+
+                reason:
+                    authorizationData.reason,
+
+                status:
+                    authorizationData.status || null,
+
+                error:
+                    authorizationData.error ||
+                    "Calling is currently unavailable."
+            });
+
+        }
+
+
+        // -------------------------------------------------
+        // AUTHORIZATION PASSED
+        // -------------------------------------------------
+
+        console.log(
+            "✅ OUTBOUND CALL AUTHORIZED:",
+            {
+                userId,
+                usageId:
+                    authorizationData.usage_id,
+                callsThisHour:
+                    authorizationData.calls_this_hour,
+                callsToday:
+                    authorizationData.calls_today
+            }
+        );
+
+
+        return res.json({
+
+            success: true,
+
+            allowed: true,
+
+            usageId:
+                authorizationData.usage_id,
+
+            controls: {
+
+                callsThisHour:
+                    authorizationData.calls_this_hour,
+
+                callsToday:
+                    authorizationData.calls_today,
+
+                minutesToday:
+                    Number(
+                        authorizationData.minutes_today
+                    ) || 0,
+
+                minutesThisMonth:
+                    Number(
+                        authorizationData.minutes_this_month
+                    ) || 0
+
+            }
+
+        });
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ Outbound call authorization error:",
+            error
+        );
+
+
+        return res.status(500).json({
+
+            success: false,
+
+            allowed: false,
+
+            error:
+                "Unable to authorize this call."
+
+        });
+
+    }
+
+});
         
 // =========================================================
 // FRONTEND FALLBACK

@@ -2190,78 +2190,113 @@ callButton.addEventListener(
             };
 
 
-            // =========================================================
-// CHECK CUSTOMER CALL CONTROLS BEFORE STARTING CALL
+// =========================================================
+// SERVER-SIDE OUTBOUND CALL AUTHORIZATION
 // =========================================================
 
-console.log("🔐 Checking customer call controls...");
+console.log(
+    "🔐 Requesting server authorization for outbound call..."
+);
 
-const controlsResponse = await authFetch(
-    "/api/call-controls",
+const authorizationResponse = await authFetch(
+    "/api/outbound-call/authorize",
     {
-        method: "GET"
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            destinationNumber: number,
+            callerNumber: customerAccount.phoneNumber
+        })
     }
 );
 
-const controlsData = await controlsResponse.json();
+
+const authorizationData =
+    await authorizationResponse.json();
+
 
 console.log(
-    "🔐 Call controls response:",
-    controlsData
+    "🔐 Outbound authorization response:",
+    authorizationData
 );
 
+
+// =========================================================
+// CALL BLOCKED
+// =========================================================
+
 if (
-    !controlsResponse.ok ||
-    !controlsData.success ||
-    !controlsData.allowed
+    !authorizationResponse.ok ||
+    !authorizationData.success ||
+    !authorizationData.allowed
 ) {
 
     const reason =
-        controlsData?.controls?.suspensionReason ||
-        controlsData?.error ||
+        authorizationData?.controls?.suspensionReason ||
+        authorizationData?.error ||
         "Calling is currently unavailable for this account.";
+
 
     console.warn(
         "🚫 OUTBOUND CALL BLOCKED:",
         reason
     );
 
+
     status.textContent =
-        controlsData?.controls?.status === "suspended"
-            ? "Calling suspended"
-            : "Calling unavailable";
+        authorizationData?.reason === "account_status"
+            ? "Calling unavailable"
+            : "Call limit reached";
+
 
     alert(
         "This call cannot be placed.\n\n" +
         reason
     );
 
-    callButton.disabled = false;
-    hangupButton.disabled = true;
 
-    currentCallHistory = null;
+    callButton.disabled =
+        false;
+
+
+    hangupButton.disabled =
+        true;
+
+
+    currentCallHistory =
+        null;
+
 
     return;
 }
 
 
 // =========================================================
-// CALL CONTROLS PASSED — CREATE CALL
+// SERVER AUTHORIZATION PASSED
 // =========================================================
 
 console.log(
-    "✅ Customer is authorized to make outbound calls."
+    "✅ Server authorized outbound call."
 );
+
 
 const remoteMedia =
     document.getElementById("remoteMedia");
 
-currentCall = client.newCall({
-    destinationNumber: number,
-    callerNumber: customerAccount.phoneNumber,
-    remoteElement: remoteMedia
-});
 
+currentCall =
+    client.newCall({
+        destinationNumber:
+            number,
+
+        callerNumber:
+            customerAccount.phoneNumber,
+
+        remoteElement:
+            remoteMedia
+    });
 
             console.log(
                 "Outgoing call created."
