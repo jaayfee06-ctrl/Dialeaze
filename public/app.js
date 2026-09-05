@@ -477,6 +477,8 @@ let currentCall = null;
 
 let currentCallHistory = null;
 
+let callStartTime = null;
+
 let callTimerInterval = null;
 
 let customerAccount = null;
@@ -1794,68 +1796,22 @@ client.on(
 
         switch (call.state) {
 
-            case "ringing": {
+           case "ringing": {
+    if (call._dialeazeRinging) return;
 
-                if (call._dialeazeAnswering) {
-                    return;
-                }
+    call._dialeazeRinging = true;
 
-                call._dialeazeAnswering = true;
+    status.textContent = "Incoming call...";
+    callButton.disabled = true;
+    hangupButton.disabled = false;
 
-                status.textContent =
-                    "Incoming call...";
+    console.log("📞 Incoming call detected. Waiting for answer.");
+    if (incomingCallPanel) {
+    incomingCallPanel.style.display = "block";
+}
 
-                callButton.disabled =
-                    true;
-
-                hangupButton.disabled =
-                    false;
-
-                console.log(
-                    "Incoming call detected. Answering..."
-                );
-
-                const remoteMedia =
-                    document.getElementById(
-                        "remoteMedia"
-                    );
-
-                call.answer({
-                    remoteElement:
-                        remoteMedia
-                })
-                    .then(() => {
-
-                        console.log(
-                            "Incoming call answered."
-                        );
-
-                        if (remoteMedia) {
-                            remoteMedia
-                                .play()
-                                .catch(
-                                    error => {
-                                        console.log(
-                                            "Remote audio play waiting for browser permission:",
-                                            error
-                                        );
-                                    }
-                                );
-                        }
-                    })
-                    .catch(error => {
-
-                        console.error(
-                            "Could not answer incoming call:",
-                            error
-                        );
-
-                        status.textContent =
-                            "Unable to answer";
-                    });
-
-                break;
-            }
+    break;
+}
 
             case "active": {
 
@@ -1896,6 +1852,9 @@ client.on(
 
                 hangupButton.disabled =
                     true;
+                    if (incomingCallPanel) {
+    incomingCallPanel.style.display = "none";
+}
 
                 if (currentCallHistory) {
 
@@ -1995,7 +1954,111 @@ client.on(
 
 }
 
+// =========================================================
+// INCOMING CALL CONTROLS
+// =========================================================
 
+const incomingCallPanel =
+    document.getElementById("incomingCallPanel");
+
+const acceptCallButton =
+    document.getElementById("acceptCallButton");
+
+const rejectCallButton =
+    document.getElementById("rejectCallButton");
+
+
+// ACCEPT INCOMING CALL
+if (acceptCallButton) {
+
+    acceptCallButton.addEventListener("click", async () => {
+
+        if (!currentCall) {
+            console.warn("No incoming call to answer.");
+            return;
+        }
+
+        try {
+
+            console.log("✅ Accepting incoming call...");
+
+            const remoteMedia =
+                document.getElementById("remoteMedia");
+
+            await currentCall.answer({
+                remoteElement: remoteMedia
+            });
+
+            console.log("✅ Incoming call answered.");
+
+            if (remoteMedia) {
+                remoteMedia.play().catch(error => {
+                    console.warn(
+                        "Remote audio play blocked:",
+                        error
+                    );
+                });
+            }
+
+            if (incomingCallPanel) {
+                incomingCallPanel.style.display = "none";
+            }
+
+            status.textContent = "Connected";
+
+        } catch (error) {
+
+            console.error(
+                "❌ Could not answer incoming call:",
+                error
+            );
+
+            status.textContent = "Unable to answer";
+
+        }
+
+    });
+
+}
+
+
+// REJECT INCOMING CALL
+if (rejectCallButton) {
+
+    rejectCallButton.addEventListener("click", () => {
+
+        if (!currentCall) {
+            console.warn("No incoming call to reject.");
+            return;
+        }
+
+        try {
+
+            console.log("❌ Rejecting incoming call...");
+
+            currentCall.hangup();
+
+        } catch (error) {
+
+            console.error(
+                "Could not reject incoming call:",
+                error
+            );
+
+        }
+
+        if (incomingCallPanel) {
+            incomingCallPanel.style.display = "none";
+        }
+
+        status.textContent = "Call rejected";
+
+        callButton.disabled = false;
+        hangupButton.disabled = true;
+
+    });
+
+}
 // =========================================================
 // MAKE OUTBOUND CALL
 // =========================================================
@@ -2098,16 +2161,13 @@ callButton.addEventListener(
             };
 
 
-            currentCall =
-                client.newCall({
+            const remoteMedia = document.getElementById("remoteMedia");
 
-                    destinationNumber:
-                        number,
-
-                    callerNumber:
-                        customerAccount.phoneNumber
-
-                });
+currentCall = client.newCall({
+    destinationNumber: number,
+    callerNumber: customerAccount.phoneNumber,
+    remoteElement: remoteMedia
+});
 
 
             console.log(
@@ -2166,57 +2226,45 @@ callButton.addEventListener(
 // HANG UP
 // =========================================================
 
-hangupButton.addEventListener(
-    "click",
-    () => {
+hangupButton.addEventListener("click", () => {
 
-        if (!currentCall) {
-            return;
-        }
+    if (!currentCall) {
+        return;
+    }
 
+    try {
 
-        try {
+        console.log("☎️ Hangup requested.");
 
-            currentCall.hangup();
+        currentCall.hangup();
 
+        status.textContent = "Ending call...";
 
-            console.log(
-                "Hangup requested."
-            );
+        hangupButton.disabled = true;
 
-        }
+    } catch (error) {
 
+        console.error(
+            "Could not hang up call:",
+            error
+        );
 
-        catch (error) {
+        status.textContent = "Call ended";
 
-            console.error(
-                "Hangup error:",
-                error
-            );
-
-        }
-
-
-        status.textContent =
-            "Call ended";
-
-
-        callButton.disabled =
-            false;
-
-
-        hangupButton.disabled =
-            true;
-
+        callButton.disabled = false;
+        hangupButton.disabled = true;
 
         stopCallTimer();
 
+        if (incomingCallPanel) {
+            incomingCallPanel.style.display = "none";
+        }
 
-        currentCall =
-            null;
+        currentCall = null;
 
     }
-);
+
+});
 
 
 // =========================================================
