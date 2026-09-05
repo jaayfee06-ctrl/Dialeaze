@@ -3244,7 +3244,6 @@ async function initializeApp() {
     }
 
     await initializeSignalWire();
-    await testSignalWireToken();
 }
 
 
