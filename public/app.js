@@ -3144,7 +3144,6 @@ supabase.auth.onAuthStateChange(
             event
         );
 
-
         if (
             event ===
             "SIGNED_OUT"
@@ -3153,65 +3152,46 @@ supabase.auth.onAuthStateChange(
             currentUserId =
                 null;
 
-
             customerAccount =
                 null;
-
 
             client =
                 null;
 
-
             stopMessagePolling();
 
-
             stopCallTimer();
-
 
             if (callButton) {
                 callButton.disabled = true;
             }
 
-
             if (hangupButton) {
                 hangupButton.disabled = true;
             }
-
 
             if (sendMessageButton) {
                 sendMessageButton.disabled = true;
             }
 
-
             if (userName) {
-
                 userName.textContent =
                     "Signed out";
-
             }
-
 
             if (businessNumber) {
-
                 businessNumber.textContent =
                     "Number unavailable";
-
             }
-
 
             if (messagesBusinessNumber) {
-
                 messagesBusinessNumber.textContent =
                     "Number unavailable";
-
             }
-
 
             status.textContent =
                 "Signed out";
-
         }
-
     }
 );
 
@@ -3226,10 +3206,8 @@ async function initializeApp() {
         "Initializing Dialeaze..."
     );
 
-
     const accountLoaded =
         await loadCustomerAccount();
-
 
     if (!accountLoaded) {
 
@@ -3238,42 +3216,14 @@ async function initializeApp() {
         );
 
         return;
-
     }
 
-
     await initializeTelnyx();
-
 }
 
 
 // =========================================================
-// START APPLICATION
-// =========================================================
-// Wait for the Dialeaze dashboard to provide
-// the authenticated customer session.
-console.log(
-    "Waiting for Dialeaze dashboard authentication..."
-);
-// =========================================================
-// TELL DASHBOARD THAT THE DIALER IS READY
+// START DIALEAZE APPLICATION
 // =========================================================
 
-if (window.opener) {
-
-    window.opener.postMessage(
-        {
-            type: "DIALEAZE_DIALER_READY"
-        },
-        "https://dialeaze.com"
-    );
-
-    console.log(
-        "Dialeaze dialer ready message sent to dashboard."
-    );
-}
-// =========================================================
-// INITIAL MESSAGE COUNTER
-// =========================================================
-
-updateMessageCharacterCount();
+initializeApp();
