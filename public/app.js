@@ -1752,37 +1752,37 @@ client.on("telnyx.socket.close", () => {
         // =================================================
 
         client.on(
-            "telnyx.notification",
-            notification => {
+    "telnyx.notification",
+    notification => {
 
-                console.log(
-                    "Telnyx notification:",
-                    notification
-                );
+        console.log(
+            "🔥 TELNYX NOTIFICATION RECEIVED:",
+            JSON.stringify(notification, null, 2)
+        );
 
+        const call =
+            notification?.call;
 
-                const call =
-                    notification?.call;
+        if (!call) {
 
+            console.log(
+                "Telnyx notification contains no call object."
+            );
 
-                if (!call) {
-                    return;
-                }
+            return;
+        }
 
+        currentCall =
+            call;
 
-                currentCall =
-                    call;
+        console.log(
+            "🔥 INCOMING/VOICE CALL STATE:",
+            call.state
+        );
 
-
-                console.log(
-                    "Call state:",
-                    call.state
-                );
-
-
-                switch (
-                    call.state
-                ) {
+        switch (
+            call.state
+        )  {
 
                     
 
