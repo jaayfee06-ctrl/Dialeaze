@@ -1042,55 +1042,72 @@ app.post("/api/telnyx/webhook", async (req, res) => {
         // =====================================================
 if (eventType === "call.initiated") {
     const callControlId = payload?.call_control_id || "";
-const calledNumber = payload?.to || payload?.called_party_number || "";
-const callerNumber = payload?.from || payload?.calling_party_number || "";
-const connectionId = payload?.connection_id || "";
-const direction = payload?.direction || "";
+    const calledNumber =
+        payload?.to ||
+        payload?.called_party_number ||
+        "";
+    const callerNumber =
+        payload?.from ||
+        payload?.calling_party_number ||
+        "";
+    const connectionId = payload?.connection_id || "";
+    const direction = payload?.direction || "";
 
     console.log("TELNYX CALL INITIATED:", {
         callControlId,
         callerNumber,
         calledNumber,
-        connectionId
+        connectionId,
+        direction
     });
 
     if (!callControlId) {
-        return res.json({ success: true });
+        return res.json({
+            success: true
+        });
     }
 
     /*
      * IMPORTANT:
-     * There are TWO call legs:
      *
-     * 1. Customer -> Dialeaze phone number
-     *    Connection: Dialeaze WebRTC connection
+     * Dialeaze has two types of calls:
      *
-     * 2. Backend -> WebRTC agent SIP URI
-     *    Connection: Dialeaze Call Control application
+     * 1. INCOMING
+     *    Customer -> Dialeaze phone number
      *
-     * We only route the ORIGINAL customer call here.
+     * 2. OUTGOING
+     *    Dialeaze browser -> Customer
+     *
+     * Only INCOMING calls should go through the
+     * "find registered agent" routing logic below.
+     *
+     * Outgoing browser calls must be allowed to continue
+     * normally through Telnyx.
      */
 
-    if (
-        process.env.TELNYX_WEBRTC_CONNECTION_ID &&
-        connectionId !== process.env.TELNYX_WEBRTC_CONNECTION_ID
-    ) {
+    if (direction !== "incoming") {
         console.log(
-            "Ignoring non-customer call leg:",
-            connectionId
+            "IGNORING NON-INCOMING CALL LEG:",
+            {
+                direction,
+                connectionId,
+                callerNumber,
+                calledNumber
+            }
         );
 
         return res.json({
             success: true,
             routed: false,
-            reason: "Not original customer call"
+            reason: "Not an incoming customer call"
         });
     }
 
     /*
      * Ignore SIP URI destinations.
-     * These belong to the WebRTC agent leg, not the customer's
-     * incoming PSTN call.
+     *
+     * These are WebRTC/SIP agent legs and are not
+     * original PSTN customer calls.
      */
     if (
         typeof calledNumber === "string" &&
@@ -1108,6 +1125,10 @@ const direction = payload?.direction || "";
         });
     }
 
+    /*
+     * This is now confirmed to be the ORIGINAL
+     * INCOMING CUSTOMER CALL.
+     */
     console.log("INBOUND CUSTOMER CALL:", {
         callControlId,
         callerNumber,
@@ -1115,7 +1136,8 @@ const direction = payload?.direction || "";
     });
 
     /*
-     * Find the Dialeaze agent that owns the called phone number.
+     * Find the Dialeaze agent that owns the
+     * called Dialeaze phone number.
      */
     const agent = findRegisteredAgent(calledNumber);
 
@@ -1133,7 +1155,7 @@ const direction = payload?.direction || "";
     }
 
     console.log(
-        "Registered Dialeaze agent found:",
+        "REGISTERED DIALEAZE AGENT FOUND:",
         agent
     );
 
@@ -1149,38 +1171,35 @@ const direction = payload?.direction || "";
         });
     }
 
-   
+    /*
+     * SIP address of the browser/WebRTC agent.
+     */
+    const sipUri =
+        `sip:${agent.sipUsername}@sip.telnyx.com`;
 
     /*
-     * STEP 2:
-     * Dial the registered Dialeaze WebRTC agent.
+     * Answer the original incoming customer call.
      *
-     * link_to = original customer call
-     * bridge_intent = tells Telnyx this is a bridge
-     * bridge_on_answer = automatically bridge when agent answers
+     * This is the PSTN/customer leg.
      */
-    const sipUri = `sip:${agent.sipUsername}@sip.telnyx.com`;
-
-/*
- * Answer ONLY the original incoming customer call.
- * Do NOT answer the WebRTC agent leg.
- */
-if (direction === "incoming") {
     console.log(
         "ANSWERING ORIGINAL CUSTOMER CALL:",
         callControlId
     );
 
     try {
-        await telnyx.calls.actions.answer(callControlId);
+        await telnyx.calls.actions.answer(
+            callControlId
+        );
 
         console.log(
-            "ORIGINAL CUSTOMER CALL ANSWERED:"
+            "ORIGINAL CUSTOMER CALL ANSWERED."
         );
     } catch (answerError) {
         console.error(
             "FAILED TO ANSWER ORIGINAL CUSTOMER CALL:",
-            answerError?.message || answerError
+            answerError?.message ||
+            answerError
         );
 
         return res.json({
@@ -1189,25 +1208,38 @@ if (direction === "incoming") {
             reason: "Failed to answer incoming call"
         });
     }
-}
 
-console.log(
-    "DIALING WEBRTC AGENT:",
-    sipUri
-);
+    /*
+     * Now create the WebRTC agent leg.
+     *
+     * link_to = original customer call
+     * bridge_intent = bridge this call
+     * bridge_on_answer = bridge when agent answers
+     */
+    console.log(
+        "DIALING WEBRTC AGENT:",
+        sipUri
+    );
 
-try {
-    const agentCall = await telnyx.calls.dial({
-        connection_id: process.env.TELNYX_CALL_CONTROL_APP_ID,
-        to: sipUri,
-        from: calledNumber,
+    try {
+        const agentCall =
+            await telnyx.calls.dial({
+                connection_id:
+                    process.env
+                        .TELNYX_CALL_CONTROL_APP_ID,
 
-        link_to: callControlId,
-        bridge_intent: true,
-        bridge_on_answer: true,
+                to: sipUri,
 
-        timeout_secs: 30
-    });
+                from: calledNumber,
+
+                link_to: callControlId,
+
+                bridge_intent: true,
+
+                bridge_on_answer: true,
+
+                timeout_secs: 30
+            });
 
         console.log(
             "WEBRTC AGENT CALL CREATED:",
@@ -1221,29 +1253,32 @@ try {
     } catch (dialError) {
         console.error(
             "WEBRTC AGENT DIAL FAILED:",
-            dialError?.message || dialError
+            dialError?.message ||
+            dialError
         );
 
         /*
-         * If the agent cannot be reached, cleanly end the
-         * customer call instead of leaving it hanging.
+         * If the browser agent cannot be reached,
+         * cleanly hang up the customer call.
          */
         try {
-            await telnyx.calls.actions.hangup(callControlId);
+            await telnyx.calls.actions.hangup(
+                callControlId
+            );
 
             console.log(
                 "ORIGINAL CUSTOMER CALL HUNG UP AFTER AGENT DIAL FAILURE."
             );
+
         } catch (hangupError) {
             console.error(
                 "FAILED TO HANG UP CUSTOMER CALL:",
-                hangupError?.message || hangupError
+                hangupError?.message ||
+                hangupError
             );
         }
     }
 }
-
-        
 
         // =====================================================
         // OTHER VOICE EVENTS
