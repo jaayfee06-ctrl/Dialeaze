@@ -1148,32 +1148,7 @@ if (eventType === "call.initiated") {
         });
     }
 
-    /*
-     * STEP 1:
-     * Answer the original customer call.
-     *
-     * Telnyx requires an incoming call to be answered before
-     * subsequent Call Control commands are executed.
-     */
-    try {
-        await telnyx.calls.actions.answer(callControlId);
-
-        console.log(
-            "ORIGINAL CUSTOMER CALL ANSWERED:",
-            callControlId
-        );
-    } catch (answerError) {
-        console.error(
-            "FAILED TO ANSWER ORIGINAL CUSTOMER CALL:",
-            answerError?.message || answerError
-        );
-
-        return res.json({
-            success: true,
-            routed: false,
-            reason: "Failed to answer customer call"
-        });
-    }
+   
 
     /*
      * STEP 2:
