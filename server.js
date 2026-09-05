@@ -1042,9 +1042,10 @@ app.post("/api/telnyx/webhook", async (req, res) => {
         // =====================================================
 if (eventType === "call.initiated") {
     const callControlId = payload?.call_control_id || "";
-    const calledNumber = payload?.to || payload?.called_party_number || "";
-    const callerNumber = payload?.from || payload?.calling_party_number || "";
-    const connectionId = payload?.connection_id || "";
+const calledNumber = payload?.to || payload?.called_party_number || "";
+const callerNumber = payload?.from || payload?.calling_party_number || "";
+const connectionId = payload?.connection_id || "";
+const direction = payload?.direction || "";
 
     console.log("TELNYX CALL INITIATED:", {
         callControlId,
@@ -1160,23 +1161,53 @@ if (eventType === "call.initiated") {
      */
     const sipUri = `sip:${agent.sipUsername}@sip.telnyx.com`;
 
+/*
+ * Answer ONLY the original incoming customer call.
+ * Do NOT answer the WebRTC agent leg.
+ */
+if (direction === "incoming") {
     console.log(
-        "DIALING WEBRTC AGENT:",
-        sipUri
+        "ANSWERING ORIGINAL CUSTOMER CALL:",
+        callControlId
     );
 
     try {
-        const agentCall = await telnyx.calls.dial({
-            connection_id: process.env.TELNYX_CALL_CONTROL_APP_ID,
-            to: sipUri,
-            from: calledNumber,
+        await telnyx.calls.actions.answer(callControlId);
 
-            link_to: callControlId,
-            bridge_intent: true,
-            bridge_on_answer: true,
+        console.log(
+            "ORIGINAL CUSTOMER CALL ANSWERED:"
+        );
+    } catch (answerError) {
+        console.error(
+            "FAILED TO ANSWER ORIGINAL CUSTOMER CALL:",
+            answerError?.message || answerError
+        );
 
-            timeout_secs: 30
+        return res.json({
+            success: true,
+            routed: false,
+            reason: "Failed to answer incoming call"
         });
+    }
+}
+
+console.log(
+    "DIALING WEBRTC AGENT:",
+    sipUri
+);
+
+try {
+    const agentCall = await telnyx.calls.dial({
+        connection_id: process.env.TELNYX_CALL_CONTROL_APP_ID,
+        to: sipUri,
+        from: calledNumber,
+
+        link_to: callControlId,
+        bridge_intent: true,
+        bridge_on_answer: true,
+
+        timeout_secs: 30
+    });
 
         console.log(
             "WEBRTC AGENT CALL CREATED:",
