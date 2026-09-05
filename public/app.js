@@ -1888,7 +1888,11 @@ client.on(
     break;
 }
 
-            case "active": {
+            case "active": { await updateOutboundCallLifecycle({
+    callStatus: "answered",
+    answered: true,
+    answeredAt: new Date().toISOString()
+});
 
                 status.textContent =
                     "Connected";
@@ -1910,7 +1914,13 @@ client.on(
             }
 
             case "hangup":
-            case "destroy": {
+            case "destroy": {await updateOutboundCallLifecycle({
+    callStatus: "completed",
+    endedAt: new Date().toISOString(),
+    durationSeconds: callStartTime
+        ? Math.floor((Date.now() - callStartTime) / 1000)
+        : 0
+});
 
                 console.log(
                     "Call ended:",
@@ -1963,6 +1973,8 @@ client.on(
 
                 callStartTime =
                     null;
+
+                   currentOutboundUsageId = null;
 
                 break;
             }
