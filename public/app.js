@@ -471,6 +471,7 @@ const sendMessageButton =
 // =========================================================
 
 let client = null;
+let telnyxInitializationPromise = null;
 
 let currentCall = null;
 
@@ -1618,7 +1619,13 @@ function stopCallTimer() {
 // =========================================================
 
 async function initializeTelnyx() {
+ 
 
+    if (telnyxInitializationPromise) {
+        return telnyxInitializationPromise;
+    }
+
+    telnyxInitializationPromise = (async () => {
     try {
 
         if (!customerAccount) {
@@ -1751,216 +1758,183 @@ client.on("telnyx.socket.close", () => {
         // NOTIFICATIONS
         // =================================================
 
-        client.on(
+       
+client.on(
     "telnyx.notification",
     notification => {
 
         console.log(
-    "Telnyx notification:",
-    notification
-);
+            "Telnyx notification:",
+            notification
+        );
 
-        const call =
-            notification?.call;
-
-        if (!call) {
-
-            console.log(
-                "Telnyx notification contains no call object."
-            );
-
+        if (
+            !notification ||
+            notification.type !== "callUpdate"
+        ) {
             return;
         }
 
-        currentCall =
-            call;
+        const call =
+            notification.call;
+
+        if (!call) {
+            console.log(
+                "Telnyx notification contains no call object."
+            );
+            return;
+        }
+
+        currentCall = call;
 
         console.log(
             "🔥 INCOMING/VOICE CALL STATE:",
             call.state
         );
 
-        switch (
-            call.state
-        )  {
+        switch (call.state) {
 
-                    
+            case "ringing": {
 
-                      case "ringing":
-
-    status.textContent =
-        "Incoming call...";
-
-    callButton.disabled =
-        true;
-
-    hangupButton.disabled =
-        false;
-
-    console.log(
-        "Incoming call detected. Answering..."
-    );
-
-    call.answer()
-        .then(() => {
-
-            console.log(
-                "Incoming call answered."
-            );
-
-        })
-        .catch(error => {
-
-            console.error(
-                "Could not answer incoming call:",
-                error
-            );
-
-            status.textContent =
-                "Unable to answer";
-
-        });
-
-    break;
-
-
-                    case "active":
-
-                        status.textContent =
-                            "Call connected";
-
-
-                        callButton.disabled =
-                            true;
-
-
-                        hangupButton.disabled =
-                            false;
-
-
-                        startCallTimer();
-
-
-                        if (
-                            currentCallHistory &&
-                            !currentCallHistory.connectedAt
-                        ) {
-
-                            currentCallHistory.connectedAt =
-                                Date.now();
-
-
-                            currentCallHistory.status =
-                                "Connected";
-
-                        }
-
-
-                        break;
-
-
-                    case "hangup":
-
-                    case "destroy":
-
-                        status.textContent =
-                            "Call ended";
-
-
-                        callButton.disabled =
-                            false;
-
-
-                        hangupButton.disabled =
-                            true;
-
-
-                        stopCallTimer();
-
-
-                        if (
-                            currentCallHistory
-                        ) {
-
-                            const endTime =
-                                Date.now();
-
-
-                            currentCallHistory.endedAt =
-                                endTime;
-
-
-                            if (
-                                currentCallHistory.connectedAt
-                            ) {
-
-                                currentCallHistory.duration =
-                                    Math.floor(
-                                        (
-                                            endTime -
-                                            currentCallHistory.connectedAt
-                                        ) / 1000
-                                    );
-
-                            }
-
-                            else {
-
-                                currentCallHistory.duration =
-                                    0;
-
-                            }
-
-
-                            currentCallHistory.status =
-                                "Completed";
-
-
-                            callHistory.unshift(
-                                currentCallHistory
-                            );
-
-
-                            callHistory =
-                                callHistory.slice(
-                                    0,
-                                    50
-                                );
-
-
-                            saveCallHistoryToSupabase(currentCallHistory);
-
-
-                            renderRecentCalls();
-
-
-                            renderCallHistory();
-
-
-                            currentCallHistory =
-                                null;
-
-                        }
-
-
-                        currentCall =
-                            null;
-
-
-                        break;
-
-
-                    default:
-
-                        console.log(
-                            "Unhandled call state:",
-                            call.state
-                        );
-
+                if (call._dialeazeAnswering) {
+                    return;
                 }
 
+                call._dialeazeAnswering = true;
+
+                status.textContent =
+                    "Incoming call...";
+
+                callButton.disabled =
+                    true;
+
+                hangupButton.disabled =
+                    false;
+
+                console.log(
+                    "Incoming call detected. Answering..."
+                );
+
+                const remoteMedia =
+                    document.getElementById(
+                        "remoteMedia"
+                    );
+
+                call.answer({
+                    remoteElement:
+                        remoteMedia
+                })
+                    .then(() => {
+
+                        console.log(
+                            "Incoming call answered."
+                        );
+
+                        if (remoteMedia) {
+                            remoteMedia
+                                .play()
+                                .catch(
+                                    error => {
+                                        console.log(
+                                            "Remote audio play waiting for browser permission:",
+                                            error
+                                        );
+                                    }
+                                );
+                        }
+                    })
+                    .catch(error => {
+
+                        console.error(
+                            "Could not answer incoming call:",
+                            error
+                        );
+
+                        status.textContent =
+                            "Unable to answer";
+                    });
+
+                break;
             }
-        );
+
+            case "active": {
+
+                status.textContent =
+                    "Connected";
+
+                callButton.disabled =
+                    true;
+
+                hangupButton.disabled =
+                    false;
+
+                if (!callStartTime) {
+                    callStartTime =
+                        Date.now();
+
+                    startCallTimer();
+                }
+
+                break;
+            }
+
+            case "hangup":
+            case "destroy": {
+
+                console.log(
+                    "Call ended:",
+                    call.state
+                );
+
+                stopCallTimer();
+
+                status.textContent =
+                    "Call ended";
+
+                callButton.disabled =
+                    false;
+
+                hangupButton.disabled =
+                    true;
+
+                if (currentCallHistory) {
+
+                    currentCallHistory.status =
+                        "Completed";
+
+                    callHistory.unshift(
+                        currentCallHistory
+                    );
+
+                    callHistory =
+                        callHistory.slice(
+                            0,
+                            50
+                        );
+
+                    saveCallHistoryToSupabase(
+                        currentCallHistory
+                    );
+
+                    renderRecentCalls();
+
+                    renderCallHistory();
+
+                    currentCallHistory =
+                        null;
+                }
+
+                currentCall =
+                    null;
+
+                callStartTime =
+                    null;
+
+                break;
+            }
+        }
+    }
+);
 
 
         // =================================================
@@ -1995,31 +1969,29 @@ client.on("telnyx.socket.close", () => {
         );
 
 
-        client.connect();
+                client.connect();
 
-    }
-
-
-    catch (error) {
+    } catch (error) {
 
         console.error(
             "WebRTC initialization error:",
             error
         );
 
-
         status.textContent =
             "Connection failed";
 
-
         callButton.disabled =
             true;
-
 
         hangupButton.disabled =
             true;
 
     }
+
+    })();
+
+    return telnyxInitializationPromise;
 
 }
 
