@@ -1,4 +1,7 @@
-import { TelnyxRTC } from "/telnyx-webrtc.mjs";
+import {
+    SignalWire,
+    StaticCredentialProvider
+} from "https://esm.sh/@signalwire/js@4.0.0-rc.2";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 
@@ -471,7 +474,7 @@ const sendMessageButton =
 // =========================================================
 
 let client = null;
-let telnyxInitializationPromise = null;
+let signalWireInitializationPromise = null;
 
 let currentCall = null;
 
@@ -1652,428 +1655,96 @@ async function testSignalWireToken() {
     }
 }
 
-// =========================================================
-// TELNYX WEBRTC
-// =========================================================
-
-async function initializeTelnyx() {
- 
-
-    if (telnyxInitializationPromise) {
-        return telnyxInitializationPromise;
+async function initializeSignalWire() {
+    if (signalWireInitializationPromise) {
+        return signalWireInitializationPromise;
     }
 
-    telnyxInitializationPromise = (async () => {
-    try {
+    signalWireInitializationPromise = (async () => {
+        try {
+            console.log("========================================");
+            console.log("INITIALIZING SIGNALWIRE...");
+            console.log("========================================");
 
-        if (!customerAccount) {
-
-            throw new Error(
-                "Customer account is not available."
-            );
-
-        }
-
-
-        status.textContent =
-            "Connecting...";
-
-
-        const response =
-            await authFetch(
-                "/api/telnyx-token"
-            );
-
-
-        if (!response.ok) {
-
-            let errorData = null;
-
-            try {
-
-                errorData =
-                    await response.json();
-
-            } catch {
-
-                errorData = null;
-
+            if (!customerAccount) {
+                console.error("No customer account available.");
+                return false;
             }
 
+            updateConnectionStatus("Connecting...", false);
 
-            throw new Error(
-                errorData?.message ||
-                errorData?.error ||
-                "Could not get Telnyx token"
-            );
-
-        }
-
-
-        const data =
-            await response.json();
-
-
-        if (
-            !data.success ||
-            !data.token
-        ) {
-
-            throw new Error(
-                "Telnyx token was not returned"
-            );
-
-        }
-
-
-        client =
-    new TelnyxRTC({
-        login_token: data.token,
-        debug: true
-    });
-client.on("telnyx.socket.open", () => {
-    console.log("TELNYX SOCKET OPEN");
-});
-
-client.on("telnyx.socket.close", () => {
-    console.log("TELNYX SOCKET CLOSED");
-});
-
-        client.remoteElement =
-            "remoteMedia";
-
-
-        // =================================================
-        // READY
-        // =================================================
-
-        client.on("telnyx.ready", async () => {
-    console.log("Telnyx WebRTC is ready");
-
-    status.textContent = "Connected";
-    callButton.disabled = false;
-    hangupButton.disabled = true;
-
-    // Register this Dialeaze agent with our backend
-    try {
-        const registerResponse = await authFetch(
-            "/api/webrtc/register",
-            {
+            const response = await authFetch("/api/signalwire-token", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({
-    sipUsername: data.sipUsername
-})
-            }
-        );
+                body: JSON.stringify({})
+            });
 
-        const registerData = await registerResponse.json();
+            const data = await response.json();
 
-        if (!registerResponse.ok || !registerData.success) {
-            throw new Error(
-                registerData.error ||
-                "WebRTC agent registration failed."
-            );
-        }
+            console.log("SIGNALWIRE TOKEN RESPONSE:", {
+                success: data.success,
+                subscriberId: data.subscriberId,
+                expiresAt: data.expiresAt
+            });
 
-        console.log(
-            "Dialeaze WebRTC agent registered:",
-            registerData
-        );
-
-    } catch (error) {
-        console.error(
-            "Dialeaze WebRTC agent registration error:",
-            error
-        );
-    }
-});
-
-
-        // =================================================
-        // NOTIFICATIONS
-        // =================================================
-async function updateOutboundCallLifecycle(data) {
-    if (!currentOutboundUsageId) {
-        return;
-    }
-
-    try {
-        const response = await authFetch(
-            "/api/outbound-call/update",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    usageId: currentOutboundUsageId,
-                    ...data
-                })
-            }
-        );
-
-        const result = await response.json();
-
-        if (!response.ok || !result.success) {
-            console.error(
-                "❌ Failed to update call lifecycle:",
-                result
-            );
-            return;
-        }
-
-        console.log(
-            "✅ Outbound call lifecycle updated:",
-            data
-        );
-
-    } catch (error) {
-        console.error(
-            "❌ Lifecycle update error:",
-            error
-        );
-    }
-}
-       
-client.on(
-    "telnyx.notification",
-     async notification => {
-
-        console.log(
-            "Telnyx notification:",
-            notification
-        );
-
-        if (
-            !notification ||
-            notification.type !== "callUpdate"
-        ) {
-            return;
-        }
-
-        const call =
-            notification.call;
-
-        if (!call) {
-            console.log(
-                "Telnyx notification contains no call object."
-            );
-            return;
-        }
-
-        currentCall = call;
-
-        console.log(
-            "🔥 INCOMING/VOICE CALL STATE:",
-            call.state
-        );
-
-        switch (call.state) {
-
-         case "ringing": {
-        await updateOutboundCallLifecycle({
-    callStatus: "ringing"
-});
-
-    if (call._dialeazeRinging) return;
-
-    call._dialeazeRinging = true;
-
-    status.textContent = "Incoming call...";
-    callButton.disabled = true;
-    hangupButton.disabled = false;
-
-    console.log("📞 INCOMING CALL");
-    console.log("📞 Full notification:", notification);
-    console.log("📞 Call object:", call);
-
-    /*
-     * Telnyx incoming INVITE contains caller_id_number.
-     * We check several possible locations so the UI
-     * remains compatible with the SDK's call object.
-     */
-
-    const callerNumber =
-        notification?.caller_id_number ||
-        notification?.call?.caller_id_number ||
-        call?.caller_id_number ||
-        call?.callerNumber ||
-        call?.remoteNumber ||
-        call?.remote_number ||
-        call?.options?.callerNumber ||
-        "Unknown Number";
-
-    console.log("📞 DISPLAYING CALLER:", callerNumber);
-
-    const incomingCallerText =
-        document.getElementById("incomingCallerText");
-
-    if (incomingCallerText) {
-        incomingCallerText.textContent = callerNumber;
-    }
-
-    if (incomingCallPanel) {
-        incomingCallPanel.style.display = "flex";
-    }
-
-    break;
-}
-
-            case "active": { await updateOutboundCallLifecycle({
-    callStatus: "answered",
-    answered: true,
-    answeredAt: new Date().toISOString()
-});
-
-                status.textContent =
-                    "Connected";
-
-                callButton.disabled =
-                    true;
-
-                hangupButton.disabled =
-                    false;
-
-                if (!callStartTime) {
-                    callStartTime =
-                        Date.now();
-
-                    startCallTimer();
-                }
-
-                break;
-            }
-
-            case "hangup":
-            case "destroy": {await updateOutboundCallLifecycle({
-    callStatus: "completed",
-    endedAt: new Date().toISOString(),
-    durationSeconds: callStartTime
-        ? Math.floor((Date.now() - callStartTime) / 1000)
-        : 0
-});
-
-                console.log(
-                    "Call ended:",
-                    call.state
+            if (!response.ok || !data.success || !data.token) {
+                throw new Error(
+                    data.error || "Unable to get SignalWire token."
                 );
+            }
 
-                stopCallTimer();
+            console.log("Creating SignalWire client...");
 
-                status.textContent =
-                    "Call ended";
-
-                callButton.disabled =
-                    false;
-
-                hangupButton.disabled =
-                    true;
-                    if (incomingCallPanel) {
-    incomingCallPanel.style.display = "none";
-}
-
-                if (currentCallHistory) {
-
-                    currentCallHistory.status =
-                        "Completed";
-
-                    callHistory.unshift(
-                        currentCallHistory
-                    );
-
-                    callHistory =
-                        callHistory.slice(
-                            0,
-                            50
-                        );
-
-                    saveCallHistoryToSupabase(
-                        currentCallHistory
-                    );
-
-                    renderRecentCalls();
-
-                    renderCallHistory();
-
-                    currentCallHistory =
-                        null;
+            client = new SignalWire(
+                new StaticCredentialProvider({
+                    token: data.token
+                }),
+                {
+                    skipRegister: true
                 }
+            );
 
-                currentCall =
-                    null;
+            console.log("SignalWire client created.");
 
-                callStartTime =
-                    null;
+            await client.register();
 
-                   currentOutboundUsageId = null;
+            console.log("✅ SIGNALWIRE REGISTERED");
 
-                break;
+            updateConnectionStatus("Connected", true);
+
+            const callButton = document.getElementById("callButton");
+
+            if (callButton) {
+                callButton.disabled = false;
             }
+
+            const hangupButton = document.getElementById("hangupButton");
+
+            if (hangupButton) {
+                hangupButton.disabled = true;
+            }
+
+            currentUserId = customerAccount.userId || currentUserId;
+
+            console.log("SignalWire browser connection is READY.");
+
+            return true;
+
+        } catch (error) {
+            console.error("❌ SIGNALWIRE INITIALIZATION ERROR:", error);
+
+            updateConnectionStatus("Connection failed", false);
+
+            return false;
         }
-    }
-);
-
-
-        // =================================================
-        // TELNYX ERROR
-        // =================================================
-
-        client.on(
-            "telnyx.error",
-            error => {
-
-                console.error(
-                    "Telnyx error:",
-                    error
-                );
-
-
-                status.textContent =
-                    "Telnyx error";
-
-
-                callButton.disabled =
-                    false;
-
-
-                hangupButton.disabled =
-                    true;
-
-
-                stopCallTimer();
-
-            }
-        );
-
-
-                client.connect();
-
-    } catch (error) {
-
-        console.error(
-            "WebRTC initialization error:",
-            error
-        );
-
-        status.textContent =
-            "Connection failed";
-
-        callButton.disabled =
-            true;
-
-        hangupButton.disabled =
-            true;
-
-    }
-
     })();
 
-    return telnyxInitializationPromise;
-
+    return signalWireInitializationPromise;
 }
+
+
 
 // =========================================================
 // INCOMING CALL CONTROLS
@@ -3536,7 +3207,7 @@ async function initializeApp() {
         return;
     }
 
-    await initializeTelnyx();
+    await initializeSignalWire();
     await testSignalWireToken();
 }
 
