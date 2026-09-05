@@ -1671,7 +1671,7 @@ async function initializeSignalWire() {
                 return false;
             }
 
-            updateConnectionStatus("Connecting...", false);
+            status.textContent = "Connecting...";
 
             const response = await authFetch("/api/signalwire-token", {
                 method: "POST",
@@ -1712,7 +1712,7 @@ async function initializeSignalWire() {
 
             console.log("✅ SIGNALWIRE REGISTERED");
 
-            updateConnectionStatus("Connected", true);
+            status.textContent = "Connected";
 
             const callButton = document.getElementById("callButton");
 
@@ -1735,7 +1735,7 @@ async function initializeSignalWire() {
         } catch (error) {
             console.error("❌ SIGNALWIRE INITIALIZATION ERROR:", error);
 
-            updateConnectionStatus("Connection failed", false);
+            status.textContent = "Connection failed";
 
             return false;
         }
