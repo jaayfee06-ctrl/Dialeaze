@@ -1,7 +1,4 @@
-import {
-    SignalWire,
-    StaticCredentialProvider
-} from "https://esm.sh/@signalwire/js@4.0.0-rc.2";
+import { TelnyxRTC } from "/telnyx-webrtc.mjs";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 
@@ -474,7 +471,7 @@ const sendMessageButton =
 // =========================================================
 
 let client = null;
-let signalWireInitializationPromise = null;
+let telnyxInitializationPromise = null;
 
 let currentCall = null;
 
@@ -1619,97 +1616,464 @@ function stopCallTimer() {
     }
 
 }
+// =========================================================
+// TEMPORARY SIGNALWIRE CONNECTION TEST
+// =========================================================
 
-async function initializeSignalWire() {
-    if (signalWireInitializationPromise) {
-        return signalWireInitializationPromise;
+async function testSignalWireToken() {
+    console.log("========================================");
+    console.log("TESTING SIGNALWIRE TOKEN...");
+    console.log("========================================");
+
+    try {
+        const response = await authFetch("/api/signalwire-token", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({})
+        });
+
+        const data = await response.json();
+
+        console.log("SIGNALWIRE TOKEN RESPONSE:", data);
+
+        if (data.success && data.token) {
+            console.log("✅ SIGNALWIRE TOKEN SUCCESS");
+            console.log("Subscriber ID:", data.subscriberId);
+            console.log("Token received successfully.");
+        } else {
+            console.error("❌ SIGNALWIRE TOKEN FAILED");
+            console.error(data);
+        }
+
+    } catch (error) {
+        console.error("❌ SIGNALWIRE TEST ERROR:", error);
+    }
+}
+
+// =========================================================
+// TELNYX WEBRTC
+// =========================================================
+
+async function initializeTelnyx() {
+ 
+
+    if (telnyxInitializationPromise) {
+        return telnyxInitializationPromise;
     }
 
-    signalWireInitializationPromise = (async () => {
-        try {
-            console.log("========================================");
-            console.log("INITIALIZING SIGNALWIRE...");
-            console.log("========================================");
+    telnyxInitializationPromise = (async () => {
+    try {
 
-            if (!customerAccount) {
-                console.error("No customer account available.");
-                return false;
+        if (!customerAccount) {
+
+            throw new Error(
+                "Customer account is not available."
+            );
+
+        }
+
+
+        status.textContent =
+            "Connecting...";
+
+
+        const response =
+            await authFetch(
+                "/api/telnyx-token"
+            );
+
+
+        if (!response.ok) {
+
+            let errorData = null;
+
+            try {
+
+                errorData =
+                    await response.json();
+
+            } catch {
+
+                errorData = null;
+
             }
 
-            status.textContent = "Connecting...";
 
-            const response = await authFetch("/api/signalwire-token", {
+            throw new Error(
+                errorData?.message ||
+                errorData?.error ||
+                "Could not get Telnyx token"
+            );
+
+        }
+
+
+        const data =
+            await response.json();
+
+
+        if (
+            !data.success ||
+            !data.token
+        ) {
+
+            throw new Error(
+                "Telnyx token was not returned"
+            );
+
+        }
+
+
+        client =
+    new TelnyxRTC({
+        login_token: data.token,
+        debug: true
+    });
+client.on("telnyx.socket.open", () => {
+    console.log("TELNYX SOCKET OPEN");
+});
+
+client.on("telnyx.socket.close", () => {
+    console.log("TELNYX SOCKET CLOSED");
+});
+
+        client.remoteElement =
+            "remoteMedia";
+
+
+        // =================================================
+        // READY
+        // =================================================
+
+        client.on("telnyx.ready", async () => {
+    console.log("Telnyx WebRTC is ready");
+
+    status.textContent = "Connected";
+    callButton.disabled = false;
+    hangupButton.disabled = true;
+
+    // Register this Dialeaze agent with our backend
+    try {
+        const registerResponse = await authFetch(
+            "/api/webrtc/register",
+            {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({})
-            });
-
-            const data = await response.json();
-
-            console.log("SIGNALWIRE TOKEN RESPONSE:", {
-                success: data.success,
-                subscriberId: data.subscriberId,
-                expiresAt: data.expiresAt
-            });
-
-            if (!response.ok || !data.success || !data.token) {
-                throw new Error(
-                    data.error || "Unable to get SignalWire token."
-                );
+                body: JSON.stringify({
+    sipUsername: data.sipUsername
+})
             }
+        );
 
-            console.log("Creating SignalWire client...");
+        const registerData = await registerResponse.json();
 
-            client = new SignalWire(
-                new StaticCredentialProvider({
-                    token: data.token
-                }),
-                {
-                    skipRegister: true
-                }
+        if (!registerResponse.ok || !registerData.success) {
+            throw new Error(
+                registerData.error ||
+                "WebRTC agent registration failed."
             );
-
-            console.log("SignalWire client created.");
-
-            await client.register();
-
-            console.log("✅ SIGNALWIRE REGISTERED");
-
-            status.textContent = "Connected";
-
-            const callButton = document.getElementById("callButton");
-
-            if (callButton) {
-                callButton.disabled = false;
-            }
-
-            const hangupButton = document.getElementById("hangupButton");
-
-            if (hangupButton) {
-                hangupButton.disabled = true;
-            }
-
-            currentUserId = customerAccount.userId || currentUserId;
-
-            console.log("SignalWire browser connection is READY.");
-
-            return true;
-
-        } catch (error) {
-            console.error("❌ SIGNALWIRE INITIALIZATION ERROR:", error);
-
-            status.textContent = "Connection failed";
-
-            return false;
         }
-    })();
 
-    return signalWireInitializationPromise;
+        console.log(
+            "Dialeaze WebRTC agent registered:",
+            registerData
+        );
+
+    } catch (error) {
+        console.error(
+            "Dialeaze WebRTC agent registration error:",
+            error
+        );
+    }
+});
+
+
+        // =================================================
+        // NOTIFICATIONS
+        // =================================================
+async function updateOutboundCallLifecycle(data) {
+    if (!currentOutboundUsageId) {
+        return;
+    }
+
+    try {
+        const response = await authFetch(
+            "/api/outbound-call/update",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    usageId: currentOutboundUsageId,
+                    ...data
+                })
+            }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            console.error(
+                "❌ Failed to update call lifecycle:",
+                result
+            );
+            return;
+        }
+
+        console.log(
+            "✅ Outbound call lifecycle updated:",
+            data
+        );
+
+    } catch (error) {
+        console.error(
+            "❌ Lifecycle update error:",
+            error
+        );
+    }
+}
+       
+client.on(
+    "telnyx.notification",
+     async notification => {
+
+        console.log(
+            "Telnyx notification:",
+            notification
+        );
+
+        if (
+            !notification ||
+            notification.type !== "callUpdate"
+        ) {
+            return;
+        }
+
+        const call =
+            notification.call;
+
+        if (!call) {
+            console.log(
+                "Telnyx notification contains no call object."
+            );
+            return;
+        }
+
+        currentCall = call;
+
+        console.log(
+            "🔥 INCOMING/VOICE CALL STATE:",
+            call.state
+        );
+
+        switch (call.state) {
+
+         case "ringing": {
+        await updateOutboundCallLifecycle({
+    callStatus: "ringing"
+});
+
+    if (call._dialeazeRinging) return;
+
+    call._dialeazeRinging = true;
+
+    status.textContent = "Incoming call...";
+    callButton.disabled = true;
+    hangupButton.disabled = false;
+
+    console.log("📞 INCOMING CALL");
+    console.log("📞 Full notification:", notification);
+    console.log("📞 Call object:", call);
+
+    /*
+     * Telnyx incoming INVITE contains caller_id_number.
+     * We check several possible locations so the UI
+     * remains compatible with the SDK's call object.
+     */
+
+    const callerNumber =
+        notification?.caller_id_number ||
+        notification?.call?.caller_id_number ||
+        call?.caller_id_number ||
+        call?.callerNumber ||
+        call?.remoteNumber ||
+        call?.remote_number ||
+        call?.options?.callerNumber ||
+        "Unknown Number";
+
+    console.log("📞 DISPLAYING CALLER:", callerNumber);
+
+    const incomingCallerText =
+        document.getElementById("incomingCallerText");
+
+    if (incomingCallerText) {
+        incomingCallerText.textContent = callerNumber;
+    }
+
+    if (incomingCallPanel) {
+        incomingCallPanel.style.display = "flex";
+    }
+
+    break;
 }
 
+            case "active": { await updateOutboundCallLifecycle({
+    callStatus: "answered",
+    answered: true,
+    answeredAt: new Date().toISOString()
+});
 
+                status.textContent =
+                    "Connected";
+
+                callButton.disabled =
+                    true;
+
+                hangupButton.disabled =
+                    false;
+
+                if (!callStartTime) {
+                    callStartTime =
+                        Date.now();
+
+                    startCallTimer();
+                }
+
+                break;
+            }
+
+            case "hangup":
+            case "destroy": {await updateOutboundCallLifecycle({
+    callStatus: "completed",
+    endedAt: new Date().toISOString(),
+    durationSeconds: callStartTime
+        ? Math.floor((Date.now() - callStartTime) / 1000)
+        : 0
+});
+
+                console.log(
+                    "Call ended:",
+                    call.state
+                );
+
+                stopCallTimer();
+
+                status.textContent =
+                    "Call ended";
+
+                callButton.disabled =
+                    false;
+
+                hangupButton.disabled =
+                    true;
+                    if (incomingCallPanel) {
+    incomingCallPanel.style.display = "none";
+}
+
+                if (currentCallHistory) {
+
+                    currentCallHistory.status =
+                        "Completed";
+
+                    callHistory.unshift(
+                        currentCallHistory
+                    );
+
+                    callHistory =
+                        callHistory.slice(
+                            0,
+                            50
+                        );
+
+                    saveCallHistoryToSupabase(
+                        currentCallHistory
+                    );
+
+                    renderRecentCalls();
+
+                    renderCallHistory();
+
+                    currentCallHistory =
+                        null;
+                }
+
+                currentCall =
+                    null;
+
+                callStartTime =
+                    null;
+
+                   currentOutboundUsageId = null;
+
+                break;
+            }
+        }
+    }
+);
+
+
+        // =================================================
+        // TELNYX ERROR
+        // =================================================
+
+        client.on(
+            "telnyx.error",
+            error => {
+
+                console.error(
+                    "Telnyx error:",
+                    error
+                );
+
+
+                status.textContent =
+                    "Telnyx error";
+
+
+                callButton.disabled =
+                    false;
+
+
+                hangupButton.disabled =
+                    true;
+
+
+                stopCallTimer();
+
+            }
+        );
+
+
+                client.connect();
+
+    } catch (error) {
+
+        console.error(
+            "WebRTC initialization error:",
+            error
+        );
+
+        status.textContent =
+            "Connection failed";
+
+        callButton.disabled =
+            true;
+
+        hangupButton.disabled =
+            true;
+
+    }
+
+    })();
+
+    return telnyxInitializationPromise;
+
+}
 
 // =========================================================
 // INCOMING CALL CONTROLS
@@ -1738,20 +2102,387 @@ if (acceptCallButton) {
         try {
 
             console.log("✅ Accepting incoming call...");
-            currentCall.answer({
-    audio: true,
-    video: false
-});
 
-console.log("✅ Incoming call answered.");
+            const remoteMedia =
+                document.getElementById("remoteMedia");
 
-if (incomingCallPanel) {
-    incomingCallPanel.style.display = "none";
+            await currentCall.answer({
+                remoteElement: remoteMedia
+            });
+
+            console.log("✅ Incoming call answered.");
+
+            if (remoteMedia) {
+                remoteMedia.play().catch(error => {
+                    console.warn(
+                        "Remote audio play blocked:",
+                        error
+                    );
+                });
+            }
+
+            if (incomingCallPanel) {
+                incomingCallPanel.style.display = "none";
+            }
+
+            status.textContent = "Connected";
+
+        } catch (error) {
+
+            console.error(
+                "❌ Could not answer incoming call:",
+                error
+            );
+
+            status.textContent = "Unable to answer";
+
+        }
+
+    });
+
 }
 
-status.textContent = "Connected";
-startCallTimer();
 
+// REJECT INCOMING CALL
+if (rejectCallButton) {
+
+    rejectCallButton.addEventListener("click", () => {
+
+        if (!currentCall) {
+            console.warn("No incoming call to reject.");
+            return;
+        }
+
+        try {
+
+            console.log("❌ Rejecting incoming call...");
+
+            currentCall.hangup();
+
+        } catch (error) {
+
+            console.error(
+                "Could not reject incoming call:",
+                error
+            );
+
+        }
+
+        if (incomingCallPanel) {
+            incomingCallPanel.style.display = "none";
+        }
+
+        status.textContent = "Call rejected";
+
+        callButton.disabled = false;
+        hangupButton.disabled = true;
+
+    });
+
+}
+// =========================================================
+// MAKE OUTBOUND CALL
+// =========================================================
+
+callButton.addEventListener(
+    "click",
+    async () => {
+
+        const number =
+            phoneNumber.value.trim();
+
+
+        if (!number) {
+
+            alert(
+                "Please enter a phone number."
+            );
+
+            return;
+
+        }
+
+
+        if (!client) {
+
+            alert(
+                "Telnyx is not connected yet."
+            );
+
+            return;
+
+        }
+
+
+        if (!customerAccount) {
+
+            alert(
+                "Customer account is still loading."
+            );
+
+            return;
+
+        }
+
+
+        if (currentCall) {
+
+            console.log(
+                "A call is already in progress."
+            );
+
+            return;
+
+        }
+
+
+        try {
+
+            status.textContent =
+                "Calling...";
+
+
+            callButton.disabled =
+                true;
+
+
+            hangupButton.disabled =
+                false;
+
+
+            currentCallHistory = {
+
+                phoneNumber:
+                    number,
+
+                direction:
+                    "Outbound",
+
+                status:
+                    "Calling",
+
+                startedAt:
+                    Date.now(),
+
+                connectedAt:
+                    null,
+
+                endedAt:
+                    null,
+
+                duration:
+                    0,
+
+                time:
+                    new Date().toISOString(),
+
+                callerNumber:
+                    customerAccount.phoneNumber
+
+            };
+
+
+// =========================================================
+// SERVER-SIDE OUTBOUND CALL AUTHORIZATION
+// =========================================================
+
+console.log(
+    "🔐 Requesting server authorization for outbound call..."
+);
+
+const authorizationResponse = await authFetch(
+    "/api/outbound-call/authorize",
+    {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            destinationNumber: number,
+            callerNumber: customerAccount.phoneNumber
+        })
+    }
+);
+
+
+const authorizationData =
+    await authorizationResponse.json();
+
+
+console.log(
+    "🔐 Outbound authorization response:",
+    authorizationData
+);
+
+
+// =========================================================
+// CALL BLOCKED
+// =========================================================
+
+if (
+    !authorizationResponse.ok ||
+    !authorizationData.success ||
+    !authorizationData.allowed
+) {
+
+    const reason =
+        authorizationData?.controls?.suspensionReason ||
+        authorizationData?.error ||
+        "Calling is currently unavailable for this account.";
+
+
+    console.warn(
+        "🚫 OUTBOUND CALL BLOCKED:",
+        reason
+    );
+
+
+    status.textContent =
+        authorizationData?.reason === "account_status"
+            ? "Calling unavailable"
+            : "Call limit reached";
+
+
+    alert(
+        "This call cannot be placed.\n\n" +
+        reason
+    );
+
+
+    callButton.disabled =
+        false;
+
+
+    hangupButton.disabled =
+        true;
+
+
+    currentCallHistory =
+        null;
+
+
+    return;
+}
+
+
+// =========================================================
+// SERVER AUTHORIZATION PASSED
+// =========================================================
+
+console.log(
+    "✅ Server authorized outbound call."
+);
+const authorizedUsageId =
+    authorizationData.usageId;
+
+    currentOutboundUsageId = authorizedUsageId;
+
+console.log(
+    "📌 Authorized usage ID:",
+    authorizedUsageId
+);
+
+const remoteMedia =
+    document.getElementById("remoteMedia");
+
+currentCall =
+    client.newCall({
+        destinationNumber:
+            number,
+
+        callerNumber:
+            customerAccount.phoneNumber,
+
+        remoteElement:
+            remoteMedia
+    });
+
+// =========================================================
+// LINK PROVIDER CALL TO USAGE RECORD
+// =========================================================
+
+console.log(
+    "📞 Provider call created:",
+    currentCall
+);
+
+const providerCallId =
+    currentCall?.callControlId ||
+    currentCall?.call_control_id ||
+    currentCall?.id ||
+    null;
+
+console.log(
+    "🔗 Provider Call ID:",
+    providerCallId
+);
+
+if (authorizedUsageId && providerCallId) {
+
+    try {
+
+        const linkResponse =
+            await authFetch(
+                "/api/outbound-call/link",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        usageId:
+                            authorizedUsageId,
+
+                        providerCallId:
+                            providerCallId
+                    })
+                }
+            );
+
+        const linkData =
+            await linkResponse.json();
+
+        console.log(
+            "🔗 Usage link response:",
+            linkResponse.status,
+            linkData
+        );
+
+    } catch (linkError) {
+
+        console.error(
+            "❌ Failed to link provider call to usage:",
+            linkError
+        );
+    }
+
+} else {
+
+    console.warn(
+        "⚠️ Could not link usage record. Missing:",
+        {
+            authorizedUsageId,
+            providerCallId
+        }
+    );
+}
+
+console.log(
+    "Outgoing call created."
+);
+
+console.log(
+    "Destination:",
+    number
+);
+
+console.log(
+    "Caller ID:",
+    customerAccount.phoneNumber
+);
         }
 
 
@@ -1787,489 +2518,51 @@ startCallTimer();
     }
 );
 
-}
 
-// REJECT INCOMING CALL
-if (rejectCallButton) {
 
-    rejectCallButton.addEventListener("click", async () => {
+// =========================================================
+// HANG UP
+// =========================================================
 
-        if (!currentCall) {
-            console.warn("No incoming call to reject.");
-            return;
-        }
+hangupButton.addEventListener("click", () => {
 
-        try {
+    if (!currentCall) {
+        return;
+    }
 
-            console.log("❌ Rejecting incoming SignalWire call...");
+    try {
 
-            if (typeof currentCall.reject === "function") {
-                await currentCall.reject();
-            } else if (typeof currentCall.hangup === "function") {
-                await currentCall.hangup();
-            }
+        console.log("☎️ Hangup requested.");
 
-            console.log("✅ Incoming call rejected.");
+        currentCall.hangup();
 
-        } catch (error) {
+        status.textContent = "Ending call...";
 
-            console.error(
-                "❌ Could not reject incoming call:",
-                error
-            );
+        hangupButton.disabled = true;
 
-        }
+    } catch (error) {
+
+        console.error(
+            "Could not hang up call:",
+            error
+        );
+
+        status.textContent = "Call ended";
+
+        callButton.disabled = false;
+        hangupButton.disabled = true;
+
+        stopCallTimer();
 
         if (incomingCallPanel) {
             incomingCallPanel.style.display = "none";
         }
 
-        status.textContent = "Call rejected";
-
-        callButton.disabled = false;
-        hangupButton.disabled = true;
-
         currentCall = null;
-    });
-}
-
-// =========================================================
-// MAKE OUTBOUND CALL
-// =========================================================
-
-if (callButton) {
-
-    callButton.addEventListener(
-        "click",
-        async () => {
-
-            if (!client) {
-
-                console.warn(
-                    "SignalWire client is not ready."
-                );
-
-                status.textContent =
-                    "Connecting...";
-
-                const ready =
-                    await initializeSignalWire();
-
-                if (!ready) {
-                    status.textContent =
-                        "Connection failed";
-                    return;
-                }
-
-            }
-
-
-            const number =
-                phoneNumber.value.trim();
-
-
-            if (!number) {
-
-                alert(
-                    "Please enter a phone number."
-                );
-
-                return;
-
-            }
-
-
-            if (!customerAccount) {
-
-                alert(
-                    "Customer account is not ready yet."
-                );
-
-                return;
-
-            }
-
-
-            console.log(
-                "📞 Preparing SignalWire outbound call to:",
-                number
-            );
-
-
-            callButton.disabled =
-                true;
-
-            hangupButton.disabled =
-                false;
-
-            status.textContent =
-                "Authorizing call...";
-
-
-            try {
-
-                // -----------------------------------------
-                // AUTHORIZE CALL WITH SERVER
-                // -----------------------------------------
-
-                const authorizationResponse =
-                    await authFetch(
-                        "/api/outbound-call/authorize",
-                        {
-                            method: "POST",
-
-                            headers: {
-                                "Content-Type":
-                                    "application/json"
-                            },
-
-                            body: JSON.stringify({
-                                destination_number:
-                                    number,
-                                caller_number:
-                                    customerAccount.phoneNumber ||
-                                    ""
-                            })
-                        }
-                    );
-
-
-                const authorizationData =
-                    await authorizationResponse.json();
-
-
-                if (
-                    !authorizationResponse.ok ||
-                    !authorizationData.success
-                ) {
-
-                    throw new Error(
-                        authorizationData.error ||
-                        "Call authorization failed."
-                    );
-
-                }
-
-
-                currentOutboundUsageId =
-                    authorizationData.usage_id ||
-                    authorizationData.usageId ||
-                    null;
-
-
-                console.log(
-                    "✅ Outbound call authorized.",
-                    currentOutboundUsageId
-                );
-
-
-                // -----------------------------------------
-                // START SIGNALWIRE CALL
-                // -----------------------------------------
-
-                status.textContent =
-                    "Calling...";
-
-
-                console.log(
-                    "📞 Dialing with SignalWire..."
-                );
-
-
-                currentCall =
-                    await client.dial(
-                        number,
-                        {
-                            audio: true,
-                            video: false
-                        }
-                    );
-
-
-                console.log(
-                    "✅ SignalWire outbound call created.",
-                    currentCall
-                );
-
-
-                // -----------------------------------------
-                // LISTEN FOR CALL STATUS
-                // -----------------------------------------
-
-                if (
-                    currentCall &&
-                    currentCall.status$
-                ) {
-
-                    currentCall.status$.subscribe(
-                        async callStatus => {
-
-                            console.log(
-                                "📡 SignalWire call status:",
-                                callStatus
-                            );
-
-
-                            let statusValue =
-                                typeof callStatus ===
-                                "string"
-                                    ? callStatus
-                                    : callStatus?.status ||
-                                      callStatus?.state ||
-                                      "";
-
-
-                            statusValue =
-                                String(
-                                    statusValue
-                                ).toLowerCase();
-
-
-                            // -----------------------------
-                            // RINGING / TRYING
-                            // -----------------------------
-
-                            if (
-                                statusValue === "trying" ||
-                                statusValue === "ringing" ||
-                                statusValue === "new"
-                            ) {
-
-                                status.textContent =
-                                    "Calling...";
-
-                            }
-
-
-                            // -----------------------------
-                            // ANSWERED
-                            // -----------------------------
-
-                            else if (
-                                statusValue ===
-                                    "answered" ||
-                                statusValue ===
-                                    "active"
-                            ) {
-
-                                console.log(
-                                    "✅ Call answered."
-                                );
-
-                                status.textContent =
-                                    "Connected";
-
-                                startCallTimer();
-
-
-                                if (
-                                    currentOutboundUsageId
-                                ) {
-
-                                    await authFetch(
-                                        "/api/outbound-call/update",
-                                        {
-                                            method: "PATCH",
-
-                                            headers: {
-                                                "Content-Type":
-                                                    "application/json"
-                                            },
-
-                                            body:
-                                                JSON.stringify({
-                                                    usageId:
-                                                        currentOutboundUsageId,
-
-                                                    call_status:
-                                                        "answered",
-
-                                                    answered:
-                                                        true,
-
-                                                    answered_at:
-                                                        new Date().toISOString()
-                                                })
-                                        }
-                                    );
-
-                                }
-
-                            }
-
-
-                            // -----------------------------
-                            // ENDING / ENDED
-                            // -----------------------------
-
-                            else if (
-                                statusValue ===
-                                    "ending" ||
-                                statusValue ===
-                                    "ended" ||
-                                statusValue ===
-                                    "hangup" ||
-                                statusValue ===
-                                    "disconnected"
-                            ) {
-
-                                console.log(
-                                    "📴 SignalWire call ended."
-                                );
-
-                                status.textContent =
-                                    "Call ended";
-
-                                stopCallTimer();
-
-                                callButton.disabled =
-                                    false;
-
-                                hangupButton.disabled =
-                                    true;
-
-
-                                if (
-                                    currentOutboundUsageId
-                                ) {
-
-                                    await authFetch(
-                                        "/api/outbound-call/update",
-                                        {
-                                            method: "PATCH",
-
-                                            headers: {
-                                                "Content-Type":
-                                                    "application/json"
-                                            },
-
-                                            body:
-                                                JSON.stringify({
-                                                    usageId:
-                                                        currentOutboundUsageId,
-
-                                                    call_status:
-                                                        "completed",
-
-                                                    ended_at:
-                                                        new Date().toISOString()
-                                                })
-                                        }
-                                    );
-
-                                }
-
-
-                                currentCall =
-                                    null;
-
-                                currentOutboundUsageId =
-                                    null;
-
-                            }
-
-                        }
-                    );
-
-                }
-
-            } catch (error) {
-
-                console.error(
-                    "❌ SignalWire outbound call error:",
-                    error
-                );
-
-
-                status.textContent =
-                    error.message ||
-                    "Call failed";
-
-
-                callButton.disabled =
-                    false;
-
-                hangupButton.disabled =
-                    true;
-
-
-                currentCall =
-                    null;
-
-
-                currentOutboundUsageId =
-                    null;
-
-            }
-
-        }
-    );
-
-}
-// =========================================================
-// HANG UP
-// =========================================================
-
-hangupButton.addEventListener(
-    "click",
-    async () => {
-
-        if (!currentCall) {
-            return;
-        }
-
-        console.log(
-            "📴 Hanging up SignalWire call..."
-        );
-
-        try {
-
-            if (typeof currentCall.hangup === "function") {
-
-                await currentCall.hangup();
-
-            } else if (typeof currentCall.disconnect === "function") {
-
-                await currentCall.disconnect();
-
-            } else {
-
-                console.warn(
-                    "⚠️ SignalWire call has no hangup/disconnect method.",
-                    currentCall
-                );
-
-            }
-
-            console.log(
-                "✅ SignalWire hangup requested."
-            );
-
-        } catch (error) {
-
-            console.error(
-                "❌ SignalWire hangup error:",
-                error
-            );
-
-        }
-
-        status.textContent =
-            "Call ended";
-
-        callButton.disabled =
-            false;
-
-        hangupButton.disabled =
-            true;
-
-        stopCallTimer();
-
-        currentCall =
-            null;
 
     }
-);
+
+});
 
 
 // =========================================================
@@ -3243,7 +3536,7 @@ async function initializeApp() {
         return;
     }
 
-    await initializeSignalWire();
+    await initializeTelnyx();
     await testSignalWireToken();
 }
 

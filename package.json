@@ -12,12 +12,14 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@signalwire/js": "^4.0.0-rc.2",
     "@supabase/supabase-js": "^2.115.0",
     "@telnyx/webrtc": "^2.27.10",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jose": "^6.2.10",
+    "rxjs": "^7.8.2",
     "telnyx": "^7.19.0"
   }
 }
