@@ -16,7 +16,7 @@ const supabase =
         SUPABASE_URL,
         SUPABASE_PUBLISHABLE_KEY
     );
-window.dialeazeSupabase = supabase;
+
     // =========================================================
 // DIALEAZE DASHBOARD AUTHENTICATION BRIDGE
 // =========================================================
@@ -478,6 +478,8 @@ let currentCall = null;
 let currentCallHistory = null;
 
 let callStartTime = null;
+
+let currentOutboundUsageId = null;
 
 let callTimerInterval = null;
 
@@ -1759,11 +1761,52 @@ client.on("telnyx.socket.close", () => {
         // =================================================
         // NOTIFICATIONS
         // =================================================
+async function updateOutboundCallLifecycle(data) {
+    if (!currentOutboundUsageId) {
+        return;
+    }
 
+    try {
+        const response = await authFetch(
+            "/api/outbound-call/update",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    usageId: currentOutboundUsageId,
+                    ...data
+                })
+            }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            console.error(
+                "❌ Failed to update call lifecycle:",
+                result
+            );
+            return;
+        }
+
+        console.log(
+            "✅ Outbound call lifecycle updated:",
+            data
+        );
+
+    } catch (error) {
+        console.error(
+            "❌ Lifecycle update error:",
+            error
+        );
+    }
+}
        
 client.on(
     "telnyx.notification",
-    notification => {
+     async notification => {
 
         console.log(
             "Telnyx notification:",
@@ -1797,6 +1840,9 @@ client.on(
         switch (call.state) {
 
          case "ringing": {
+        await updateOutboundCallLifecycle({
+    callStatus: "ringing"
+});
 
     if (call._dialeazeRinging) return;
 
@@ -2282,6 +2328,8 @@ console.log(
 );
 const authorizedUsageId =
     authorizationData.usageId;
+
+    currentOutboundUsageId = authorizedUsageId;
 
 console.log(
     "📌 Authorized usage ID:",
