@@ -1403,3 +1403,279 @@ body {
     }
 
 }
+
+
+.dialeaze-incoming-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 999999;
+
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(10, 18, 35, 0.58);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+
+    padding: 20px;
+}
+
+.dialeaze-incoming-card {
+    width: 100%;
+    max-width: 420px;
+
+    background: #ffffff;
+    border-radius: 24px;
+
+    padding: 32px 30px 28px;
+
+    text-align: center;
+
+    box-shadow:
+        0 30px 80px rgba(0, 0, 0, 0.30),
+        0 8px 30px rgba(0, 0, 0, 0.16);
+
+    animation: dialeazeIncomingAppear 0.28s ease-out;
+}
+
+.dialeaze-incoming-top {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.8px;
+
+    color: #526174;
+
+    margin-bottom: 24px;
+}
+
+.dialeaze-live-dot {
+    width: 8px;
+    height: 8px;
+
+    border-radius: 50%;
+
+    background: #22c55e;
+
+    box-shadow: 0 0 0 5px rgba(34, 197, 94, 0.12);
+
+    animation: dialeazeLivePulse 1.4s infinite;
+}
+
+.dialeaze-phone-ring {
+    width: 88px;
+    height: 88px;
+
+    margin: 0 auto 20px;
+
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #eef6ff;
+
+    box-shadow:
+        0 0 0 10px rgba(91, 170, 230, 0.08),
+        0 0 0 20px rgba(91, 170, 230, 0.04);
+
+    animation: dialeazePhonePulse 1.5s infinite;
+}
+
+.dialeaze-phone-ring span {
+    width: 64px;
+    height: 64px;
+
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #55afe0;
+
+    color: white;
+
+    font-size: 30px;
+}
+
+.dialeaze-incoming-title {
+    font-size: 18px;
+    font-weight: 600;
+
+    color: #6b7280;
+
+    margin-bottom: 8px;
+}
+
+.dialeaze-caller-number {
+    font-size: 29px;
+    line-height: 1.2;
+
+    font-weight: 800;
+
+    color: #172033;
+
+    letter-spacing: 0.3px;
+
+    word-break: break-word;
+}
+
+.dialeaze-caller-label {
+    margin-top: 8px;
+
+    font-size: 13px;
+
+    color: #8a94a6;
+}
+
+.dialeaze-incoming-buttons {
+    display: flex;
+
+    gap: 14px;
+
+    margin-top: 30px;
+}
+
+.dialeaze-call-btn {
+    flex: 1;
+
+    height: 54px;
+
+    border: none;
+    border-radius: 13px;
+
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 9px;
+
+    font-size: 15px;
+
+    transition:
+        transform 0.15s ease,
+        box-shadow 0.15s ease,
+        opacity 0.15s ease;
+}
+
+.dialeaze-call-btn:hover {
+    transform: translateY(-2px);
+}
+
+.dialeaze-call-btn:active {
+    transform: translateY(0);
+}
+
+.dialeaze-call-btn span {
+    font-size: 18px;
+}
+
+.dialeaze-decline {
+    background: #f3f4f6;
+
+    color: #dc3545;
+
+    border: 1px solid #e5e7eb;
+}
+
+.dialeaze-decline:hover {
+    background: #feecec;
+
+    box-shadow: 0 7px 20px rgba(220, 53, 69, 0.12);
+}
+
+.dialeaze-answer {
+    background: #22b45b;
+
+    color: white;
+
+    box-shadow: 0 7px 20px rgba(34, 180, 91, 0.22);
+}
+
+.dialeaze-answer:hover {
+    background: #1ca451;
+
+    box-shadow: 0 9px 25px rgba(34, 180, 91, 0.30);
+}
+
+@keyframes dialeazeIncomingAppear {
+
+    from {
+        opacity: 0;
+        transform: scale(0.94) translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+
+}
+
+@keyframes dialeazePhonePulse {
+
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.06);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+
+}
+
+@keyframes dialeazeLivePulse {
+
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.45;
+        transform: scale(1.25);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+}
+
+@media (max-width: 480px) {
+
+    .dialeaze-incoming-overlay {
+        padding: 15px;
+    }
+
+    .dialeaze-incoming-card {
+        max-width: 100%;
+        padding: 28px 20px 22px;
+        border-radius: 20px;
+    }
+
+    .dialeaze-caller-number {
+        font-size: 24px;
+    }
+
+    .dialeaze-phone-ring {
+        width: 78px;
+        height: 78px;
+    }
+
+}
+

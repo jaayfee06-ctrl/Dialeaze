@@ -2190,7 +2190,71 @@ callButton.addEventListener(
             };
 
 
-            const remoteMedia = document.getElementById("remoteMedia");
+            // =========================================================
+// CHECK CUSTOMER CALL CONTROLS BEFORE STARTING CALL
+// =========================================================
+
+console.log("🔐 Checking customer call controls...");
+
+const controlsResponse = await authFetch(
+    "/api/call-controls",
+    {
+        method: "GET"
+    }
+);
+
+const controlsData = await controlsResponse.json();
+
+console.log(
+    "🔐 Call controls response:",
+    controlsData
+);
+
+if (
+    !controlsResponse.ok ||
+    !controlsData.success ||
+    !controlsData.allowed
+) {
+
+    const reason =
+        controlsData?.controls?.suspensionReason ||
+        controlsData?.error ||
+        "Calling is currently unavailable for this account.";
+
+    console.warn(
+        "🚫 OUTBOUND CALL BLOCKED:",
+        reason
+    );
+
+    status.textContent =
+        controlsData?.controls?.status === "suspended"
+            ? "Calling suspended"
+            : "Calling unavailable";
+
+    alert(
+        "This call cannot be placed.\n\n" +
+        reason
+    );
+
+    callButton.disabled = false;
+    hangupButton.disabled = true;
+
+    currentCallHistory = null;
+
+    return;
+}
+
+
+// =========================================================
+// CALL CONTROLS PASSED — CREATE CALL
+// =========================================================
+
+console.log(
+    "✅ Customer is authorized to make outbound calls."
+);
+
+const remoteMedia =
+    document.getElementById("remoteMedia");
 
 currentCall = client.newCall({
     destinationNumber: number,

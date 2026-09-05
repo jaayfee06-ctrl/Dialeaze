@@ -1315,6 +1315,102 @@ if (eventType === "call.initiated") {
     }
 });
 
+// =========================================================
+// CUSTOMER CALL CONTROLS
+// =========================================================
+
+app.get("/api/call-controls", async (req, res) => {
+    try {
+        const auth = await authenticateRequest(req);
+
+        if (!auth.success) {
+            return res.status(auth.status).json({
+                success: false,
+                error: auth.error
+            });
+        }
+
+        const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/customer_call_controls` +
+            `?user_id=eq.${encodeURIComponent(auth.user.id)}` +
+            `&select=*`,
+            {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${auth.token}`,
+                    apikey: SUPABASE_PUBLISHABLE_KEY
+                }
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error(
+                "Customer call controls fetch error:",
+                data
+            );
+
+            return res.status(response.status).json({
+                success: false,
+                error:
+                    data?.message ||
+                    "Unable to load call controls."
+            });
+        }
+
+        // If the customer does not have a control record yet,
+        // return a safe default response.
+        if (!Array.isArray(data) || data.length === 0) {
+            return res.json({
+                success: true,
+                allowed: false,
+                status: "missing",
+                error:
+                    "Call controls have not been configured for this customer."
+            });
+        }
+
+        const controls = data[0];
+
+        const allowed =
+            controls.status === "active";
+
+        return res.json({
+            success: true,
+            allowed,
+            controls: {
+                status: controls.status,
+                riskScore: controls.risk_score,
+                hourlyCallLimit: controls.hourly_call_limit,
+                dailyCallLimit: controls.daily_call_limit,
+                dailyMinuteLimit: controls.daily_minute_limit,
+                monthlyMinuteLimit: controls.monthly_minute_limit,
+                callsToday: controls.calls_today,
+                callsThisHour: controls.calls_this_hour,
+                minutesToday: Number(controls.minutes_today) || 0,
+                minutesThisMonth:
+                    Number(controls.minutes_this_month) || 0,
+                lastCallAt: controls.last_call_at,
+                suspensionReason:
+                    controls.suspension_reason || null
+            }
+        });
+
+    } catch (error) {
+        console.error(
+            "Call controls error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            error:
+                "Unable to check customer call controls."
+        });
+    }
+});
+
         
         
 // =========================================================
