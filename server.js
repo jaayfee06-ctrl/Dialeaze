@@ -1131,32 +1131,41 @@ app.post("/api/telnyx/webhook", async (req, res) => {
             // Transfer the incoming call to the WebRTC agent
             // -------------------------------------------------
 
-            try {
+            // -------------------------------------------------
+// Dial the registered WebRTC agent and bridge the call
+// -------------------------------------------------
 
-                await telnyx.calls.actions.transfer(
-                    callControlId,
-                    {
-                        to: sipUri,
-                        from: calledNumber
-                    }
-                );
+try {
 
-                console.log(
-                    "INBOUND CALL TRANSFERRED SUCCESSFULLY:",
-                    sipUri
-                );
+    const agentCall = await telnyx.calls.dial({
+        connection_id: process.env.TELNYX_WEBRTC_CONNECTION_ID,
+        to: `sip:${agent.sipUsername}@sip.telnyx.com`,
+        from: calledNumber,
+        link_to: callControlId,
+        bridge_intent: true,
+        bridge_on_answer: true,
+        timeout_secs: 30
+    });
 
-            } catch (transferError) {
+    console.log(
+        "WEBRTC AGENT CALL CREATED:",
+        agentCall?.data?.call_control_id
+    );
 
-                console.error(
-                    "INBOUND CALL TRANSFER FAILED:",
-                    transferError?.message ||
-                    transferError
-                );
+    console.log(
+        "INBOUND CALL LINKED TO WEBRTC AGENT:",
+        sipUri
+    );
 
-            }
-        }
+} catch (dialError) {
 
+    console.error(
+        "WEBRTC AGENT DIAL FAILED:",
+        dialError?.message ||
+        dialError
+    );
+
+}}
         // =====================================================
         // OTHER VOICE EVENTS
         // =====================================================
