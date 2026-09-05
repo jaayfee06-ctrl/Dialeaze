@@ -1774,8 +1774,7 @@ if (acceptCallButton) {
 
             console.log("✅ Accepting incoming call...");
 
-            const remoteMedia =
-    document.getElementById("remoteMedia");
+           
 
 // =========================================================
 // SIGNALWIRE OUTBOUND CALL
@@ -2295,8 +2294,6 @@ console.log(
     authorizedUsageId
 );
 
-const remoteMedia =
-    document.getElementById("remoteMedia");
 
 currentCall = await client.dial(
     number,
