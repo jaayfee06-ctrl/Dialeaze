@@ -1616,7 +1616,41 @@ function stopCallTimer() {
     }
 
 }
+// =========================================================
+// TEMPORARY SIGNALWIRE CONNECTION TEST
+// =========================================================
 
+async function testSignalWireToken() {
+    console.log("========================================");
+    console.log("TESTING SIGNALWIRE TOKEN...");
+    console.log("========================================");
+
+    try {
+        const response = await authFetch("/api/signalwire-token", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({})
+        });
+
+        const data = await response.json();
+
+        console.log("SIGNALWIRE TOKEN RESPONSE:", data);
+
+        if (data.success && data.token) {
+            console.log("✅ SIGNALWIRE TOKEN SUCCESS");
+            console.log("Subscriber ID:", data.subscriberId);
+            console.log("Token received successfully.");
+        } else {
+            console.error("❌ SIGNALWIRE TOKEN FAILED");
+            console.error(data);
+        }
+
+    } catch (error) {
+        console.error("❌ SIGNALWIRE TEST ERROR:", error);
+    }
+}
 
 // =========================================================
 // TELNYX WEBRTC
@@ -3503,6 +3537,7 @@ async function initializeApp() {
     }
 
     await initializeTelnyx();
+    await testSignalWireToken();
 }
 
 
