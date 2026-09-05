@@ -1806,19 +1806,28 @@ client.on(
     callButton.disabled = true;
     hangupButton.disabled = false;
 
-    console.log("📞 Incoming call detected. Waiting for answer.");
+    console.log("📞 INCOMING CALL");
+    console.log("📞 Full notification:", notification);
+    console.log("📞 Call object:", call);
 
-    // Get caller number
+    /*
+     * Telnyx incoming INVITE contains caller_id_number.
+     * We check several possible locations so the UI
+     * remains compatible with the SDK's call object.
+     */
+
     const callerNumber =
-        call.callerNumber ||
-        call.caller_id_number ||
-        call.remoteNumber ||
-        call.remote_number ||
+        notification?.caller_id_number ||
+        notification?.call?.caller_id_number ||
+        call?.caller_id_number ||
+        call?.callerNumber ||
+        call?.remoteNumber ||
+        call?.remote_number ||
+        call?.options?.callerNumber ||
         "Unknown Number";
 
-    console.log("📞 Caller number:", callerNumber);
+    console.log("📞 DISPLAYING CALLER:", callerNumber);
 
-    // Display caller number
     const incomingCallerText =
         document.getElementById("incomingCallerText");
 
@@ -1826,9 +1835,8 @@ client.on(
         incomingCallerText.textContent = callerNumber;
     }
 
-    // Show incoming call panel
     if (incomingCallPanel) {
-        incomingCallPanel.style.display = "block";
+        incomingCallPanel.style.display = "flex";
     }
 
     break;
