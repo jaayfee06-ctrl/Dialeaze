@@ -1847,6 +1847,162 @@ app.post("/api/outbound-call/link", async (req, res) => {
         });
     }
 });
+
+// =========================================================
+// UPDATE OUTBOUND CALL USAGE LIFECYCLE
+// =========================================================
+
+app.post("/api/outbound-call/update", async (req, res) => {
+    try {
+        const auth = await authenticateRequest(req);
+
+        if (!auth.success) {
+            return res.status(auth.status).json({
+                success: false,
+                error: auth.error
+            });
+        }
+
+        const userId = auth.user.id;
+
+        const {
+            usageId,
+            callStatus,
+            answered,
+            answeredAt,
+            endedAt,
+            durationSeconds
+        } = req.body;
+
+        if (!usageId) {
+            return res.status(400).json({
+                success: false,
+                error: "usageId is required."
+            });
+        }
+
+        const allowedStatuses = [
+            "started",
+            "ringing",
+            "answered",
+            "completed",
+            "failed",
+            "rejected",
+            "cancelled"
+        ];
+
+        if (
+            callStatus &&
+            !allowedStatuses.includes(callStatus)
+        ) {
+            return res.status(400).json({
+                success: false,
+                error: "Invalid call status."
+            });
+        }
+
+        const updateData = {};
+
+        if (callStatus) {
+            updateData.call_status = callStatus;
+        }
+
+        if (typeof answered === "boolean") {
+            updateData.answered = answered;
+        }
+
+        if (answeredAt) {
+            updateData.answered_at = answeredAt;
+        }
+
+        if (endedAt) {
+            updateData.ended_at = endedAt;
+        }
+
+        if (
+            durationSeconds !== undefined &&
+            durationSeconds !== null
+        ) {
+            const parsedDuration =
+                Number(durationSeconds);
+
+            if (
+                !Number.isFinite(parsedDuration) ||
+                parsedDuration < 0
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    error: "Invalid durationSeconds."
+                });
+            }
+
+            updateData.duration_seconds =
+                Math.floor(parsedDuration);
+        }
+
+
+        const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/customer_call_usage` +
+            `?id=eq.${encodeURIComponent(usageId)}` +
+            `&user_id=eq.${encodeURIComponent(userId)}`,
+            {
+                method: "PATCH",
+
+                headers: {
+                    Authorization:
+                        `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                    apikey:
+                        SUPABASE_SECRET_KEY,
+
+                    "Content-Type":
+                        "application/json",
+
+                    Prefer:
+                        "return=representation"
+                },
+
+                body:
+                    JSON.stringify(updateData)
+            }
+        );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+            console.error(
+                "❌ Failed to update outbound call usage:",
+                data
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    "Unable to update call usage."
+            });
+        }
+
+        return res.json({
+            success: true,
+            usageId,
+            updated: data
+        });
+
+    } catch (error) {
+
+        console.error(
+            "❌ Outbound call lifecycle update error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            error:
+                "Unable to update call lifecycle."
+        });
+    }
+});
         
 // =========================================================
 // FRONTEND FALLBACK
