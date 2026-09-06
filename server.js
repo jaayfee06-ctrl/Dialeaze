@@ -2474,6 +2474,7 @@ app.post("/api/signalwire/outbound-swml", (req, res) => {
                     connect: {
     from: callerNumber,
     to: destination,
+    answer_on_bridge: true,
     timeout: 60,
     call_state_events: [
         "created",
