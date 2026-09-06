@@ -454,19 +454,21 @@ app.get("/api/phone-numbers", async (req, res) => {
                 error: auth.error
             });
         }
+const signalWireAuth = Buffer.from(
+    `${SIGNALWIRE_PROJECT_ID}:${SIGNALWIRE_API_TOKEN}`
+).toString("base64");
 
-        const response = await fetch(
-            `${SUPABASE_URL}/rest/v1/phone_numbers?select=id,phone_number,user_id,status,created_at,updated_at&or=(user_id.eq.${auth.user.id},status.eq.available)&order=status.asc,created_at.asc`,
-            {
-                method: "GET",
-                headers: {
-                    Authorization: `Bearer ${auth.token}`,
-                    apikey: SUPABASE_PUBLISHABLE_KEY
-                }
-            }
-        );
-
-        const data = await response.json();
+const response = await fetch(
+    `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/relay/rest/phone_numbers/search?max_results=100`,
+    {
+        method: "GET",
+        headers: {
+            Authorization: `Basic ${signalWireAuth}`,
+            Accept: "application/json"
+        }
+    }
+);
+               const data = await response.json();
 
         if (!response.ok) {
             console.error("Phone numbers fetch error:", data);
@@ -479,10 +481,24 @@ app.get("/api/phone-numbers", async (req, res) => {
             });
         }
 
-        return res.json({
-            success: true,
-            numbers: data || []
-        });
+        const signalWireNumbers = Array.isArray(data)
+    ? data
+    : Array.isArray(data?.data)
+        ? data.data
+        : [];
+
+return res.json({
+    success: true,
+    numbers: signalWireNumbers
+        .map(number => ({
+            phone_number:
+                number.phone_number ||
+                number.number ||
+                number.e164,
+            status: "available"
+        }))
+        .filter(number => number.phone_number)
+});
 
     } catch (error) {
         console.error("Phone numbers GET error:", error);
@@ -2133,7 +2149,7 @@ app.use((req, res) => {
         path.join(__dirname, "public", "index.html")
     );
 });
-
+    
 app.listen(PORT, () => {
     console.log("");
     console.log("==========================================");
