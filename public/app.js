@@ -1924,12 +1924,12 @@ if (callButton) {
                             },
 
                             body: JSON.stringify({
-                                destination_number:
-                                    number,
-                                caller_number:
-                                    customerAccount.phoneNumber ||
-                                    ""
-                            })
+    destinationNumber:
+        number,
+    callerNumber:
+        customerAccount.phoneNumber ||
+        ""
+})
                         }
                     );
 
