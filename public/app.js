@@ -1938,7 +1938,8 @@ if (rejectCallButton) {
         }
 
         try {
-
+            console.log("🧪 REJECT BUTTON CLICKED");
+console.trace("🧪 Reject click stack");
             console.log("❌ Rejecting incoming SignalWire call...");
 
             if (typeof currentCall.reject === "function") {
@@ -1980,6 +1981,9 @@ if (callButton) {
     callButton.addEventListener(
         "click",
         async () => {
+
+            console.log("🧪 OUTBOUND CALL BUTTON CLICKED");
+console.trace("🧪 Outbound click stack");
 
             if (!client) {
 
