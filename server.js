@@ -2484,7 +2484,29 @@ app.post("/api/signalwire/outbound-swml", (req, res) => {
     call_state_url:
         "https://dialeaze.onrender.com/api/signalwire/outbound-call-state",
     status_url:
-        "https://dialeaze.onrender.com/api/signalwire/outbound-connect-status"
+        "https://dialeaze.onrender.com/api/signalwire/outbound-connect-status",
+    result: {
+        switch: {
+            variable: "return_value",
+            case: {
+                failed: [
+                    {
+                        hangup: {}
+                    }
+                ],
+                connected: [
+                    {
+                        hangup: {}
+                    }
+                ]
+            },
+            default: [
+                {
+                    hangup: {}
+                }
+            ]
+        }
+    }
 }
                 }
             ]
