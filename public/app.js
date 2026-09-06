@@ -2135,13 +2135,21 @@ console.trace("🧪 Outbound click stack");
 
 
                 currentCall =
-                    await client.dial(
-                        number,
-                        {
-                            audio: true,
-                            video: false
-                        }
-                    );
+    await client.dial(
+        "/public/dialeaze-outbound",
+        {
+            audio: true,
+            video: false,
+            userVariables: {
+                destination: number,
+                callerNumber:
+                    customerAccount.phoneNumber || "",
+                usageId:
+                    currentOutboundUsageId || null
+            }
+        }
+    );
+    
                     const providerCallId =
     currentCall?.id ||
     currentCall?.callId ||
