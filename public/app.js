@@ -2268,6 +2268,44 @@ remoteAudio.volume = 1.0;
                                 console.log(
                                     "✅ Call answered."
                                 );
+                                if (!recordingStarted && currentOutboundUsageId && providerCallId) {
+    recordingStarted = true;
+
+    try {
+        const recordingResponse = await authFetch(
+            "/api/outbound-call/record",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    usageId: currentOutboundUsageId,
+                    providerCallId: providerCallId
+                })
+            }
+        );
+
+        const recordingData = await recordingResponse.json();
+
+        if (!recordingResponse.ok) {
+            console.error(
+                "❌ Server-side SignalWire recording failed:",
+                recordingData
+            );
+        } else {
+            console.log(
+                "🎙️ Server-side SignalWire recording started:",
+                recordingData
+            );
+        }
+    } catch (error) {
+        console.error(
+            "❌ Could not request server-side recording:",
+            error
+        );
+    }
+}
 
                                 status.textContent =
                                     "Connected";
@@ -2282,41 +2320,7 @@ remoteAudio.volume = 1.0;
 // START SIGNALWIRE NATIVE RECORDING
 // -----------------------------------------
 
-try {
-    if (
-        currentCall &&
-        typeof currentCall.recordAudio === "function"
-    ) {
-        console.log("🎙️ Starting native SignalWire recording...");
-
-        const recording = await currentCall.recordAudio({
-            direction: "both",
-            endSilenceTimeout: 0,
-            terminators: ""
-        });
-
-        console.log(
-            "🎙️ SignalWire recording started:",
-            recording
-        );
-
-        window.currentSignalWireRecording = recording;
-
-        console.log(
-            "🎙️ Recording ID:",
-            recording?.id
-        );
-    } else {
-        console.error(
-            "❌ currentCall.recordAudio() is not available."
-        );
-    }
-} catch (recordingError) {
-    console.error(
-        "❌ Native SignalWire recording failed:",
-        recordingError
-    );
-}
+ 
 
                                     await authFetch(
                                         "/api/outbound-call/update",
