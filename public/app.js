@@ -1983,6 +1983,12 @@ if (callButton) {
         async (event) => {
 
            console.log("🧪 OUTBOUND CALL BUTTON CLICKED");
+                       if (currentCall) {
+                console.warn(
+                    "⚠️ An outbound call is already active. Ignoring duplicate call attempt."
+                );
+                return;
+            }
 console.log("🧪 Event trusted:", event.isTrusted);
 console.log("🧪 Event target:", event.target);
 console.log("🧪 Event currentTarget:", event.currentTarget);
