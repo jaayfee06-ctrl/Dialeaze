@@ -2235,7 +2235,43 @@ console.log(
     "🧪 SIGNALWIRE CALL OBJECT:",
     currentCall
 );
+// Detect whether the remote party actually answered or rejected.
+if (currentCall?.answered$) {
+    currentCall.answered$.subscribe((answered) => {
+        console.log("📞 SignalWire answered$:", answered);
 
+        if (answered === false) {
+            console.warn("❌ REMOTE PARTY REJECTED THE CALL.");
+
+            window.dialeazeOutboundLocked = true;
+
+            if (currentCall) {
+                currentCall.hangup().catch((error) => {
+                    console.warn("⚠️ Cleanup hangup after rejection failed:", error);
+                });
+            }
+
+            currentCall = null;
+            currentOutboundUsageId = null;
+
+            if (callButton) {
+                callButton.disabled = false;
+            }
+
+            if (hangupButton) {
+                hangupButton.disabled = true;
+            }
+
+            if (callStatus) {
+                callStatus.textContent = "Call rejected";
+            }
+
+            console.log(
+                "🛑 Outbound call completely stopped after remote rejection."
+            );
+        }
+    });
+}
                 // -----------------------------------------
                 // LISTEN FOR CALL STATUS
                 // -----------------------------------------
