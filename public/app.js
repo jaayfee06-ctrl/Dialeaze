@@ -2122,7 +2122,17 @@ if (callButton) {
                             video: false
                         }
                     );
+                    const providerCallId =
+    currentCall?.id ||
+    currentCall?.callId ||
+    currentCall?.call_id ||
+    null;
 
+console.log(
+    "🔗 SignalWire Provider Call ID:",
+    providerCallId
+);
+let recordingStarted = false;
 if (currentCall && currentCall.remoteStream$) {
 
     currentCall.remoteStream$.subscribe(async (stream) => {
@@ -2231,11 +2241,13 @@ remoteAudio.volume = 1.0;
                             // -----------------------------
 
                             else if (
-                                statusValue ===
-                                    "answered" ||
-                                statusValue ===
-                                    "active"
-                            ) {
+    statusValue ===
+        "connected" ||
+    statusValue ===
+        "answered" ||
+    statusValue ===
+        "active"
+) {
 
                                 console.log(
                                     "✅ Call answered."
@@ -2245,6 +2257,51 @@ remoteAudio.volume = 1.0;
                                     "Connected";
 
                                 startCallTimer();
+                                if (!recordingStarted && currentOutboundUsageId && providerCallId) {
+    recordingStarted = true;
+
+    try {
+        const recordingResponse = await authFetch(
+            "/api/outbound-call/record",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    usageId: currentOutboundUsageId,
+                    providerCallId: providerCallId
+                })
+            }
+        );
+
+        const recordingData =
+            await recordingResponse.json();
+
+        console.log(
+            "🎙️ Recording response:",
+            recordingResponse.status,
+            recordingData
+        );
+
+        if (!recordingResponse.ok) {
+            console.error(
+                "❌ Recording failed:",
+                recordingData
+            );
+        } else {
+            console.log(
+                "✅ SignalWire recording started:",
+                recordingData.recordingId
+            );
+        }
+    } catch (recordingError) {
+        console.error(
+            "❌ Recording request error:",
+            recordingError
+        );
+    }
+}
 
 
                                 if (
@@ -2288,15 +2345,12 @@ remoteAudio.volume = 1.0;
                             // -----------------------------
 
                             else if (
-                                statusValue ===
-                                    "ending" ||
-                                statusValue ===
-                                    "ended" ||
-                                statusValue ===
-                                    "hangup" ||
-                                statusValue ===
-                                    "disconnected"
-                            ) {
+    statusValue === "ending" ||
+    statusValue === "ended" ||
+    statusValue === "hangup" ||
+    statusValue === "disconnected" ||
+    statusValue === "destroyed"
+)  {
 
                                 console.log(
                                     "📴 SignalWire call ended."
@@ -2321,7 +2375,7 @@ remoteAudio.volume = 1.0;
                                     await authFetch(
                                         "/api/outbound-call/update",
                                         {
-                                            method: "PATCH",
+                                            method: "POST",
 
                                             headers: {
                                                 "Content-Type":
