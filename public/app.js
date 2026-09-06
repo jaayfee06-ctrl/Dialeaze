@@ -2278,7 +2278,45 @@ remoteAudio.volume = 1.0;
 
                                 if (
                                     currentOutboundUsageId
-                                ) {
+                                ) { // -----------------------------------------
+// START SIGNALWIRE NATIVE RECORDING
+// -----------------------------------------
+
+try {
+    if (
+        currentCall &&
+        typeof currentCall.recordAudio === "function"
+    ) {
+        console.log("🎙️ Starting native SignalWire recording...");
+
+        const recording = await currentCall.recordAudio({
+            direction: "both",
+            endSilenceTimeout: 0,
+            terminators: ""
+        });
+
+        console.log(
+            "🎙️ SignalWire recording started:",
+            recording
+        );
+
+        window.currentSignalWireRecording = recording;
+
+        console.log(
+            "🎙️ Recording ID:",
+            recording?.id
+        );
+    } else {
+        console.error(
+            "❌ currentCall.recordAudio() is not available."
+        );
+    }
+} catch (recordingError) {
+    console.error(
+        "❌ Native SignalWire recording failed:",
+        recordingError
+    );
+}
 
                                     await authFetch(
                                         "/api/outbound-call/update",
