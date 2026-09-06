@@ -2105,11 +2105,8 @@ app.post("/api/outbound-call/update", async (req, res) => {
         });
     }
 });
-        app.use((req, res) => {
-    res.sendFile(
-        path.join(__dirname, "public", "index.html")
-    );
-});
+        
+
 app.post("/api/signalwire/inbound-swml", (req, res) => {
     console.log("📞 SIGNALWIRE INBOUND CALL RECEIVED");
     console.log("SWML request:", req.body);
