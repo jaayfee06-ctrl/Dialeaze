@@ -2235,6 +2235,40 @@ console.log(
     "🧪 SIGNALWIRE CALL OBJECT:",
     currentCall
 );
+
+// =====================================================
+// DEBUG SIGNALWIRE PSTN CALL STATE
+// =====================================================
+
+if (
+    currentCall.callStates$ &&
+    typeof currentCall.callStates$.subscribe === "function"
+) {
+    currentCall.callStates$.subscribe((stateEvent) => {
+        console.log(
+            "🧪 SIGNALWIRE CALL STATE EVENT:",
+            stateEvent
+        );
+
+        console.log(
+            "🧪 SIGNALWIRE CALL STATE EVENT JSON:",
+            JSON.stringify(stateEvent, null, 2)
+        );
+    });
+}
+
+if (
+    currentCall.signalingEvent$ &&
+    typeof currentCall.signalingEvent$.subscribe === "function"
+) {
+    currentCall.signalingEvent$.subscribe((event) => {
+        console.log(
+            "🧪 SIGNALWIRE RAW SIGNALING EVENT:",
+            event
+        );
+    });
+}
+
 // Detect whether the remote party actually answered or rejected.
 if (currentCall?.answered$) {
     currentCall.answered$.subscribe((answered) => {
