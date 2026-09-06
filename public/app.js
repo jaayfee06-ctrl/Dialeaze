@@ -1980,9 +1980,12 @@ if (callButton) {
 
     callButton.addEventListener(
         "click",
-        async () => {
+        async (event) => {
 
-            console.log("🧪 OUTBOUND CALL BUTTON CLICKED");
+           console.log("🧪 OUTBOUND CALL BUTTON CLICKED");
+console.log("🧪 Event trusted:", event.isTrusted);
+console.log("🧪 Event target:", event.target);
+console.log("🧪 Event currentTarget:", event.currentTarget);
 console.trace("🧪 Outbound click stack");
 
             if (!client) {
