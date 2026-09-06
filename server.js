@@ -2471,19 +2471,21 @@ app.post("/api/signalwire/outbound-swml", (req, res) => {
         sections: {
             main: [
                 {
-                    connect: {
-                        from: callerNumber,
-                        to: destination,
-                        timeout: 60,
-                        call_state_events: [
-                            "created",
-                            "ringing",
-                            "answered",
-                            "ended"
-                        ],
-                        call_state_url:
-                            "https://dialeaze.onrender.com/api/signalwire/outbound-call-state"
-                    }
+                    cconnect: {
+    from: callerNumber,
+    to: destination,
+    timeout: 60,
+    call_state_events: [
+        "created",
+        "ringing",
+        "answered",
+        "ended"
+    ],
+    call_state_url:
+        "https://dialeaze.onrender.com/api/signalwire/outbound-call-state",
+    status_url:
+        "https://dialeaze.onrender.com/api/signalwire/outbound-connect-status"
+}
                 }
             ]
         }
@@ -2509,7 +2511,24 @@ app.post(
         return res.sendStatus(204);
     }
 );
+// =========================================================
+// SIGNALWIRE OUTBOUND CONNECT STATUS
+// =========================================================
 
+app.post(
+    "/api/signalwire/outbound-connect-status",
+    async (req, res) => {
+        console.log(
+            "📡 SIGNALWIRE OUTBOUND CONNECT STATUS"
+        );
+
+        console.log(
+            JSON.stringify(req.body, null, 2)
+        );
+
+        return res.sendStatus(204);
+    }
+);
 app.post("/api/signalwire/inbound-swml", (req, res) => {
     console.log("📞 SIGNALWIRE INBOUND CALL RECEIVED");
     console.log("SWML request:", req.body);
