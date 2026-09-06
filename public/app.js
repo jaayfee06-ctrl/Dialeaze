@@ -1985,7 +1985,54 @@ if (callButton) {
                         }
                     );
 
+if (currentCall && currentCall.remoteStream$) {
 
+    currentCall.remoteStream$.subscribe(async (stream) => {
+
+        console.log("🔊 SignalWire remote audio stream received.");
+
+        let remoteAudio =
+    document.getElementById("signalWireRemoteAudio");
+
+if (!remoteAudio) {
+
+    remoteAudio =
+        document.createElement("audio");
+
+    remoteAudio.id =
+        "signalWireRemoteAudio";
+
+    remoteAudio.autoplay = true;
+    remoteAudio.playsInline = true;
+    remoteAudio.controls = false;
+
+    document.body.appendChild(remoteAudio);
+}
+
+remoteAudio.muted = false;
+remoteAudio.volume = 1.0;
+
+        remoteAudio.srcObject =
+            stream;
+
+        try {
+            await remoteAudio.play();
+
+            console.log(
+                "🔊 SignalWire remote audio playing."
+            );
+        } catch (error) {
+
+            console.error(
+                "❌ Could not play remote SignalWire audio:",
+                error
+            );
+
+        }
+
+    });
+
+}
                 console.log(
                     "✅ SignalWire outbound call created.",
                     currentCall
