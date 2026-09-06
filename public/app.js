@@ -2149,7 +2149,7 @@ console.trace("🧪 Outbound click stack");
             }
         }
     );
-    
+
                     const providerCallId =
     currentCall?.id ||
     currentCall?.callId ||
@@ -2285,7 +2285,7 @@ if (currentCall?.answered$) {
         if (answered === false) {
             console.warn("❌ REMOTE PARTY REJECTED THE CALL.");
 
-            window.dialeazeOutboundLocked = true;
+            window.dialeazeOutboundLocked = false;
 
             if (currentCall) {
                 currentCall.hangup().catch((error) => {
