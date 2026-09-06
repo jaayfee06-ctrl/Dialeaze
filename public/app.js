@@ -1983,12 +1983,19 @@ if (callButton) {
         async (event) => {
 
            console.log("🧪 OUTBOUND CALL BUTTON CLICKED");
-                       if (currentCall) {
-                console.warn(
-                    "⚠️ An outbound call is already active. Ignoring duplicate call attempt."
-                );
-                return;
-            }
+                      if (window.dialeazeOutboundLocked) {
+    console.warn(
+        "⚠️ Outbound call session is locked. Waiting for manual Call button."
+    );
+    return;
+}
+
+window.dialeazeOutboundLocked = true;
+
+console.log(
+    "🔒 Outbound call session LOCKED."
+);
+
 console.log("🧪 Event trusted:", event.isTrusted);
 console.log("🧪 Event target:", event.target);
 console.log("🧪 Event currentTarget:", event.currentTarget);
@@ -2497,8 +2504,14 @@ hangupButton.addEventListener(
 
         stopCallTimer();
 
-        currentCall =
-            null;
+currentCall =
+    null;
+
+window.dialeazeOutboundLocked = false;
+
+console.log(
+    "🔓 Outbound call session UNLOCKED by manual hangup."
+);
 
     }
 );
