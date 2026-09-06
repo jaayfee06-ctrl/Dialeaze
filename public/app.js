@@ -2138,6 +2138,12 @@ if (currentCall && currentCall.remoteStream$) {
     currentCall.remoteStream$.subscribe(async (stream) => {
 
         console.log("🔊 SignalWire remote audio stream received.");
+        console.log("🔊 Remote stream object:", stream);
+console.log("🔊 Remote stream tracks:", stream?.getTracks?.());
+console.log(
+    "🔊 Remote audio tracks:",
+    stream?.getAudioTracks?.()
+);
 
         let remoteAudio =
     document.getElementById("signalWireRemoteAudio");
