@@ -2274,7 +2274,27 @@ remoteAudio.volume = 1.0;
 
                                 startCallTimer();
                                
+// -----------------------------------------
+// TEMPORARY SIGNALWIRE RECORDING TEST
+// -----------------------------------------
 
+try {
+    if (currentCall && typeof currentCall.record === "function") {
+        console.log("🎙️ Starting SignalWire recording test...");
+
+        const recording = await currentCall.record({
+            direction: "both"
+        });
+
+        console.log("🎙️ SIGNALWIRE RECORDING RESULT:", recording);
+
+        window.currentSignalWireRecording = recording;
+    } else {
+        console.error("❌ currentCall.record() is not available.");
+    }
+} catch (recordingError) {
+    console.error("❌ SignalWire recording test failed:", recordingError);
+}
 
                                 if (
                                     currentOutboundUsageId
