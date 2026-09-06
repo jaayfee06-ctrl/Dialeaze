@@ -2273,51 +2273,7 @@ remoteAudio.volume = 1.0;
                                     "Connected";
 
                                 startCallTimer();
-                                if (!recordingStarted && currentOutboundUsageId && providerCallId) {
-    recordingStarted = true;
-
-    try {
-        const recordingResponse = await authFetch(
-            "/api/outbound-call/record",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    usageId: currentOutboundUsageId,
-                    providerCallId: providerCallId
-                })
-            }
-        );
-
-        const recordingData =
-            await recordingResponse.json();
-
-        console.log(
-            "🎙️ Recording response:",
-            recordingResponse.status,
-            recordingData
-        );
-
-        if (!recordingResponse.ok) {
-            console.error(
-                "❌ Recording failed:",
-                recordingData
-            );
-        } else {
-            console.log(
-                "✅ SignalWire recording started:",
-                recordingData.recordingId
-            );
-        }
-    } catch (recordingError) {
-        console.error(
-            "❌ Recording request error:",
-            recordingError
-        );
-    }
-}
+                               
 
 
                                 if (
