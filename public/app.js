@@ -1677,6 +1677,144 @@ async function initializeSignalWire() {
 
             console.log("✅ SIGNALWIRE REGISTERED");
 
+            // =========================================================
+// SIGNALWIRE INCOMING CALL LISTENER
+// =========================================================
+
+if (client.session && client.session.incomingCalls$) {
+
+    client.session.incomingCalls$.subscribe((calls) => {
+
+        console.log("📞 Incoming calls update:", calls);
+
+        const ringingCall = calls.find(
+            (call) => call.status === "ringing"
+        );
+
+        if (!ringingCall) {
+            return;
+        }
+
+        console.log("📲 INCOMING SIGNALWIRE CALL:", ringingCall);
+
+        currentCall = ringingCall;
+
+        const callerName =
+            ringingCall.fromName &&
+            ringingCall.fromName !== "_undef_"
+                ? ringingCall.fromName
+                : ringingCall.from || "Unknown";
+
+        console.log("📞 Caller:", callerName);
+
+        // Show your existing incoming-call panel
+        if (incomingCallPanel) {
+            incomingCallPanel.style.display = "flex";
+        }
+
+        // Update caller name if your UI has this element
+        const incomingCallerName =
+            document.getElementById("incomingCallerName");
+
+        if (incomingCallerName) {
+            incomingCallerName.textContent = callerName;
+        }
+
+        status.textContent = "Incoming call";
+
+        callButton.disabled = true;
+        hangupButton.disabled = false;
+
+        // Listen for incoming call state changes
+        ringingCall.status$.subscribe((callStatus) => {
+
+            console.log(
+                "📡 Incoming SignalWire call status:",
+                callStatus
+            );
+
+            if (callStatus === "connected") {
+                status.textContent = "Connected";
+                startCallTimer();
+            }
+
+            if (
+                callStatus === "disconnected" ||
+                callStatus === "destroyed"
+            ) {
+                console.log("📴 Incoming call ended.");
+
+                if (incomingCallPanel) {
+                    incomingCallPanel.style.display = "none";
+                }
+
+                status.textContent = "Call ended";
+
+                stopCallTimer();
+
+                callButton.disabled = false;
+                hangupButton.disabled = true;
+
+                if (currentCall === ringingCall) {
+                    currentCall = null;
+                }
+            }
+        });
+
+        // Receive the other person's audio
+        if (ringingCall.remoteStream$) {
+
+            ringingCall.remoteStream$.subscribe(async (stream) => {
+
+                console.log(
+                    "🔊 Incoming remote audio stream received."
+                );
+
+                let remoteAudio =
+                    document.getElementById(
+                        "signalWireRemoteAudio"
+                    );
+
+                if (!remoteAudio) {
+
+                    remoteAudio =
+                        document.createElement("audio");
+
+                    remoteAudio.id =
+                        "signalWireRemoteAudio";
+
+                    remoteAudio.autoplay = true;
+                    remoteAudio.playsInline = true;
+                    remoteAudio.controls = false;
+
+                    document.body.appendChild(remoteAudio);
+                }
+
+                remoteAudio.muted = false;
+                remoteAudio.volume = 1.0;
+                remoteAudio.srcObject = stream;
+
+                try {
+                    await remoteAudio.play();
+
+                    console.log(
+                        "🔊 Incoming remote audio playing."
+                    );
+
+                } catch (error) {
+
+                    console.error(
+                        "❌ Could not play incoming remote audio:",
+                        error
+                    );
+                }
+            });
+        }
+    });
+
+    console.log("✅ SignalWire incoming-call listener ready.");
+}
+
             status.textContent = "Connected";
 
             const callButton = document.getElementById("callButton");
