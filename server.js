@@ -2444,7 +2444,7 @@ app.post("/api/signalwire/outbound-swml", (req, res) => {
     SIGNALWIRE_PHONE_NUMBER ||
     userVariables.callerNumber ||
     null;
-    
+
     if (!destination) {
         console.error(
             "❌ OUTBOUND SWML: No destination received."
@@ -2471,7 +2471,7 @@ app.post("/api/signalwire/outbound-swml", (req, res) => {
         sections: {
             main: [
                 {
-                    cconnect: {
+                    connect: {
     from: callerNumber,
     to: destination,
     timeout: 60,
