@@ -520,6 +520,14 @@ app.post("/api/phone-numbers/claim", async (req, res) => {
                 error: auth.error
             });
         }
+        const areaCode = String(req.query.area_code || "").trim();
+
+if (areaCode && !/^\d{3}$/.test(areaCode)) {
+    return res.status(400).json({
+        success: false,
+        error: "Area code must be exactly 3 digits."
+    });
+}
 
         const { phoneNumber } = req.body;
 
