@@ -2467,34 +2467,33 @@ app.post("/api/signalwire/outbound-swml", (req, res) => {
     );
 
     return res.json({
-        version: "1.0.0",
-        sections: {
-            main: [
-                {
-                    connect: {
-    from: callerNumber,
-    to: destination,
-    answer_on_bridge: true,
-    timeout: 60,
-    call_state_events: [
-        "created",
-        "ringing",
-        "answered",
-        "ended"
-    ],
-    call_state_url:
-        "https://dialeaze.onrender.com/api/signalwire/outbound-call-state",
-    status_url:
-        "https://dialeaze.onrender.com/api/signalwire/outbound-connect-status",
-    result: [
-    {
-        hangup: {}
-    }
-] }
+    version: "1.0.0",
+    sections: {
+        main: [
+            {
+                connect: {
+                    from: callerNumber,
+                    to: destination,
+                    answer_on_bridge: true,
+                    timeout: 60,
+                    call_state_events: [
+                        "created",
+                        "ringing",
+                        "answered",
+                        "ended"
+                    ],
+                    call_state_url:
+                        "https://dialeaze.onrender.com/api/signalwire/outbound-call-state",
+                    status_url:
+                        "https://dialeaze.onrender.com/api/signalwire/outbound-connect-status"
                 }
-            ]
-        }
-    });
+            },
+            {
+                hangup: {}
+            }
+        ]
+    }
+});
 });
 
 
