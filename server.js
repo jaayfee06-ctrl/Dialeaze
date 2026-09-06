@@ -2427,11 +2427,13 @@ app.post("/api/signalwire/outbound-swml", (req, res) => {
     );
 
     const userVariables =
-        req.body?.user_variables ||
-        req.body?.userVariables ||
-        req.body?.params?.user_variables ||
-        req.body?.params?.userVariables ||
-        {};
+    req.body?.vars?.userVariables ||
+    req.body?.vars?.user_variables ||
+    req.body?.user_variables ||
+    req.body?.userVariables ||
+    req.body?.params?.user_variables ||
+    req.body?.params?.userVariables ||
+    {};
 
     const destination =
         userVariables.destination ||
