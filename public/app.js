@@ -2221,7 +2221,20 @@ remoteAudio.volume = 1.0;
                     "✅ SignalWire outbound call created.",
                     currentCall
                 );
+console.log(
+    "🧪 SIGNALWIRE CALL SUBJECTS:",
+    currentCall?.subjects
+);
 
+console.log(
+    "🧪 SIGNALWIRE CALL METHODS:",
+    Object.keys(currentCall || {})
+);
+
+console.log(
+    "🧪 SIGNALWIRE CALL OBJECT:",
+    currentCall
+);
 
                 // -----------------------------------------
                 // LISTEN FOR CALL STATUS
