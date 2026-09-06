@@ -2268,61 +2268,11 @@ remoteAudio.volume = 1.0;
                                 console.log(
                                     "✅ Call answered."
                                 );
-                                try {
-    if (currentCall && typeof currentCall.startRecording === "function") {
-        console.log("🎙️ Testing SignalWire startRecording()...");
-
-        await currentCall.startRecording();
-
-        console.log("✅ SignalWire startRecording() succeeded.");
-    } else {
-        console.error("❌ currentCall.startRecording() is not available.");
-    }
-} catch (recordingError) {
-    console.error(
-        "❌ SignalWire startRecording() failed:",
-        recordingError
-    );
-}
+                                
                                 if (!recordingStarted && currentOutboundUsageId && providerCallId) {
     recordingStarted = true;
 
-    try {
-        const recordingResponse = await authFetch(
-            "/api/outbound-call/record",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    usageId: currentOutboundUsageId,
-                    providerCallId: providerCallId
-                })
-            }
-        );
-
-        const recordingData = await recordingResponse.json();
-
-        if (!recordingResponse.ok) {
-            console.error(
-                "❌ Server-side SignalWire recording failed:",
-                recordingData
-            );
-        } else {
-            console.log(
-                "🎙️ Server-side SignalWire recording started:",
-                recordingData
-            );
-        } 
-    } catch (error) {
-        console.error(
-            "❌ Could not request server-side recording:",
-            error
-        );
-    }
-}
-
+   
                                 status.textContent =
                                     "Connected";
 
