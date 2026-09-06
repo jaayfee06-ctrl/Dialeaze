@@ -1732,7 +1732,7 @@ if (client.session && client.session.incomingCalls$) {
                 "📡 Incoming SignalWire call status:",
                 callStatus
             );
-
+console.log("🧪 RAW OUTBOUND STATUS:", JSON.stringify(callStatus));
             if (callStatus === "connected") {
                 status.textContent = "Connected";
                 startCallTimer();
