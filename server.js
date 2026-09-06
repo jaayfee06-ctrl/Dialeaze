@@ -2415,7 +2415,98 @@ app.post("/api/outbound-call/update", async (req, res) => {
         // =========================================================
 // SIGNALWIRE OUTBOUND RECORDING SWML
 // =========================================================
+// =========================================================
+// SIGNALWIRE OUTBOUND SWML
+// =========================================================
 
+app.post("/api/signalwire/outbound-swml", (req, res) => {
+    console.log("📞 SIGNALWIRE OUTBOUND SWML RECEIVED");
+    console.log(
+        "SWML outbound request:",
+        JSON.stringify(req.body, null, 2)
+    );
+
+    const userVariables =
+        req.body?.user_variables ||
+        req.body?.userVariables ||
+        req.body?.params?.user_variables ||
+        req.body?.params?.userVariables ||
+        {};
+
+    const destination =
+        userVariables.destination ||
+        userVariables.destinationNumber ||
+        null;
+
+    const callerNumber =
+        userVariables.callerNumber ||
+        SIGNALWIRE_PHONE_NUMBER ||
+        null;
+
+    if (!destination) {
+        console.error(
+            "❌ OUTBOUND SWML: No destination received."
+        );
+
+        return res.status(400).json({
+            success: false,
+            error: "No outbound destination was provided."
+        });
+    }
+
+    console.log(
+        "📞 OUTBOUND SWML DESTINATION:",
+        destination
+    );
+
+    console.log(
+        "📞 OUTBOUND SWML CALLER ID:",
+        callerNumber
+    );
+
+    return res.json({
+        version: "1.0.0",
+        sections: {
+            main: [
+                {
+                    connect: {
+                        from: callerNumber,
+                        to: destination,
+                        timeout: 60,
+                        call_state_events: [
+                            "created",
+                            "ringing",
+                            "answered",
+                            "ended"
+                        ],
+                        call_state_url:
+                            "https://dialeaze.onrender.com/api/signalwire/outbound-call-state"
+                    }
+                }
+            ]
+        }
+    });
+});
+
+
+// =========================================================
+// SIGNALWIRE OUTBOUND CALL STATE
+// =========================================================
+
+app.post(
+    "/api/signalwire/outbound-call-state",
+    async (req, res) => {
+        console.log(
+            "📡 SIGNALWIRE OUTBOUND CALL STATE"
+        );
+
+        console.log(
+            JSON.stringify(req.body, null, 2)
+        );
+
+        return res.sendStatus(204);
+    }
+);
 
 app.post("/api/signalwire/inbound-swml", (req, res) => {
     console.log("📞 SIGNALWIRE INBOUND CALL RECEIVED");
