@@ -2118,7 +2118,28 @@ app.use((req, res) => {
         path.join(__dirname, "public", "index.html")
     );
 });
+// =========================================================
+// SIGNALWIRE INBOUND CALL SWML
+// =========================================================
 
+app.post("/api/signalwire/inbound-swml", (req, res) => {
+    console.log("📞 SIGNALWIRE INBOUND CALL RECEIVED");
+    console.log("SWML request:", req.body);
+
+    return res.json({
+        version: "1.0.0",
+        sections: {
+            main: [
+                {
+                    connect: {
+                        to: "/private/junaid-sabir",
+                        timeout: 60
+                    }
+                }
+            ]
+        }
+    });
+});
 // =========================================================
 // START SERVER
 // =========================================================
