@@ -459,7 +459,7 @@ const signalWireAuth = Buffer.from(
 ).toString("base64");
 
 const response = await fetch(
-    `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/relay/rest/phone_numbers/search?max_results=100`,
+    `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/relay/rest/phone_numbers/search?max_results=100${areaCode ? `&areacode=${areaCode}` : ""}`,
     {
         method: "GET",
         headers: {
@@ -584,6 +584,14 @@ app.post("/api/call-history", async (req, res) => {
                 error: auth.error
             });
         }
+        const areaCode = String(req.query.area_code || "").trim();
+
+if (areaCode && !/^\d{3}$/.test(areaCode)) {
+    return res.status(400).json({
+        success: false,
+        error: "Area code must be exactly 3 digits."
+    });
+}
 
         const {
             phoneNumber,
