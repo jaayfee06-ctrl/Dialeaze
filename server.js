@@ -2105,7 +2105,12 @@ app.post("/api/outbound-call/update", async (req, res) => {
         });
     }
 });
-        
+        app.use((req, res) => {
+    res.sendFile(
+        path.join(__dirname, "public", "index.html")
+    );
+});
+
 // =========================================================
 // FRONTEND FALLBACK
 // =========================================================
@@ -2113,11 +2118,7 @@ app.post("/api/outbound-call/update", async (req, res) => {
 // Express 5 can reject app.get("*"), so we use
 // a normal middleware fallback instead.
 
-app.use((req, res) => {
-    res.sendFile(
-        path.join(__dirname, "public", "index.html")
-    );
-});
+
 // =========================================================
 // SIGNALWIRE INBOUND CALL SWML
 // =========================================================
