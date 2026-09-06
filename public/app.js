@@ -2272,7 +2272,9 @@ remoteAudio.volume = 1.0;
                                 if (!recordingStarted && currentOutboundUsageId && providerCallId) {
     recordingStarted = true;
 
-   
+    
+}
+
                                 status.textContent =
                                     "Connected";
 
@@ -2389,10 +2391,8 @@ remoteAudio.volume = 1.0;
 
                         }
                     );
-
-                }
-
-            } catch (error) {
+                
+            } } catch (error) {
 
                 console.error(
                     "❌ SignalWire outbound call error:",
