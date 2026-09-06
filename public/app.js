@@ -2144,6 +2144,16 @@ console.log(
     "🔊 Remote audio tracks:",
     stream?.getAudioTracks?.()
 );
+const audioTracks = stream?.getAudioTracks?.() || [];
+
+audioTracks.forEach((track) => {
+    console.log("🎧 Audio track:", {
+        enabled: track.enabled,
+        muted: track.muted,
+        readyState: track.readyState,
+        label: track.label
+    });
+});
 
         let remoteAudio =
     document.getElementById("signalWireRemoteAudio");
