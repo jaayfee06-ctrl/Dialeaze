@@ -2441,10 +2441,10 @@ app.post("/api/signalwire/outbound-swml", (req, res) => {
         null;
 
     const callerNumber =
-        userVariables.callerNumber ||
-        SIGNALWIRE_PHONE_NUMBER ||
-        null;
-
+    SIGNALWIRE_PHONE_NUMBER ||
+    userVariables.callerNumber ||
+    null;
+    
     if (!destination) {
         console.error(
             "❌ OUTBOUND SWML: No destination received."
