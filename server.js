@@ -688,12 +688,11 @@ app.get("/api/telnyx-token", async (req, res) => {
             });
         }
 
-        if (!telnyx) {
-            return res.status(500).json({
-                success: false,
-                error: "Telnyx is not configured."
-            });
-        }
+        const sms = await telnyx.messages.send({
+    from: fromNumber,
+    to: to,
+    text: text.trim()
+});
 
         if (!TELNYX_WEBRTC_CREDENTIAL_ID) {
             return res.status(500).json({
@@ -945,12 +944,14 @@ app.post("/api/webrtc/unregister", async (req, res) => {
 
 const messages = [];
 
+
 // =========================================================
-// SEND SMS
+// SEND SMS - SIGNALWIRE
 // =========================================================
 
 app.post("/api/messages/send", async (req, res) => {
     try {
+
         const auth = await authenticateRequest(req);
 
         if (!auth.success) {
@@ -960,14 +961,7 @@ app.post("/api/messages/send", async (req, res) => {
             });
         }
 
-        if (!telnyx) {
-            return res.status(500).json({
-                success: false,
-                error: "Telnyx is not configured."
-            });
-        }
-
-        const { to, text } = req.body;
+        const { to, text } = req.body || {};
 
         if (!to) {
             return res.status(400).json({
@@ -983,74 +977,248 @@ app.post("/api/messages/send", async (req, res) => {
             });
         }
 
-        const profile = await getProfile(
-            auth.token,
-            auth.user.id
+        if (
+            !SIGNALWIRE_SPACE_NAME ||
+            !SIGNALWIRE_PROJECT_ID ||
+            !SIGNALWIRE_API_TOKEN ||
+            !SIGNALWIRE_PHONE_NUMBER
+        ) {
+            return res.status(500).json({
+                success: false,
+                error: "SignalWire messaging configuration is missing."
+            });
+        }
+
+        // -------------------------------------------------
+        // SIGNALWIRE AUTHENTICATION
+        // -------------------------------------------------
+
+        const signalWireAuth = Buffer.from(
+            `${SIGNALWIRE_PROJECT_ID}:${SIGNALWIRE_API_TOKEN}`
+        ).toString("base64");
+
+        // -------------------------------------------------
+        // SEND SMS THROUGH SIGNALWIRE
+        // -------------------------------------------------
+
+        const signalWireResponse = await fetch(
+            `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/messaging/messages`,
+            {
+                method: "POST",
+
+                headers: {
+                    Authorization:
+                        `Basic ${signalWireAuth}`,
+
+                    "Content-Type":
+                        "application/json"
+                },
+
+                body: JSON.stringify({
+                    from: SIGNALWIRE_PHONE_NUMBER,
+                    to: to,
+                    body: text.trim()
+                })
+            }
         );
 
-        if (!profile) {
-            return res.status(404).json({
-                success: false,
-                error: "Customer profile was not found."
-            });
-        }
+        const signalWireData =
+            await signalWireResponse.json();
 
-        const fromNumber =
-            profile.telnyx_phone_number ||
-            process.env.TELNYX_PHONE_NUMBER ||
-            "";
+        if (!signalWireResponse.ok) {
 
-        if (!fromNumber) {
-            return res.status(400).json({
+            console.error(
+                "SignalWire SMS error:",
+                signalWireData
+            );
+
+            return res.status(
+                signalWireResponse.status
+            ).json({
                 success: false,
                 error:
-                    "No Telnyx phone number is assigned to this customer."
+                    signalWireData?.message ||
+                    signalWireData?.error ||
+                    signalWireData?.detail ||
+                    "SignalWire failed to send the message."
             });
         }
 
-        const sms = await telnyx.messages.send({
-            from: fromNumber,
-            to: to,
-            text: text.trim()
-        });
+        console.log(
+            "✅ SignalWire SMS sent:",
+            signalWireData
+        );
+
+        // -------------------------------------------------
+        // SAVE OUTBOUND MESSAGE TO SUPABASE
+        // -------------------------------------------------
 
         const messageRecord = {
-            id:
-                sms?.data?.id ||
-                sms?.id ||
-                `msg_${Date.now()}`,
+            user_id:
+                auth.user.id,
 
-            userId: auth.user.id,
+            provider_message_id:
+                signalWireData?.id ||
+                null,
 
-            from: fromNumber,
+            from_number:
+                signalWireData?.from ||
+                SIGNALWIRE_PHONE_NUMBER,
 
-            to,
+            to_number:
+                signalWireData?.to ||
+                to,
 
-            text: text.trim(),
+            body:
+                text.trim(),
 
-            direction: "outbound",
+            direction:
+                "outbound",
 
-            createdAt: new Date().toISOString()
+            status:
+                signalWireData?.status ||
+                "queued"
         };
 
-        messages.push(messageRecord);
+        const saveResponse =
+            await fetch(
+                `${SUPABASE_URL}/rest/v1/messages`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        Authorization:
+                            `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                        apikey:
+                            SUPABASE_SECRET_KEY,
+
+                        "Content-Type":
+                            "application/json",
+
+                        Prefer:
+                            "return=representation"
+                    },
+
+                    body:
+                        JSON.stringify(
+                            messageRecord
+                        )
+                }
+            );
+
+        const savedMessage =
+            await saveResponse.json();
+
+        if (!saveResponse.ok) {
+
+            console.error(
+                "⚠ SignalWire SMS was sent, but Supabase save failed:",
+                savedMessage
+            );
+
+            // IMPORTANT:
+            // The SMS was already successfully
+            // submitted to SignalWire.
+            return res.json({
+                success: true,
+
+                message: {
+                    id:
+                        signalWireData?.id ||
+                        `msg_${Date.now()}`,
+
+                    userId:
+                        auth.user.id,
+
+                    from:
+                        signalWireData?.from ||
+                        SIGNALWIRE_PHONE_NUMBER,
+
+                    to:
+                        signalWireData?.to ||
+                        to,
+
+                    text:
+                        text.trim(),
+
+                    direction:
+                        "outbound",
+
+                    createdAt:
+                        signalWireData?.created_at ||
+                        new Date().toISOString(),
+
+                    status:
+                        signalWireData?.status ||
+                        "queued"
+                },
+
+                warning:
+                    "Message was sent, but could not be saved to message history."
+            });
+        }
+
+        const saved =
+            Array.isArray(savedMessage)
+                ? savedMessage[0]
+                : savedMessage;
 
         return res.json({
             success: true,
-            message: messageRecord
+
+            message: {
+                id:
+                    saved?.id ||
+                    signalWireData?.id,
+
+                userId:
+                    saved?.user_id ||
+                    auth.user.id,
+
+                from:
+                    saved?.from_number ||
+                    SIGNALWIRE_PHONE_NUMBER,
+
+                to:
+                    saved?.to_number ||
+                    to,
+
+                text:
+                    saved?.body ||
+                    text.trim(),
+
+                direction:
+                    saved?.direction ||
+                    "outbound",
+
+                createdAt:
+                    saved?.created_at ||
+                    new Date().toISOString(),
+
+                status:
+                    saved?.status ||
+                    signalWireData?.status ||
+                    "queued"
+            }
         });
+
     } catch (error) {
-        console.error("Send message error:", error);
+
+        console.error(
+            "SignalWire send message error:",
+            error
+        );
 
         return res.status(500).json({
             success: false,
+
             error:
                 error?.message ||
                 "Unable to send message."
         });
     }
 });
-
 // =========================================================
 // GET MESSAGES
 // =========================================================
