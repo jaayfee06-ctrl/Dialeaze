@@ -1051,10 +1051,11 @@ app.get("/api/messages", async (req, res) => {
                         message.status,
 
                     createdAt:
-                        message.created_at,
-
-                    updatedAt:
-                        message.updated_at
+    message.created_at,
+updatedAt:
+    message.updated_at,
+isRead:
+    message.is_read
                 })
             );
 
