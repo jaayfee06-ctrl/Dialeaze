@@ -946,10 +946,10 @@ const messages = [];
 
 
 // =========================================================
-// SEND SMS - SIGNALWIRE
+// GET MESSAGES - SUPABASE
 // =========================================================
 
-app.post("/api/messages/send", async (req, res) => {
+app.get("/api/messages", async (req, res) => {
     try {
 
         const auth = await authenticateRequest(req);
@@ -961,307 +961,121 @@ app.post("/api/messages/send", async (req, res) => {
             });
         }
 
-        const { to, text } = req.body || {};
+        const phone =
+            String(req.query.phone || "").trim();
 
-        if (!to) {
-            return res.status(400).json({
-                success: false,
-                error: "Recipient phone number is required."
-            });
-        }
+        let url =
+            `${SUPABASE_URL}/rest/v1/messages` +
+            `?user_id=eq.${encodeURIComponent(auth.user.id)}` +
+            `&order=created_at.asc`;
 
-        if (!text || !text.trim()) {
-            return res.status(400).json({
-                success: false,
-                error: "Message text is required."
-            });
-        }
-
-        if (
-            !SIGNALWIRE_SPACE_NAME ||
-            !SIGNALWIRE_PROJECT_ID ||
-            !SIGNALWIRE_API_TOKEN ||
-            !SIGNALWIRE_PHONE_NUMBER
-        ) {
-            return res.status(500).json({
-                success: false,
-                error: "SignalWire messaging configuration is missing."
-            });
-        }
-
-        // -------------------------------------------------
-        // SIGNALWIRE AUTHENTICATION
-        // -------------------------------------------------
-
-        const signalWireAuth = Buffer.from(
-            `${SIGNALWIRE_PROJECT_ID}:${SIGNALWIRE_API_TOKEN}`
-        ).toString("base64");
-
-        // -------------------------------------------------
-        // SEND SMS THROUGH SIGNALWIRE
-        // -------------------------------------------------
-
-        const signalWireResponse = await fetch(
-            `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/messaging/messages`,
+        const response = await fetch(
+            url,
             {
-                method: "POST",
+                method: "GET",
 
                 headers: {
                     Authorization:
-                        `Basic ${signalWireAuth}`,
+                        `Bearer ${SUPABASE_SECRET_KEY}`,
 
-                    "Content-Type":
+                    apikey:
+                        SUPABASE_SECRET_KEY,
+
+                    Accept:
                         "application/json"
-                },
-
-                body: JSON.stringify({
-                    from: SIGNALWIRE_PHONE_NUMBER,
-                    to: to,
-                    body: text.trim()
-                })
+                }
             }
         );
 
-        const signalWireData =
-            await signalWireResponse.json();
+        const data =
+            await response.json();
 
-        if (!signalWireResponse.ok) {
+        if (!response.ok) {
 
             console.error(
-                "SignalWire SMS error:",
-                signalWireData
+                "Get messages Supabase error:",
+                data
             );
 
             return res.status(
-                signalWireResponse.status
+                response.status
             ).json({
                 success: false,
                 error:
-                    signalWireData?.message ||
-                    signalWireData?.error ||
-                    signalWireData?.detail ||
-                    "SignalWire failed to send the message."
+                    data?.message ||
+                    "Unable to load messages."
             });
         }
 
-        console.log(
-            "✅ SignalWire SMS sent:",
-            signalWireData
-        );
+        let userMessages =
+            Array.isArray(data)
+                ? data
+                : [];
 
-        // -------------------------------------------------
-        // SAVE OUTBOUND MESSAGE TO SUPABASE
-        // -------------------------------------------------
+        if (phone) {
 
-        const messageRecord = {
-            user_id:
-                auth.user.id,
+            userMessages =
+                userMessages.filter(
+                    message =>
+                        message.from_number === phone ||
+                        message.to_number === phone
+                );
 
-            provider_message_id:
-                signalWireData?.id ||
-                null,
+        }
 
-            from_number:
-                signalWireData?.from ||
-                SIGNALWIRE_PHONE_NUMBER,
-
-            to_number:
-                signalWireData?.to ||
-                to,
-
-            body:
-                text.trim(),
-
-            direction:
-                "outbound",
-
-            status:
-                signalWireData?.status ||
-                "queued"
-        };
-
-        const saveResponse =
-            await fetch(
-                `${SUPABASE_URL}/rest/v1/messages`,
-                {
-                    method: "POST",
-
-                    headers: {
-                        Authorization:
-                            `Bearer ${SUPABASE_SECRET_KEY}`,
-
-                        apikey:
-                            SUPABASE_SECRET_KEY,
-
-                        "Content-Type":
-                            "application/json",
-
-                        Prefer:
-                            "return=representation"
-                    },
-
-                    body:
-                        JSON.stringify(
-                            messageRecord
-                        )
-                }
-            );
-
-        const savedMessage =
-            await saveResponse.json();
-
-        if (!saveResponse.ok) {
-
-            console.error(
-                "⚠ SignalWire SMS was sent, but Supabase save failed:",
-                savedMessage
-            );
-
-            // IMPORTANT:
-            // The SMS was already successfully
-            // submitted to SignalWire.
-            return res.json({
-                success: true,
-
-                message: {
+        const formattedMessages =
+            userMessages.map(
+                message => ({
                     id:
-                        signalWireData?.id ||
-                        `msg_${Date.now()}`,
+                        message.id,
 
                     userId:
-                        auth.user.id,
+                        message.user_id,
+
+                    providerMessageId:
+                        message.provider_message_id,
 
                     from:
-                        signalWireData?.from ||
-                        SIGNALWIRE_PHONE_NUMBER,
+                        message.from_number,
 
                     to:
-                        signalWireData?.to ||
-                        to,
+                        message.to_number,
 
                     text:
-                        text.trim(),
+                        message.body,
 
                     direction:
-                        "outbound",
-
-                    createdAt:
-                        signalWireData?.created_at ||
-                        new Date().toISOString(),
+                        message.direction,
 
                     status:
-                        signalWireData?.status ||
-                        "queued"
-                },
+                        message.status,
 
-                warning:
-                    "Message was sent, but could not be saved to message history."
-            });
-        }
+                    createdAt:
+                        message.created_at,
 
-        const saved =
-            Array.isArray(savedMessage)
-                ? savedMessage[0]
-                : savedMessage;
+                    updatedAt:
+                        message.updated_at
+                })
+            );
 
         return res.json({
             success: true,
-
-            message: {
-                id:
-                    saved?.id ||
-                    signalWireData?.id,
-
-                userId:
-                    saved?.user_id ||
-                    auth.user.id,
-
-                from:
-                    saved?.from_number ||
-                    SIGNALWIRE_PHONE_NUMBER,
-
-                to:
-                    saved?.to_number ||
-                    to,
-
-                text:
-                    saved?.body ||
-                    text.trim(),
-
-                direction:
-                    saved?.direction ||
-                    "outbound",
-
-                createdAt:
-                    saved?.created_at ||
-                    new Date().toISOString(),
-
-                status:
-                    saved?.status ||
-                    signalWireData?.status ||
-                    "queued"
-            }
+            messages: formattedMessages
         });
 
     } catch (error) {
 
         console.error(
-            "SignalWire send message error:",
+            "Get messages error:",
             error
         );
 
         return res.status(500).json({
             success: false,
-
             error:
-                error?.message ||
-                "Unable to send message."
-        });
-    }
-});
-// =========================================================
-// GET MESSAGES
-// =========================================================
-
-app.get("/api/messages", async (req, res) => {
-    try {
-        const auth = await authenticateRequest(req);
-
-        if (!auth.success) {
-            return res.status(auth.status).json({
-                success: false,
-                error: auth.error
-            });
-        }
-
-        const phone = req.query.phone || "";
-
-        const userMessages = messages.filter((message) => {
-            if (message.userId !== auth.user.id) {
-                return false;
-            }
-
-            if (!phone) {
-                return true;
-            }
-
-            return (
-                message.to === phone ||
-                message.from === phone
-            );
+                "Unable to load messages."
         });
 
-        return res.json({
-            success: true,
-            messages: userMessages
-        });
-    } catch (error) {
-        console.error("Get messages error:", error);
-
-        return res.status(500).json({
-            success: false,
-            error: "Unable to load messages."
-        });
     }
 });
 
