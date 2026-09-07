@@ -2410,11 +2410,7 @@ if (currentCall?.answered$) {
 
                             else if (
     statusValue ===
-        "connected" ||
-    statusValue ===
-        "answered" ||
-    statusValue ===
-        "active"
+        "answered"
 ) {
 
                                 console.log(
@@ -2511,19 +2507,19 @@ if (currentCall?.answered$) {
                                     true;
 
 
-                                if (currentOutboundUsageId) {
+                                const endedAt = Date.now();
 
-    const endedAt = Date.now();
-
-    const durationSeconds =
-        outboundAnswered && outboundAnsweredAt
-            ? Math.max(
-                  0,
-                  Math.floor(
-                      (endedAt - outboundAnsweredAt) / 1000
-                  )
+const durationSeconds =
+    outboundAnswered && outboundAnsweredAt
+        ? Math.max(
+              0,
+              Math.floor(
+                  (endedAt - outboundAnsweredAt) / 1000
               )
-            : 0;
+          )
+        : 0;
+
+if (currentOutboundUsageId) {
 
     const finalStatus =
         outboundAnswered
