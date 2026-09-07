@@ -3036,3 +3036,15 @@ body {
     }
 
 }
+/* =========================================================
+   FIX MESSAGE CHAT CENTER BACKGROUND
+   ========================================================= */
+
+.messages-chat-panel .messages-conversation {
+    background: transparent !important;
+}
+
+.messages-chat-panel .messages-empty {
+    background: transparent !important;
+    color: rgba(255, 255, 255, 0.30) !important;
+}
