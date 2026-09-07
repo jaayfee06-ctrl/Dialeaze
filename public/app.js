@@ -3980,35 +3980,173 @@ if (newMessageButton) {
         "click",
         () => {
 
-            const phone =
-                window.prompt(
-                    "Enter the phone number you want to message:"
-                );
+            selectedMessageConversation = null;
 
-            if (!phone) {
-                return;
+            if (messagesChatContact) {
+                messagesChatContact.textContent =
+                    "New Message";
             }
 
-            const normalizedPhone =
-                normalizePhoneNumber(
-                    phone
-                );
-
-            if (!normalizedPhone) {
-
-                alert(
-                    "Please enter a valid phone number."
-                );
-
-                return;
+            if (messagesChatStatus) {
+                messagesChatStatus.textContent =
+                    "Start a new SMS conversation";
             }
 
-            openMessageConversation(
-                normalizedPhone
-            );
+            if (messagesInboxBody) {
+                messagesInboxBody.classList.add(
+                    "chat-open"
+                );
+            }
 
-            if (messageText) {
-                messageText.focus();
+            if (messagesConversation) {
+
+                messagesConversation.innerHTML = `
+                    <div class="new-message-screen">
+
+                        <div class="new-message-icon">
+                            +
+                        </div>
+
+                        <div class="new-message-title">
+                            New Message
+                        </div>
+
+                        <div class="new-message-subtitle">
+                            Enter a phone number to start a conversation.
+                        </div>
+
+                        <div class="new-message-form">
+
+                            <label
+                                for="newMessagePhone"
+                                class="new-message-label"
+                            >
+                                Phone number
+                            </label>
+
+                            <input
+                                id="newMessagePhone"
+                                class="new-message-phone"
+                                type="tel"
+                                inputmode="tel"
+                                autocomplete="tel"
+                                placeholder="+1 (555) 123-4567"
+                            >
+
+                            <button
+                                type="button"
+                                id="startNewMessageButton"
+                                class="start-new-message-button"
+                            >
+                                Start Conversation
+                            </button>
+
+                        </div>
+
+                    </div>
+                `;
+
+                const newMessagePhone =
+                    document.getElementById(
+                        "newMessagePhone"
+                    );
+
+                const startNewMessageButton =
+                    document.getElementById(
+                        "startNewMessageButton"
+                    );
+
+                if (newMessagePhone) {
+                    newMessagePhone.focus();
+                }
+
+                const startConversation =
+                    () => {
+
+                        if (!newMessagePhone) {
+                            return;
+                        }
+
+                        const rawPhone =
+                            newMessagePhone.value.trim();
+
+                        const digits =
+                            rawPhone.replace(
+                                /\D/g,
+                                ""
+                            );
+
+                        let phone =
+                            rawPhone;
+
+                        if (digits.length === 10) {
+
+                            phone =
+                                "+1" +
+                                digits;
+
+                        } else if (
+                            digits.length === 11 &&
+                            digits.startsWith("1")
+                        ) {
+
+                            phone =
+                                "+" +
+                                digits;
+
+                        }
+
+                        const normalizedPhone =
+                            normalizePhoneNumber(
+                                phone
+                            );
+
+                        if (!normalizedPhone) {
+
+                            alert(
+                                "Please enter a valid phone number."
+                            );
+
+                            newMessagePhone.focus();
+
+                            return;
+                        }
+
+                        openMessageConversation(
+                            normalizedPhone
+                        );
+
+                        if (messageText) {
+                            messageText.focus();
+                        }
+                    };
+
+                if (startNewMessageButton) {
+
+                    startNewMessageButton.addEventListener(
+                        "click",
+                        startConversation
+                    );
+                }
+
+                if (newMessagePhone) {
+
+                    newMessagePhone.addEventListener(
+                        "keydown",
+                        event => {
+
+                            if (
+                                event.key ===
+                                "Enter"
+                            ) {
+
+                                event.preventDefault();
+
+                                startConversation();
+                            }
+                        }
+                    );
+                }
             }
 
         }
