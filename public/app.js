@@ -503,6 +503,7 @@ let currentUserId = null;
 // =========================================================
 
 let selectedMessageConversation = null;
+let isCreatingNewMessage = false;
 
 const messagesConversationList =
     document.getElementById(
@@ -3004,6 +3005,7 @@ function openMessages() {
 
     selectedMessageConversation =
         null;
+        isCreatingNewMessage = true;
 
     if (messagesInboxBody) {
         messagesInboxBody.classList.remove(
@@ -3383,9 +3385,6 @@ async function sendMessage() {
 }
 
 
-// =========================================================
-// FETCH SERVER MESSAGES
-// =========================================================
 
 // =========================================================
 // FETCH ALL MESSAGES - SUPABASE
@@ -3443,13 +3442,15 @@ async function fetchMessages() {
         // REFRESH INBOX
         // =================================================
 
-        renderConversationList();
+       renderConversationList();
 
-        // =================================================
-        // REFRESH OPEN CONVERSATION
-        // =================================================
+// =================================================
+// REFRESH OPEN CONVERSATION
+// =================================================
 
-        renderConversation();
+if (!isCreatingNewMessage) {
+    renderConversation();
+}
 
     } catch (error) {
 
@@ -3981,6 +3982,7 @@ if (newMessageButton) {
         () => {
 
             selectedMessageConversation = null;
+            
 
             if (messagesChatContact) {
                 messagesChatContact.textContent =
@@ -4112,9 +4114,11 @@ if (newMessageButton) {
                             return;
                         }
 
-                        openMessageConversation(
-                            normalizedPhone
-                        );
+                        isCreatingNewMessage = false;
+
+openMessageConversation(
+    normalizedPhone
+);
 
                         if (messageText) {
                             messageText.focus();
@@ -4163,8 +4167,8 @@ if (messagesBackButton) {
         "click",
         () => {
 
-            selectedMessageConversation =
-                null;
+            selectedMessageConversation = null;
+isCreatingNewMessage = false;
 
             if (messagesInboxBody) {
                 messagesInboxBody.classList.remove(
