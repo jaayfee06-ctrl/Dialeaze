@@ -1129,14 +1129,17 @@ app.post("/api/messages/send", async (req, res) => {
             );
 
             return res.status(
-                signalWireResponse.status
-            ).json({
-                success: false,
-                error:
-                    signalWireData?.message ||
-                    signalWireData?.error ||
-                    "Unable to send SMS through SignalWire."
-            });
+    signalWireResponse.status
+).json({
+    success: false,
+    error:
+        signalWireData?.message ||
+        signalWireData?.error ||
+        signalWireData?.error_message ||
+        "Unable to send SMS through SignalWire.",
+    signalWireError:
+        signalWireData
+});
         }
 
         // =====================================================
