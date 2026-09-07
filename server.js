@@ -987,6 +987,294 @@ app.post("/api/webrtc/unregister", async (req, res) => {
 const messages = [];
 
 // =========================================================
+// SEND SMS - SIGNALWIRE
+// =========================================================
+
+app.post("/api/messages/send", async (req, res) => {
+    try {
+
+        const auth =
+            await authenticateRequest(req);
+
+        if (!auth.success) {
+            return res.status(auth.status).json({
+                success: false,
+                error: auth.error
+            });
+        }
+
+        const to =
+            String(
+                req.body?.to ||
+                ""
+            ).trim();
+
+        const text =
+            String(
+                req.body?.text ||
+                ""
+            ).trim();
+
+        if (!to) {
+            return res.status(400).json({
+                success: false,
+                error:
+                    "Recipient phone number is required."
+            });
+        }
+
+        if (!text) {
+            return res.status(400).json({
+                success: false,
+                error:
+                    "Message text is required."
+            });
+        }
+
+        // =====================================================
+        // GET THIS USER'S ASSIGNED DIALEAZE PHONE NUMBER
+        // =====================================================
+
+        const phoneNumberResponse =
+            await fetch(
+                `${SUPABASE_URL}/rest/v1/phone_numbers` +
+                `?user_id=eq.${encodeURIComponent(auth.user.id)}` +
+                `&status=eq.assigned` +
+                `&select=phone_number` +
+                `&limit=1`,
+                {
+                    method: "GET",
+                    headers: {
+                        Authorization:
+                            `Bearer ${SUPABASE_SECRET_KEY}`,
+                        apikey:
+                            SUPABASE_SECRET_KEY,
+                        Accept:
+                            "application/json"
+                    }
+                }
+            );
+
+        const phoneNumberData =
+            await phoneNumberResponse.json();
+
+        if (
+            !phoneNumberResponse.ok ||
+            !Array.isArray(phoneNumberData) ||
+            !phoneNumberData.length
+        ) {
+            return res.status(404).json({
+                success: false,
+                error:
+                    "Your Dialeaze phone number could not be found."
+            });
+        }
+
+        const senderNumber =
+            phoneNumberData[0].phone_number;
+
+        if (!senderNumber) {
+            return res.status(404).json({
+                success: false,
+                error:
+                    "Your Dialeaze phone number is unavailable."
+            });
+        }
+
+        // =====================================================
+        // SEND THROUGH SIGNALWIRE
+        // =====================================================
+
+        const signalWireAuth =
+            Buffer.from(
+                `${SIGNALWIRE_PROJECT_ID}:${SIGNALWIRE_API_TOKEN}`
+            ).toString("base64");
+
+        const signalWireResponse =
+            await fetch(
+                `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/messaging/messages`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        Authorization:
+                            `Basic ${signalWireAuth}`,
+                        "Content-Type":
+                            "application/json",
+                        Accept:
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        from:
+                            senderNumber,
+
+                        to:
+                            to,
+
+                        body:
+                            text
+                    })
+                }
+            );
+
+        const signalWireData =
+            await signalWireResponse.json();
+
+        if (!signalWireResponse.ok) {
+
+            console.error(
+                "❌ SignalWire SMS send error:",
+                signalWireData
+            );
+
+            return res.status(
+                signalWireResponse.status
+            ).json({
+                success: false,
+                error:
+                    signalWireData?.message ||
+                    signalWireData?.error ||
+                    "Unable to send SMS through SignalWire."
+            });
+        }
+
+        // =====================================================
+        // SAVE OUTBOUND MESSAGE TO SUPABASE
+        // =====================================================
+
+        const messageRecord = {
+            user_id:
+                auth.user.id,
+
+            provider_message_id:
+                signalWireData?.id ||
+                signalWireData?.message_id ||
+                null,
+
+            from_number:
+                signalWireData?.from ||
+                senderNumber,
+
+            to_number:
+                signalWireData?.to ||
+                to,
+
+            body:
+                text,
+
+            direction:
+                "outbound",
+
+            status:
+                signalWireData?.status ||
+                "queued",
+
+            is_read:
+                true
+        };
+
+        const saveResponse =
+            await fetch(
+                `${SUPABASE_URL}/rest/v1/messages`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        Authorization:
+                            `Bearer ${SUPABASE_SECRET_KEY}`,
+                        apikey:
+                            SUPABASE_SECRET_KEY,
+                        "Content-Type":
+                            "application/json",
+                        Prefer:
+                            "return=representation"
+                    },
+
+                    body:
+                        JSON.stringify(
+                            messageRecord
+                        )
+                }
+            );
+
+        const savedMessage =
+            await saveResponse.json();
+
+        if (!saveResponse.ok) {
+
+            console.error(
+                "❌ Failed to save outbound SMS:",
+                savedMessage
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    "Message was sent, but could not be saved to your message history."
+            });
+        }
+
+        console.log(
+            "✅ SignalWire SMS sent and saved:",
+            {
+                from: senderNumber,
+                to: to
+            }
+        );
+
+        return res.json({
+            success: true,
+
+            message: {
+                id:
+                    savedMessage?.[0]?.id ||
+                    null,
+
+                providerMessageId:
+                    messageRecord.provider_message_id,
+
+                from:
+                    messageRecord.from_number,
+
+                to:
+                    messageRecord.to_number,
+
+                text:
+                    messageRecord.body,
+
+                direction:
+                    "outbound",
+
+                status:
+                    messageRecord.status,
+
+                createdAt:
+                    savedMessage?.[0]?.created_at ||
+                    new Date().toISOString(),
+
+                isRead:
+                    true
+            }
+        });
+
+    } catch (error) {
+
+        console.error(
+            "❌ SMS sending error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            error:
+                error?.message ||
+                "Unable to send message."
+        });
+    }
+});
+
+// =========================================================
 // MARK MESSAGES AS READ - SUPABASE
 // =========================================================
 
