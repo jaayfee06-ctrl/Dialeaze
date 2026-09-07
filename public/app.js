@@ -2991,8 +2991,8 @@ function openMessages() {
     ) {
 
         const number =
-            customerAccount.phoneNumber ||
-            "";
+    customerAccount.assignedPhoneNumber ||
+    "";
 
         messagesBusinessNumber.textContent =
             number
@@ -3465,7 +3465,7 @@ function renderConversationList() {
 
     const customerPhone =
         normalizePhoneNumber(
-            customerAccount.phoneNumber
+            customerAccount.assignedPhoneNumber
         );
 
     if (!customerPhone) {
@@ -3912,9 +3912,9 @@ async function markConversationAsRead(
                         );
 
                     const customerPhone =
-                        normalizePhoneNumber(
-                            customerAccount?.phoneNumber
-                        );
+    normalizePhoneNumber(
+        customerAccount?.assignedPhoneNumber
+    );
 
                     const belongsToConversation =
                         (
@@ -4167,9 +4167,9 @@ function renderConversation() {
 
 
     const customerPhone =
-        normalizePhoneNumber(
-            customerAccount.phoneNumber
-        );
+    normalizePhoneNumber(
+        customerAccount.assignedPhoneNumber
+    );
 
 
     const conversation =

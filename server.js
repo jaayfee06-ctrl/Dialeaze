@@ -349,7 +349,45 @@ app.get("/api/account", async (req, res) => {
                 error: "Customer profile was not found."
             });
         }
+// =====================================================
+// GET ASSIGNED DIALEAZE PHONE NUMBER
+// Used by messaging without changing legacy call data.
+// =====================================================
 
+let assignedPhoneNumber = "";
+
+const assignedPhoneResponse =
+    await fetch(
+        `${SUPABASE_URL}/rest/v1/phone_numbers` +
+        `?user_id=eq.${encodeURIComponent(auth.user.id)}` +
+        `&status=eq.assigned` +
+        `&select=phone_number` +
+        `&limit=1`,
+        {
+            method: "GET",
+            headers: {
+                Authorization:
+                    `Bearer ${SUPABASE_SECRET_KEY}`,
+                apikey:
+                    SUPABASE_SECRET_KEY,
+                Accept:
+                    "application/json"
+            }
+        }
+    );
+
+const assignedPhoneData =
+    await assignedPhoneResponse.json();
+
+if (
+    assignedPhoneResponse.ok &&
+    Array.isArray(assignedPhoneData) &&
+    assignedPhoneData.length
+) {
+    assignedPhoneNumber =
+        assignedPhoneData[0].phone_number ||
+        "";
+}
         // IMPORTANT:
         // app.js expects the account information
         // inside data.account
@@ -372,10 +410,13 @@ app.get("/api/account", async (req, res) => {
                 phoneNumber:
                     profile.telnyx_phone_number ||
                     "",
+                
 
                 telnyxPhoneNumber:
                     profile.telnyx_phone_number ||
                     "",
+                    assignedPhoneNumber:
+                 assignedPhoneNumber,
 
                 subscriptionPlan:
                     profile.subscription_plan ||
@@ -429,6 +470,7 @@ app.get("/api/call-history", async (req, res) => {
                     "Unable to load call history."
             });
         }
+
 
         return res.json({
             success: true,
