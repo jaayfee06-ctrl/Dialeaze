@@ -1719,3 +1719,425 @@ body {
     background: #2563eb;
     color: #ffffff;
 }
+
+/* =========================================================
+   DIALEAZE MESSAGES INBOX
+   ========================================================= */
+
+.messages-inbox-window {
+    width: min(1000px, 94vw);
+    height: min(720px, 90vh);
+    max-width: 1000px;
+    max-height: 720px;
+    padding: 0;
+    overflow: hidden;
+}
+
+
+/* =========================================================
+   INBOX BODY
+   ========================================================= */
+
+.messages-inbox-body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    height: calc(100% - 72px);
+}
+
+
+/* =========================================================
+   LEFT — CONVERSATION LIST
+   ========================================================= */
+
+.messages-inbox-list {
+    width: 340px;
+    min-width: 340px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.025);
+}
+
+
+.messages-inbox-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 16px 10px;
+}
+
+
+.messages-inbox-heading {
+    font-size: 17px;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+
+.new-message-button {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+        opacity 0.2s ease,
+        transform 0.1s ease;
+}
+
+
+.new-message-button:hover {
+    opacity: 0.88;
+}
+
+
+.new-message-button:active {
+    transform: scale(0.95);
+}
+
+
+/* =========================================================
+   SEARCH
+   ========================================================= */
+
+.messages-search-area {
+    padding: 0 14px 12px;
+}
+
+
+.messages-search-area input {
+    width: 100%;
+    height: 38px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 9px;
+    outline: none;
+    background: rgba(255, 255, 255, 0.055);
+    color: #ffffff;
+    padding: 0 12px;
+    font-size: 13px;
+}
+
+
+.messages-search-area input::placeholder {
+    color: rgba(255, 255, 255, 0.42);
+}
+
+
+.messages-search-area input:focus {
+    border-color: rgba(37, 99, 235, 0.75);
+}
+
+
+/* =========================================================
+   CONVERSATION LIST
+   ========================================================= */
+
+.messages-conversation-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+
+.messages-inbox-empty {
+    min-height: 220px;
+    padding: 40px 22px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 14px;
+    gap: 8px;
+}
+
+
+.messages-inbox-empty small {
+    max-width: 230px;
+    color: rgba(255, 255, 255, 0.35);
+    line-height: 1.5;
+}
+
+
+.messages-inbox-empty-icon {
+    font-size: 30px;
+    margin-bottom: 4px;
+}
+
+
+/* =========================================================
+   INDIVIDUAL INBOX ITEM
+   ========================================================= */
+
+.messages-inbox-item {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 13px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+    transition: background 0.18s ease;
+}
+
+
+.messages-inbox-item:hover {
+    background: rgba(255, 255, 255, 0.055);
+}
+
+
+.messages-inbox-item.active {
+    background: rgba(37, 99, 235, 0.16);
+}
+
+
+.messages-inbox-avatar {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    border-radius: 50%;
+    background: rgba(37, 99, 235, 0.18);
+    color: #60a5fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    font-weight: 700;
+}
+
+
+.messages-inbox-content {
+    min-width: 0;
+    flex: 1;
+}
+
+
+.messages-inbox-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+
+.messages-inbox-number {
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 650;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+.messages-inbox-time {
+    flex-shrink: 0;
+    color: rgba(255, 255, 255, 0.38);
+    font-size: 10px;
+}
+
+
+.messages-inbox-preview {
+    margin-top: 4px;
+    color: rgba(255, 255, 255, 0.48);
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+.messages-inbox-item.unread .messages-inbox-number {
+    font-weight: 750;
+}
+
+
+.messages-inbox-item.unread .messages-inbox-preview {
+    color: rgba(255, 255, 255, 0.78);
+    font-weight: 550;
+}
+
+
+.messages-inbox-unread {
+    width: 8px;
+    height: 8px;
+    min-width: 8px;
+    border-radius: 50%;
+    background: #3b82f6;
+}
+
+
+/* =========================================================
+   RIGHT — CHAT PANEL
+   ========================================================= */
+
+.messages-chat-panel {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    background: rgba(0, 0, 0, 0.08);
+}
+
+
+.messages-chat-header {
+    min-height: 62px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+
+.messages-back-button {
+    display: none;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: #ffffff;
+    font-size: 28px;
+    cursor: pointer;
+}
+
+
+.messages-chat-contact {
+    min-width: 0;
+}
+
+
+.messages-chat-contact-number {
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+.messages-chat-contact-status {
+    margin-top: 3px;
+    color: rgba(255, 255, 255, 0.40);
+    font-size: 11px;
+}
+
+
+/* =========================================================
+   HIDDEN RECIPIENT INPUT
+   ========================================================= */
+
+#messageRecipient {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+
+/* =========================================================
+   CHAT CONVERSATION
+   ========================================================= */
+
+.messages-chat-panel .messages-conversation {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+
+/* =========================================================
+   EMPTY CHAT
+   ========================================================= */
+
+.messages-chat-panel .messages-empty {
+    height: 100%;
+    min-height: 250px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 30px;
+}
+
+
+/* =========================================================
+   COMPOSER
+   ========================================================= */
+
+.messages-chat-panel .message-composer {
+    flex-shrink: 0;
+}
+
+
+/* =========================================================
+   SCROLLBARS
+   ========================================================= */
+
+.messages-conversation-list::-webkit-scrollbar,
+.messages-chat-panel .messages-conversation::-webkit-scrollbar {
+    width: 6px;
+}
+
+
+.messages-conversation-list::-webkit-scrollbar-track,
+.messages-chat-panel .messages-conversation::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+
+.messages-conversation-list::-webkit-scrollbar-thumb,
+.messages-chat-panel .messages-conversation::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 700px) {
+
+    .messages-inbox-window {
+        width: 96vw;
+        height: 92vh;
+    }
+
+    .messages-inbox-list {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .messages-chat-panel {
+        display: none;
+    }
+
+    .messages-inbox-body.chat-open .messages-inbox-list {
+        display: none;
+    }
+
+    .messages-inbox-body.chat-open .messages-chat-panel {
+        display: flex;
+        width: 100%;
+    }
+
+    .messages-inbox-body.chat-open .messages-back-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+}

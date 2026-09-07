@@ -498,6 +498,52 @@ let messagePollingInterval = null;
 
 let currentUserId = null;
 
+// =========================================================
+// MESSAGES INBOX STATE
+// =========================================================
+
+let selectedMessageConversation = null;
+
+const messagesConversationList =
+    document.getElementById(
+        "messagesConversationList"
+    );
+
+const messagesSearch =
+    document.getElementById(
+        "messagesSearch"
+    );
+
+const newMessageButton =
+    document.getElementById(
+        "newMessageButton"
+    );
+
+const messagesChatHeader =
+    document.getElementById(
+        "messagesChatHeader"
+    );
+
+const messagesChatContact =
+    document.getElementById(
+        "messagesChatContact"
+    );
+
+const messagesChatStatus =
+    document.getElementById(
+        "messagesChatStatus"
+    );
+
+const messagesBackButton =
+    document.getElementById(
+        "messagesBackButton"
+    );
+
+const messagesInboxBody =
+    document.querySelector(
+        ".messages-inbox-body"
+    );
+
 
 // =========================================================
 // INITIAL BUTTON STATE
@@ -2927,22 +2973,17 @@ function openMessages() {
         return;
     }
 
-
     if (!customerAccount) {
-
         alert(
             "Customer account is not ready yet."
         );
 
         return;
-
     }
-
 
     messagesOverlay.classList.add(
         "open"
     );
-
 
     if (
         customerAccount &&
@@ -2951,24 +2992,45 @@ function openMessages() {
 
         const number =
             customerAccount.phoneNumber ||
-            customerAccount.telnyxPhoneNumber ||
             "";
-
 
         messagesBusinessNumber.textContent =
             number
                 ? "From " +
                   formatPhoneNumber(number)
                 : "Number unavailable";
-
     }
 
+    selectedMessageConversation =
+        null;
 
-    messageRecipient.focus();
+    if (messagesInboxBody) {
+        messagesInboxBody.classList.remove(
+            "chat-open"
+        );
+    }
 
+    if (messagesChatContact) {
+        messagesChatContact.textContent =
+            "Select a conversation";
+    }
+
+    if (messagesChatStatus) {
+        messagesChatStatus.textContent =
+            "Your Dialeaze messages";
+    }
+
+    if (messagesConversation) {
+        messagesConversation.innerHTML = `
+            <div class="messages-empty">
+                Select a conversation to view messages.
+            </div>
+        `;
+    }
+
+    renderConversationList();
 
     startMessagePolling();
-
 }
 
 
@@ -2989,48 +3051,6 @@ function closeMessages() {
 
 
     stopMessagePolling();
-
-}
-
-
-// =========================================================
-// MESSAGE RECIPIENT CHANGE
-// =========================================================
-
-if (messageRecipient) {
-
-    messageRecipient.addEventListener(
-        "input",
-        () => {
-
-            renderConversation();
-
-        }
-    );
-
-
-    messageRecipient.addEventListener(
-        "blur",
-        () => {
-
-            const normalized =
-                normalizePhoneNumber(
-                    messageRecipient.value
-                );
-
-
-            if (normalized) {
-
-                messageRecipient.value =
-                    normalized;
-
-
-                renderConversation();
-
-            }
-
-        }
-    );
 
 }
 
@@ -3137,7 +3157,8 @@ async function sendMessage() {
 
 
     const rawRecipient =
-        messageRecipient.value.trim();
+    selectedMessageConversation ||
+    messageRecipient.value.trim();
 
 
     const text =
@@ -3355,34 +3376,22 @@ async function sendMessage() {
 // FETCH SERVER MESSAGES
 // =========================================================
 
+// =========================================================
+// FETCH ALL MESSAGES - SUPABASE
+// =========================================================
+
 async function fetchMessages() {
 
     if (!customerAccount) {
         return;
     }
 
-
-    const recipient =
-        normalizePhoneNumber(
-            messageRecipient?.value
-        );
-
-
-    if (!recipient) {
-        return;
-    }
-
-
     try {
 
         const response =
             await authFetch(
-                "/api/messages?phone=" +
-                encodeURIComponent(
-                    recipient
-                )
+                "/api/messages"
             );
-
 
         if (!response.ok) {
 
@@ -3390,22 +3399,16 @@ async function fetchMessages() {
                 response.status === 401 ||
                 response.status === 403
             ) {
-
                 console.warn(
                     "Authentication required for messages."
                 );
-
             }
 
-
             return;
-
         }
-
 
         const data =
             await response.json();
-
 
         if (
             !data.success ||
@@ -3413,76 +3416,713 @@ async function fetchMessages() {
                 data.messages
             )
         ) {
-
             return;
-
         }
 
+        // =================================================
+        // SUPABASE IS THE SOURCE OF TRUTH
+        // =================================================
+
+        localMessages =
+            data.messages.slice(-500);
+
+        saveLocalMessages();
 
         // =================================================
-        // MERGE SERVER MESSAGES
+        // REFRESH INBOX
         // =================================================
 
-        let changed =
-            false;
+        renderConversationList();
 
-
-        data.messages.forEach(
-            serverMessage => {
-
-                const exists =
-                    localMessages.some(
-                        localMessage =>
-                            localMessage.id ===
-                            serverMessage.id
-                    );
-
-
-                if (!exists) {
-
-                    localMessages.push(
-                        serverMessage
-                    );
-
-                    changed =
-                        true;
-
-                }
-
-            }
-        );
-
-
-        if (changed) {
-
-            localMessages =
-                localMessages.slice(
-                    -500
-                );
-
-
-            saveLocalMessages();
-
-        }
-
+        // =================================================
+        // REFRESH OPEN CONVERSATION
+        // =================================================
 
         renderConversation();
 
-    }
-
-
-    catch (error) {
+    } catch (error) {
 
         console.error(
             "Message polling error:",
             error
         );
-
     }
+}
+
+// =========================================================
+// RENDER MESSAGE CONVERSATION LIST
+// =========================================================
+
+function renderConversationList() {
+
+    if (!messagesConversationList) {
+        return;
+    }
+
+    if (!customerAccount) {
+        return;
+    }
+
+    const customerPhone =
+        normalizePhoneNumber(
+            customerAccount.phoneNumber
+        );
+
+    if (!customerPhone) {
+        messagesConversationList.innerHTML = `
+            <div class="messages-inbox-empty">
+                <div class="messages-inbox-empty-icon">
+                    💬
+                </div>
+
+                <div>
+                    Number unavailable
+                </div>
+
+                <small>
+                    Your Dialeaze number is not available yet.
+                </small>
+            </div>
+        `;
+
+        return;
+    }
+
+    // =====================================================
+    // GROUP MESSAGES BY THE OTHER PHONE NUMBER
+    // =====================================================
+
+    const conversations = new Map();
+
+    localMessages.forEach(
+        message => {
+
+            const from =
+                normalizePhoneNumber(
+                    message.from
+                );
+
+            const to =
+                normalizePhoneNumber(
+                    message.to
+                );
+
+            if (!from || !to) {
+                return;
+            }
+
+            let otherNumber = null;
+
+            if (from === customerPhone) {
+                otherNumber = to;
+            } else if (to === customerPhone) {
+                otherNumber = from;
+            }
+
+            if (!otherNumber) {
+                return;
+            }
+
+            const existing =
+                conversations.get(
+                    otherNumber
+                );
+
+            const messageTime =
+                new Date(
+                    message.createdAt ||
+                    message.timestamp ||
+                    Date.now()
+                ).getTime();
+
+            if (
+                !existing ||
+                messageTime >
+                    existing.latestTime
+            ) {
+
+                conversations.set(
+                    otherNumber,
+                    {
+                        phone:
+                            otherNumber,
+
+                        latestMessage:
+                            message,
+
+                        latestTime:
+                            messageTime,
+
+                        unread:
+                            false
+                    }
+                );
+            }
+
+            // =================================================
+            // ANY UNREAD INBOUND MESSAGE = UNREAD CONVERSATION
+            // =================================================
+
+            if (
+                message.direction ===
+                    "inbound" &&
+                message.isRead !== true
+            ) {
+
+                const conversation =
+                    conversations.get(
+                        otherNumber
+                    );
+
+                if (conversation) {
+                    conversation.unread = true;
+                }
+            }
+
+        }
+    );
+
+    // =====================================================
+    // SORT NEWEST CONVERSATION FIRST
+    // =====================================================
+
+    const conversationArray =
+        Array.from(
+            conversations.values()
+        ).sort(
+            (a, b) =>
+                b.latestTime -
+                a.latestTime
+        );
+
+    // =====================================================
+    // SEARCH FILTER
+    // =====================================================
+
+    const search =
+        String(
+            messagesSearch?.value ||
+            ""
+        )
+        .trim()
+        .toLowerCase();
+
+    const filtered =
+        conversationArray.filter(
+            conversation => {
+
+                if (!search) {
+                    return true;
+                }
+
+                const phone =
+                    conversation.phone
+                        .toLowerCase();
+
+                const preview =
+                    String(
+                        conversation
+                            .latestMessage
+                            ?.text ||
+                        ""
+                    )
+                    .toLowerCase();
+
+                return (
+                    phone.includes(search) ||
+                    preview.includes(search)
+                );
+            }
+        );
+
+    // =====================================================
+    // EMPTY STATE
+    // =====================================================
+
+    if (!filtered.length) {
+
+        messagesConversationList.innerHTML = `
+            <div class="messages-inbox-empty">
+
+                <div class="messages-inbox-empty-icon">
+                    💬
+                </div>
+
+                <div>
+                    ${
+                        search
+                            ? "No conversations found"
+                            : "No conversations yet"
+                    }
+                </div>
+
+                <small>
+                    ${
+                        search
+                            ? "Try another phone number or message."
+                            : "Incoming and outgoing messages will appear here."
+                    }
+                </small>
+
+            </div>
+        `;
+
+        return;
+    }
+
+    // =====================================================
+    // BUILD CONVERSATION LIST
+    // =====================================================
+
+    messagesConversationList.innerHTML =
+        filtered
+            .map(
+                conversation => {
+
+                    const phone =
+                        conversation.phone;
+
+                    const latest =
+                        conversation
+                            .latestMessage;
+
+                    const preview =
+                        String(
+                            latest?.text ||
+                            ""
+                        );
+
+                    const time =
+                        latest?.createdAt ||
+                        latest?.timestamp;
+
+                    const timeText =
+                        time
+                            ? formatMessageListTime(
+                                  time
+                              )
+                            : "";
+
+                    const isActive =
+                        selectedMessageConversation ===
+                        phone;
+
+                    return `
+                        <div
+                            class="messages-inbox-item ${
+                                conversation.unread
+                                    ? "unread"
+                                    : ""
+                            } ${
+                                isActive
+                                    ? "active"
+                                    : ""
+                            }"
+                            data-message-phone="${phone}"
+                        >
+
+                            <div class="messages-inbox-avatar">
+                                ${phone.slice(-2)}
+                            </div>
+
+                            <div class="messages-inbox-content">
+
+                                <div class="messages-inbox-top">
+
+                                    <div class="messages-inbox-number">
+                                        ${formatPhoneNumber(phone)}
+                                    </div>
+
+                                    <div class="messages-inbox-time">
+                                        ${timeText}
+                                    </div>
+
+                                </div>
+
+                                <div class="messages-inbox-preview">
+
+                                    ${
+                                        latest?.direction ===
+                                        "outbound"
+                                            ? "You: "
+                                            : ""
+                                    }${escapeHtml(preview)}
+
+                                </div>
+
+                            </div>
+
+                            ${
+                                conversation.unread
+                                    ? `
+                                        <div
+                                            class="messages-inbox-unread"
+                                        ></div>
+                                    `
+                                    : ""
+                            }
+
+                        </div>
+                    `;
+                }
+            )
+            .join("");
+}
+
+// =========================================================
+// OPEN MESSAGE CONVERSATION
+// =========================================================
+
+function openMessageConversation(phone) {
+
+    const normalizedPhone =
+        normalizePhoneNumber(phone);
+
+    if (!normalizedPhone) {
+        return;
+    }
+
+    selectedMessageConversation =
+        normalizedPhone;
+
+    if (messagesChatContact) {
+        messagesChatContact.textContent =
+            formatPhoneNumber(
+                normalizedPhone
+            );
+    }
+
+    if (messagesChatStatus) {
+        messagesChatStatus.textContent =
+            "SMS conversation";
+    }
+
+    if (messagesInboxBody) {
+        messagesInboxBody.classList.add(
+            "chat-open"
+        );
+    }
+
+    // Keep the existing hidden recipient
+    // synchronized for now.
+    if (messageRecipient) {
+        messageRecipient.value =
+            normalizedPhone;
+    }
+
+    renderConversation();
+
+    renderConversationList();
+
+    markConversationAsRead(
+        normalizedPhone
+    );
+}
+
+// =========================================================
+// CONVERSATION LIST CLICK HANDLER
+// =========================================================
+
+if (messagesConversationList) {
+
+    messagesConversationList.addEventListener(
+        "click",
+        event => {
+
+            const conversationItem =
+                event.target.closest(
+                    ".messages-inbox-item"
+                );
+
+            if (!conversationItem) {
+                return;
+            }
+
+            const phone =
+                conversationItem.dataset
+                    .messagePhone;
+
+            if (!phone) {
+                return;
+            }
+
+            openMessageConversation(
+                phone
+            );
+        }
+    );
+
+}
+// =========================================================
+// MARK CONVERSATION AS READ
+// =========================================================
+
+async function markConversationAsRead(
+    phone
+) {
+
+    const normalizedPhone =
+        normalizePhoneNumber(phone);
+
+    if (!normalizedPhone) {
+        return;
+    }
+
+    try {
+
+        const response =
+            await authFetch(
+                "/api/messages/read",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        phone:
+                            normalizedPhone
+                    })
+                }
+            );
+
+        if (!response.ok) {
+            console.warn(
+                "Unable to mark messages as read."
+            );
+
+            return;
+        }
+
+        // Update local state immediately
+        localMessages =
+            localMessages.map(
+                message => {
+
+                    const from =
+                        normalizePhoneNumber(
+                            message.from
+                        );
+
+                    const to =
+                        normalizePhoneNumber(
+                            message.to
+                        );
+
+                    const customerPhone =
+                        normalizePhoneNumber(
+                            customerAccount?.phoneNumber
+                        );
+
+                    const belongsToConversation =
+                        (
+                            from ===
+                                normalizedPhone &&
+                            to ===
+                                customerPhone
+                        ) ||
+                        (
+                            to ===
+                                normalizedPhone &&
+                            from ===
+                                customerPhone
+                        );
+
+                    if (
+                        belongsToConversation &&
+                        message.direction ===
+                            "inbound"
+                    ) {
+
+                        return {
+                            ...message,
+                            isRead: true
+                        };
+                    }
+
+                    return message;
+                }
+            );
+
+        saveLocalMessages();
+
+        renderConversationList();
+
+    } catch (error) {
+
+        console.error(
+            "Mark messages read error:",
+            error
+        );
+    }
+}
+
+// =========================================================
+// NEW MESSAGE BUTTON
+// =========================================================
+
+if (newMessageButton) {
+
+    newMessageButton.addEventListener(
+        "click",
+        () => {
+
+            const phone =
+                window.prompt(
+                    "Enter the phone number you want to message:"
+                );
+
+            if (!phone) {
+                return;
+            }
+
+            const normalizedPhone =
+                normalizePhoneNumber(
+                    phone
+                );
+
+            if (!normalizedPhone) {
+
+                alert(
+                    "Please enter a valid phone number."
+                );
+
+                return;
+            }
+
+            openMessageConversation(
+                normalizedPhone
+            );
+
+            if (messageText) {
+                messageText.focus();
+            }
+
+        }
+    );
+
+}
+// =========================================================
+// BACK TO MESSAGE INBOX
+// =========================================================
+
+if (messagesBackButton) {
+
+    messagesBackButton.addEventListener(
+        "click",
+        () => {
+
+            selectedMessageConversation =
+                null;
+
+            if (messagesInboxBody) {
+                messagesInboxBody.classList.remove(
+                    "chat-open"
+                );
+            }
+
+            if (messagesChatContact) {
+                messagesChatContact.textContent =
+                    "Select a conversation";
+            }
+
+            if (messagesChatStatus) {
+                messagesChatStatus.textContent =
+                    "Your Dialeaze messages";
+            }
+
+            if (messagesConversation) {
+                messagesConversation.innerHTML = `
+                    <div class="messages-empty">
+                        Select a conversation to view messages.
+                    </div>
+                `;
+            }
+
+            renderConversationList();
+        }
+    );
 
 }
 
+// =========================================================
+// MESSAGE SEARCH
+// =========================================================
 
+if (messagesSearch) {
+
+    messagesSearch.addEventListener(
+        "input",
+        () => {
+            renderConversationList();
+        }
+    );
+
+}
+// =========================================================
+// MESSAGE LIST TIME FORMAT
+// =========================================================
+
+function formatMessageListTime(
+    timestamp
+) {
+
+    const date =
+        new Date(timestamp);
+
+    if (
+        Number.isNaN(
+            date.getTime()
+        )
+    ) {
+        return "";
+    }
+
+    const now =
+        new Date();
+
+    const sameDay =
+        date.toDateString() ===
+        now.toDateString();
+
+    if (sameDay) {
+
+        return date.toLocaleTimeString(
+            [],
+            {
+                hour: "numeric",
+                minute: "2-digit"
+            }
+        );
+    }
+
+    const diff =
+        now.getTime() -
+        date.getTime();
+
+    const oneDay =
+        24 * 60 * 60 * 1000;
+
+    if (diff < 7 * oneDay) {
+
+        return date.toLocaleDateString(
+            [],
+            {
+                weekday: "short"
+            }
+        );
+    }
+
+    return date.toLocaleDateString(
+        [],
+        {
+            month: "short",
+            day: "numeric"
+        }
+    );
+}
 // =========================================================
 // RENDER CONVERSATION
 // =========================================================

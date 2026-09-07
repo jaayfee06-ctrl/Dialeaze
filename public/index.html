@@ -461,128 +461,236 @@
 
 
 
-    <!-- =====================================
-         MESSAGES MODAL
-    ====================================== -->
+   <!-- =====================================
+     MESSAGES INBOX
+====================================== -->
 
-    <div
-        id="messagesOverlay"
-        class="messages-overlay"
-    >
+<div
+    id="messagesOverlay"
+    class="messages-overlay"
+>
 
-        <div class="messages-window">
+    <div class="messages-window messages-inbox-window">
 
+        <!-- =================================
+             MESSAGES HEADER
+        ================================== -->
 
-            <!-- MESSAGES HEADER -->
+        <div class="messages-header">
 
-            <div class="messages-header">
+            <div>
 
-                <div>
-
-                    <div class="messages-title">
-                        Messages
-                    </div>
-
-                    <div
-                        class="messages-number"
-                        id="messagesBusinessNumber"
-                    >
-                        Loading...
-                    </div>
-
+                <div class="messages-title">
+                    Messages
                 </div>
 
-
-                <button
-                    id="closeMessagesButton"
-                    class="messages-close"
-                    type="button"
+                <div
+                    class="messages-number"
+                    id="messagesBusinessNumber"
                 >
-                    ×
-                </button>
+                    Loading...
+                </div>
 
             </div>
 
-
-
-            <!-- RECIPIENT -->
-
-            <div class="messages-recipient-area">
-
-                <label for="messageRecipient">
-                    To
-                </label>
-
-                <input
-                    id="messageRecipient"
-                    type="tel"
-                    placeholder="+1 555 123 4567"
-                    autocomplete="off"
-                >
-
-            </div>
-
-
-
-            <!-- CONVERSATION -->
-
-            <div
-                id="messagesConversation"
-                class="messages-conversation"
+            <button
+                id="closeMessagesButton"
+                class="messages-close"
+                type="button"
             >
+                ×
+            </button>
 
-                <div class="messages-empty">
-                    Enter a phone number to start messaging.
-                </div>
-
-            </div>
+        </div>
 
 
+        <!-- =================================
+             INBOX / CHAT AREA
+        ================================== -->
 
-            <!-- COMPOSER -->
+        <div class="messages-inbox-body">
 
-            <div class="message-composer">
+            <!-- =================================
+                 CONVERSATION LIST
+            ================================== -->
 
-                <textarea
-                    id="messageText"
-                    rows="2"
-                    maxlength="1600"
-                    placeholder="Type your message..."
-                ></textarea>
+            <aside class="messages-inbox-list">
 
+                <div class="messages-inbox-list-header">
 
-                <div class="message-composer-bottom">
-
-                    <span
-                        id="messageCharacterCount"
-                        class="message-character-count"
-                    >
-                        0 / 1600
-                    </span>
-
+                    <div class="messages-inbox-heading">
+                        Inbox
+                    </div>
 
                     <button
-                        id="sendMessageButton"
-                        class="send-message-button"
+                        id="newMessageButton"
+                        class="new-message-button"
                         type="button"
+                        title="New message"
                     >
-
-                        <span>
-                            ➤
-                        </span>
-
-                        Send
-
+                        +
                     </button>
 
                 </div>
 
-            </div>
 
+                <div class="messages-search-area">
+
+                    <input
+                        id="messagesSearch"
+                        type="text"
+                        placeholder="Search conversations..."
+                        autocomplete="off"
+                    >
+
+                </div>
+
+
+                <div
+                    id="messagesConversationList"
+                    class="messages-conversation-list"
+                >
+
+                    <div class="messages-inbox-empty">
+                        <div class="messages-inbox-empty-icon">
+                            💬
+                        </div>
+
+                        <div>
+                            No conversations yet
+                        </div>
+
+                        <small>
+                            Incoming and outgoing messages will appear here.
+                        </small>
+                    </div>
+
+                </div>
+
+            </aside>
+
+
+            <!-- =================================
+                 CHAT AREA
+            ================================== -->
+
+            <section class="messages-chat-panel">
+
+                <!-- CHAT HEADER -->
+
+                <div
+                    id="messagesChatHeader"
+                    class="messages-chat-header"
+                >
+
+                    <button
+                        id="messagesBackButton"
+                        class="messages-back-button"
+                        type="button"
+                        title="Back to inbox"
+                    >
+                        ‹
+                    </button>
+
+
+                    <div class="messages-chat-contact">
+
+                        <div
+                            id="messagesChatContact"
+                            class="messages-chat-contact-number"
+                        >
+                            Select a conversation
+                        </div>
+
+                        <div
+                            id="messagesChatStatus"
+                            class="messages-chat-contact-status"
+                        >
+                            Your Dialeaze messages
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================
+                     HIDDEN RECIPIENT FIELD
+                     Kept for existing messaging logic
+                ================================== -->
+
+                <input
+                    id="messageRecipient"
+                    type="tel"
+                    autocomplete="off"
+                    tabindex="-1"
+                    aria-hidden="true"
+                >
+
+
+                <!-- CONVERSATION -->
+
+                <div
+                    id="messagesConversation"
+                    class="messages-conversation"
+                >
+
+                    <div class="messages-empty">
+                        Select a conversation to view messages.
+                    </div>
+
+                </div>
+
+
+                <!-- =================================
+                     COMPOSER
+                ================================== -->
+
+                <div class="message-composer">
+
+                    <textarea
+                        id="messageText"
+                        rows="2"
+                        maxlength="1600"
+                        placeholder="Type a message..."
+                    ></textarea>
+
+
+                    <div class="message-composer-bottom">
+
+                        <span
+                            id="messageCharacterCount"
+                            class="message-character-count"
+                        >
+                            0 / 1600
+                        </span>
+
+
+                        <button
+                            id="sendMessageButton"
+                            class="send-message-button"
+                            type="button"
+                        >
+
+                            <span>
+                                ➤
+                            </span>
+
+                            Send
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </section>
 
         </div>
 
     </div>
+
+</div>
 
 
 

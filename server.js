@@ -944,7 +944,164 @@ app.post("/api/webrtc/unregister", async (req, res) => {
 
 const messages = [];
 
+// =========================================================
+// MARK MESSAGES AS READ - SUPABASE
+// =========================================================
 
+app.post("/api/messages/read", async (req, res) => {
+    try {
+
+        const auth =
+            await authenticateRequest(req);
+
+        if (!auth.success) {
+            return res.status(
+                auth.status
+            ).json({
+                success: false,
+                error: auth.error
+            });
+        }
+
+        const phone =
+            String(
+                req.body?.phone ||
+                ""
+            ).trim();
+
+        if (!phone) {
+            return res.status(400).json({
+                success: false,
+                error:
+                    "Phone number is required."
+            });
+        }
+
+        // -------------------------------------------------
+        // Get the logged-in customer's Dialeaze number
+        // -------------------------------------------------
+
+        const phoneNumberResponse =
+            await fetch(
+                `${SUPABASE_URL}/rest/v1/phone_numbers` +
+                `?user_id=eq.${encodeURIComponent(auth.user.id)}` +
+                `&status=eq.assigned` +
+                `&select=phone_number` +
+                `&limit=1`,
+                {
+                    method: "GET",
+                    headers: {
+                        Authorization:
+                            `Bearer ${SUPABASE_SECRET_KEY}`,
+                        apikey:
+                            SUPABASE_SECRET_KEY,
+                        Accept:
+                            "application/json"
+                    }
+                }
+            );
+
+        const phoneNumberData =
+            await phoneNumberResponse.json();
+
+        if (
+            !phoneNumberResponse.ok ||
+            !Array.isArray(
+                phoneNumberData
+            ) ||
+            !phoneNumberData.length
+        ) {
+            return res.status(404).json({
+                success: false,
+                error:
+                    "Your Dialeaze phone number could not be found."
+            });
+        }
+
+        const customerPhone =
+            phoneNumberData[0].phone_number;
+
+        // -------------------------------------------------
+        // Mark inbound messages from this contact as read
+        // -------------------------------------------------
+
+        const updateUrl =
+            `${SUPABASE_URL}/rest/v1/messages` +
+            `?user_id=eq.${encodeURIComponent(auth.user.id)}` +
+            `&direction=eq.inbound` +
+            `&from_number=eq.${encodeURIComponent(phone)}` +
+            `&to_number=eq.${encodeURIComponent(customerPhone)}` +
+            `&is_read=eq.false`;
+
+        const updateResponse =
+            await fetch(
+                updateUrl,
+                {
+                    method: "PATCH",
+
+                    headers: {
+                        Authorization:
+                            `Bearer ${SUPABASE_SECRET_KEY}`,
+                        apikey:
+                            SUPABASE_SECRET_KEY,
+                        "Content-Type":
+                            "application/json",
+
+                        Prefer:
+                            "return=representation"
+                    },
+
+                    body: JSON.stringify({
+                        is_read: true,
+                        updated_at:
+                            new Date().toISOString()
+                    })
+                }
+            );
+
+        const updateData =
+            await updateResponse.json();
+
+        if (!updateResponse.ok) {
+
+            console.error(
+                "Mark messages read Supabase error:",
+                updateData
+            );
+
+            return res.status(
+                updateResponse.status
+            ).json({
+                success: false,
+                error:
+                    updateData?.message ||
+                    "Unable to mark messages as read."
+            });
+        }
+
+        return res.json({
+            success: true,
+            updated:
+                Array.isArray(updateData)
+                    ? updateData.length
+                    : 0
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Mark messages read error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            error:
+                error?.message ||
+                "Unable to mark messages as read."
+        });
+    }
+});
 // =========================================================
 // GET MESSAGES - SUPABASE
 // =========================================================
@@ -2721,9 +2878,11 @@ const userId =
             );
 
             return res.status(200).json({
-                success: true,
-                stored: true
-            });
+    version: "1.0.0",
+    sections: {
+        main: []
+    }
+});
 
         } catch (error) {
 
