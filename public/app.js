@@ -1566,16 +1566,7 @@ if (callHistoryList) {
                 messageRecipient.value =
                     call.phoneNumber || "";
 
-                function escapeHtml(value) {
-
-    return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-
-}
+                
                 openMessages();
 
                 if (
@@ -3043,6 +3034,16 @@ function openMessages() {
     startMessagePolling();
 }
 
+function escapeHtml(value) {
+
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+}
 
 // =========================================================
 // CLOSE MESSAGE WINDOW
