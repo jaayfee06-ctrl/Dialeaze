@@ -1679,3 +1679,43 @@ body {
 
 }
 
+/* =========================================================
+   CALL HISTORY ACTION BUTTONS
+   ========================================================= */
+
+.call-history-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.history-call-button,
+.history-message-button {
+    border: none;
+    border-radius: 7px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s ease, transform 0.1s ease;
+}
+
+.history-call-button:hover,
+.history-message-button:hover {
+    opacity: 0.85;
+}
+
+.history-call-button:active,
+.history-message-button:active {
+    transform: scale(0.97);
+}
+
+.history-call-button {
+    background: #16a34a;
+    color: #ffffff;
+}
+
+.history-message-button {
+    background: #2563eb;
+    color: #ffffff;
+}

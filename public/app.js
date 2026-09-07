@@ -1373,24 +1373,43 @@ function renderCallHistory() {
 
                 <div class="call-history-left">
 
-                    <div class="call-icon">
-                        ↗
-                    </div>
+    <div class="call-icon">
+        ↗
+    </div>
 
-                    <div>
+    <div>
 
-                        <div class="call-history-number">
-                            ${call.phoneNumber}
-                        </div>
+        <div class="call-history-number">
+            ${call.phoneNumber}
+        </div>
 
-                        <div class="call-history-details">
-                            Outbound · ${call.status}
-                        </div>
+        <div class="call-history-details">
+            Outbound · ${call.status}
+        </div>
 
-                    </div>
+        <div class="call-history-actions">
 
-                </div>
+            <button
+                type="button"
+                class="history-call-button"
+                data-call-id="${call.id}"
+            >
+                📞 Call
+            </button>
 
+            <button
+                type="button"
+                class="history-message-button"
+                data-call-id="${call.id}"
+            >
+                💬 Message
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
 
                 <div class="call-history-right">
 
@@ -1418,6 +1437,104 @@ function renderCallHistory() {
 
 }
 
+// =========================================================
+// CALL HISTORY ACTION BUTTONS
+// =========================================================
+
+if (callHistoryList) {
+
+    callHistoryList.addEventListener(
+        "click",
+        event => {
+
+            const historyCallButton =
+                event.target.closest(
+                    ".history-call-button"
+                );
+
+            const historyMessageButton =
+                event.target.closest(
+                    ".history-message-button"
+                );
+
+            if (
+                !historyCallButton &&
+                !historyMessageButton
+            ) {
+                return;
+            }
+
+            event.stopPropagation();
+
+            const callId =
+                (
+                    historyCallButton ||
+                    historyMessageButton
+                ).dataset.callId;
+
+            const call =
+                callHistory.find(
+                    item =>
+                        String(item.id) ===
+                        String(callId)
+                );
+
+            if (!call) {
+                console.warn(
+                    "⚠️ Call history record not found:",
+                    callId
+                );
+                return;
+            }
+
+            // -----------------------------------------
+            // CALL PREVIOUS NUMBER
+            // -----------------------------------------
+
+            if (historyCallButton) {
+
+                phoneNumber.value =
+                    call.phoneNumber || "";
+
+                if (
+                    !callButton.disabled
+                ) {
+
+                    window.scrollTo({
+                        top: 0,
+                        behavior: "smooth"
+                    });
+
+                    callButton.click();
+                }
+
+                return;
+            }
+
+            // -----------------------------------------
+            // MESSAGE PREVIOUS NUMBER
+            // -----------------------------------------
+
+            if (historyMessageButton) {
+
+                messageRecipient.value =
+                    call.phoneNumber || "";
+
+                openMessages();
+
+                if (
+                    typeof renderConversation ===
+                    "function"
+                ) {
+                    renderConversation();
+                }
+
+            }
+
+        }
+    );
+
+}
 
 // =========================================================
 // HISTORY TOGGLE
@@ -1582,6 +1699,21 @@ phoneNumber.addEventListener(
                 ""
             );
 
+    }
+);
+phoneNumber.addEventListener(
+    "keydown",
+    (event) => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+
+            if (
+                callButton &&
+                !callButton.disabled
+            ) {
+                callButton.click();
+            }
+        }
     }
 );
 
@@ -2063,8 +2195,22 @@ console.trace("🧪 Outbound click stack");
             }
 
 
-            const number =
-                phoneNumber.value.trim();
+            const rawNumber =
+    phoneNumber.value.trim();
+
+const digits =
+    rawNumber.replace(/\D/g, "");
+
+let number = rawNumber;
+
+if (digits.length === 10) {
+    number = "+1" + digits;
+} else if (
+    digits.length === 11 &&
+    digits.startsWith("1")
+) {
+    number = "+" + digits;
+}
 
 
             if (!number) {
