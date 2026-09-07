@@ -2544,7 +2544,8 @@ app.post("/api/signalwire/inbound-swml", (req, res) => {
                 {
                     connect: {
                         to: "/private/junaid-sabir",
-                        timeout: 60
+                        timeout: 60,
+                        answer_on_bridge: true
                     }
                 }
             ]

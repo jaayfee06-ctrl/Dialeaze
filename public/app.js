@@ -484,9 +484,15 @@ let callStartTime = null;
 
 let currentOutboundUsageId = null;
 
-let callTimerInterval = null;
+let outboundAnswered = false;
+
+let outboundAnsweredAt = null;
 
 let customerAccount = null;
+
+let outboundHistorySaved = false;
+
+let callTimerInterval = null;
 
 let messagePollingInterval = null;
 
@@ -912,7 +918,38 @@ function formatTime(dateString) {
 
     }
 }
+function formatDateTime(dateString) {
 
+    if (!dateString) {
+        return "";
+    }
+
+    try {
+
+        const date =
+            new Date(dateString);
+
+        if (Number.isNaN(date.getTime())) {
+            return "";
+        }
+
+        return date.toLocaleString(
+            [],
+            {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit"
+            }
+        );
+
+    } catch {
+
+        return "";
+
+    }
+}
 
 // =========================================================
 // GET INITIALS
@@ -1364,7 +1401,7 @@ function renderCallHistory() {
                     </div>
 
                     <div class="call-history-time">
-                        ${call.time}
+                        ${formatDateTime(call.time)}
                     </div>
 
                 </div>
@@ -1995,6 +2032,10 @@ window.dialeazeOutboundLocked = true;
 console.log(
     "🔒 Outbound call session LOCKED."
 );
+outboundAnswered = false;
+outboundAnsweredAt = null;
+outboundHistorySaved = false;
+callStartTime = Date.now();
 
 console.log("🧪 Event trusted:", event.isTrusted);
 console.log("🧪 Event target:", event.target);
@@ -2379,6 +2420,15 @@ if (currentCall?.answered$) {
                                 console.log(
                                     "✅ Call answered."
                                 );
+                                if (!outboundAnswered) {
+    outboundAnswered = true;
+    outboundAnsweredAt = Date.now();
+
+    console.log(
+        "💰 BILLABLE CALL STARTED:",
+        new Date(outboundAnsweredAt).toISOString()
+    );
+}
                                 
                                 if (!recordingStarted && currentOutboundUsageId && providerCallId) {
     recordingStarted = true;
@@ -2402,31 +2452,31 @@ if (currentCall?.answered$) {
  
 
                                     await authFetch(
-                                        "/api/outbound-call/update",
-                                        {
-                                            method: "PATCH",
+    "/api/outbound-call/update",
+    {
+        method: "POST",
 
-                                            headers: {
-                                                "Content-Type":
-                                                    "application/json"
-                                            },
+        headers: {
+            "Content-Type":
+                "application/json"
+        },
 
-                                            body:
-                                                JSON.stringify({
-                                                    usageId:
-                                                        currentOutboundUsageId,
+        body:
+            JSON.stringify({
+                usageId:
+                    currentOutboundUsageId,
 
-                                                    call_status:
-                                                        "answered",
+                callStatus:
+                    "answered",
 
-                                                    answered:
-                                                        true,
+                answered:
+                    true,
 
-                                                    answered_at:
-                                                        new Date().toISOString()
-                                                })
-                                        }
-                                    );
+                answeredAt:
+                    new Date().toISOString()
+            })
+        }
+);
 
                                 }
 
@@ -2461,36 +2511,92 @@ if (currentCall?.answered$) {
                                     true;
 
 
-                                if (
-                                    currentOutboundUsageId
-                                ) {
+                                if (currentOutboundUsageId) {
 
-                                    await authFetch(
-                                        "/api/outbound-call/update",
-                                        {
-                                            method: "POST",
+    const endedAt = Date.now();
 
-                                            headers: {
-                                                "Content-Type":
-                                                    "application/json"
-                                            },
+    const durationSeconds =
+        outboundAnswered && outboundAnsweredAt
+            ? Math.max(
+                  0,
+                  Math.floor(
+                      (endedAt - outboundAnsweredAt) / 1000
+                  )
+              )
+            : 0;
 
-                                            body:
-                                                JSON.stringify({
-                                                    usageId:
-                                                        currentOutboundUsageId,
+    const finalStatus =
+        outboundAnswered
+            ? "completed"
+            : "failed";
 
-                                                    call_status:
-                                                        "completed",
+    await authFetch(
+        "/api/outbound-call/update",
+        {
+            method: "POST",
 
-                                                    ended_at:
-                                                        new Date().toISOString()
-                                                })
-                                        }
-                                    );
+            headers: {
+                "Content-Type":
+                    "application/json"
+            },
 
-                                }
+            body:
+                JSON.stringify({
+                    usageId:
+                        currentOutboundUsageId,
 
+                    callStatus:
+                        finalStatus,
+
+                    answered:
+                        outboundAnswered,
+
+                    answeredAt:
+                        outboundAnsweredAt
+                            ? new Date(
+                                  outboundAnsweredAt
+                              ).toISOString()
+                            : null,
+
+                    endedAt:
+                        new Date(
+                            endedAt
+                        ).toISOString(),
+
+                    durationSeconds:
+                        durationSeconds
+                })
+        }
+    );
+}
+
+if (!outboundHistorySaved) {
+    outboundHistorySaved = true;
+
+    const savedCall =
+        await saveCallHistoryToSupabase({
+            phoneNumber: number,
+            callerNumber:
+                customerAccount?.phoneNumber || "",
+            direction: "Outbound",
+            status:
+                outboundAnswered
+                    ? "Completed"
+                    : "No answer",
+            startedAt: callStartTime,
+            connectedAt: outboundAnsweredAt,
+            endedAt: endedAt,
+            duration: durationSeconds
+        });
+
+    if (savedCall) {
+        await loadLocalUserData();
+
+        console.log(
+            "✅ Outbound call added to call history."
+        );
+    }
+}
 
                                 currentCall =
                                     null;
