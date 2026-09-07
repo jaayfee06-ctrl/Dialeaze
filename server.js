@@ -2534,6 +2534,213 @@ app.post("/api/signalwire/inbound-swml", (req, res) => {
         }
     });
 });
+
+// =========================================================
+// SIGNALWIRE INBOUND SMS WEBHOOK
+// =========================================================
+
+app.post(
+    "/api/signalwire/inbound-message",
+    async (req, res) => {
+        try {
+
+            console.log(
+                "💬 SIGNALWIRE INBOUND SMS RECEIVED"
+            );
+
+            console.log(
+                "Inbound message payload:",
+                JSON.stringify(req.body, null, 2)
+            );
+
+            const message =
+                req.body?.message ||
+                req.body?.data?.message ||
+                req.body;
+
+            const from =
+                message?.from ||
+                message?.source?.phone_number ||
+                null;
+
+            const to =
+                message?.to ||
+                message?.destination?.phone_number ||
+                null;
+
+            const body =
+                message?.body ||
+                message?.text ||
+                "";
+
+            const providerMessageId =
+                message?.message_id ||
+                message?.id ||
+                null;
+
+            if (!from || !to || !body) {
+
+                console.warn(
+                    "⚠️ Inbound SMS missing required fields:",
+                    {
+                        from,
+                        to,
+                        body
+                    }
+                );
+
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Invalid inbound SMS payload."
+                });
+            }
+
+            // -------------------------------------------------
+            // Find the Dialeaze user who owns this SignalWire
+            // phone number.
+            // -------------------------------------------------
+
+            // -------------------------------------------------
+// Find the Dialeaze user who owns this number
+// -------------------------------------------------
+
+const phoneNumberResponse =
+    await fetch(
+        `${SUPABASE_URL}/rest/v1/phone_numbers` +
+        `?phone_number=eq.${encodeURIComponent(to)}` +
+        `&status=eq.assigned` +
+        `&select=user_id`,
+        {
+            method: "GET",
+            headers: {
+                Authorization:
+                    `Bearer ${SUPABASE_SECRET_KEY}`,
+                apikey:
+                    SUPABASE_SECRET_KEY,
+                Accept:
+                    "application/json"
+            }
+        }
+    );
+
+const phoneNumberData =
+    await phoneNumberResponse.json();
+
+if (
+    !phoneNumberResponse.ok ||
+    !Array.isArray(phoneNumberData) ||
+    !phoneNumberData.length
+) {
+
+    console.warn(
+        "⚠️ No Dialeaze user found for inbound SMS number:",
+        to
+    );
+
+    return res.status(200).json({
+        success: true,
+        stored: false,
+        reason:
+            "No Dialeaze user owns this phone number."
+    });
+}
+
+const userId =
+    phoneNumberData[0].user_id;
+
+            // -------------------------------------------------
+            // Save inbound message to Supabase
+            // -------------------------------------------------
+
+            const messageRecord = {
+                user_id:
+                    userId,
+
+                provider_message_id:
+                    providerMessageId,
+
+                from_number:
+                    from,
+
+                to_number:
+                    to,
+
+                body:
+                    body,
+
+                direction:
+                    "inbound",
+
+                status:
+                    "received"
+            };
+
+            const saveResponse =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/messages`,
+                    {
+                        method: "POST",
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+                            "Content-Type":
+                                "application/json",
+                            Prefer:
+                                "return=representation"
+                        },
+                        body:
+                            JSON.stringify(
+                                messageRecord
+                            )
+                    }
+                );
+
+            const savedMessage =
+                await saveResponse.json();
+
+            if (!saveResponse.ok) {
+
+                console.error(
+                    "❌ Failed to save inbound SMS:",
+                    savedMessage
+                );
+
+                return res.status(500).json({
+                    success: false,
+                    error:
+                        "Unable to save inbound message."
+                });
+            }
+
+            console.log(
+                "✅ Inbound SMS saved to Supabase."
+            );
+
+            return res.status(200).json({
+                success: true,
+                stored: true
+            });
+
+        } catch (error) {
+
+            console.error(
+                "❌ Inbound SMS webhook error:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    "Inbound SMS processing failed."
+            });
+        }
+    }
+);
+
+
 // =========================================================
 // FRONTEND FALLBACK
 // =========================================================
