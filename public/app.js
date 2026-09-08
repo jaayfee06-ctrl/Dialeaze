@@ -2518,31 +2518,17 @@ if (currentCall?.answered$) {
         if (answered === false) {
             console.warn("❌ REMOTE PARTY REJECTED THE CALL.");
 
-            window.dialeazeOutboundLocked = false;
-
-            if (currentCall) {
-                currentCall.hangup().catch((error) => {
-                    console.warn("⚠️ Cleanup hangup after rejection failed:", error);
-                });
-            }
-
-            currentCall = null;
-            currentOutboundUsageId = null;
-
-            if (callButton) {
-                callButton.disabled = false;
-            }
-
-            if (hangupButton) {
-                hangupButton.disabled = true;
-            }
-
+            // The remote party already rejected the call.
+            // Do NOT call hangup() here.
+            // Do NOT unlock the outbound session here.
+            // Let SignalWire complete its normal call lifecycle.
+            
             if (callStatus) {
                 callStatus.textContent = "Call rejected";
             }
 
             console.log(
-                "🛑 Outbound call completely stopped after remote rejection."
+                "🛑 Remote rejection detected. Waiting for SignalWire call-end lifecycle."
             );
         }
     });
