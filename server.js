@@ -2301,7 +2301,6 @@ app.post("/api/signalwire/outbound-swml", (req, res) => {
                 connect: {
                     from: callerNumber,
                     to: destination,
-                    answer_on_bridge: true,
                     timeout: 60,
                     call_state_events: [
                         "created",
@@ -2373,7 +2372,7 @@ app.post("/api/signalwire/inbound-swml", (req, res) => {
                         to: "/private/junaid-sabir",
                         timeout: 60,
                         answer_on_bridge: true
-                    }
+                        }
                 }
             ]
         }

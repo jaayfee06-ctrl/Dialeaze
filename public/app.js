@@ -1983,6 +1983,7 @@ console.log("🧪 RAW OUTBOUND STATUS:", JSON.stringify(callStatus));
 
                 callButton.disabled = false;
                 hangupButton.disabled = true;
+                window.dialeazeOutboundLocked = false;
 
                 if (currentCall === ringingCall) {
                     currentCall = null;
