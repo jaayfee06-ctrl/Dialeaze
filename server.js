@@ -199,8 +199,24 @@ app.post("/api/signalwire-token", async (req, res) => {
 
         const user = auth.user;
 
-        // Use a stable reference for this Dialeaze customer.
-        const reference = `dialeaze_${user.id}`;
+// Check whether this Dialeaze account has been provisioned
+// for SignalWire. Never create a SignalWire Subscriber
+// simply because someone signed up or opened the dialer.
+const profile = await getProfile(auth.token, user.id);
+
+if (
+    !profile ||
+    profile.signalwire_provisioned !== true ||
+    !profile.signalwire_subscriber_id
+) {
+    return res.status(403).json({
+        success: false,
+        error: "Your Dialeaze account is not provisioned for calling yet."
+    });
+}
+
+// Use a stable reference for this Dialeaze customer.
+const reference = `dialeaze_${user.id}`;
 
         const basicAuth = Buffer.from(
             `${SIGNALWIRE_PROJECT_ID}:${SIGNALWIRE_API_TOKEN}`
