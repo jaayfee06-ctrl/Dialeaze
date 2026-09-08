@@ -477,6 +477,8 @@ let client = null;
 let signalWireInitializationPromise = null;
 
 let currentCall = null;
+let providerStatePollingInterval = null;
+let providerEndReason = null;
 
 let currentCallHistory = null;
 
@@ -2434,8 +2436,7 @@ console.log(
 // MONITOR PSTN PROVIDER CALL STATE
 // =====================================================
 
-let providerStatePollingInterval = null;
-let providerEndReason = null;
+providerEndReason = null;
 
 if (providerCallId) {
     providerStatePollingInterval =
@@ -2532,20 +2533,7 @@ if (providerCallId) {
                         reason
                     );
 
-                    if (
-                        currentCall &&
-                        typeof currentCall.hangup ===
-                            "function"
-                    ) {
-                        try {
-                            await currentCall.hangup();
-                        } catch (hangupError) {
-                            console.error(
-                                "Remote-end hangup error:",
-                                hangupError
-                            );
-                        }
-                    }
+                   
                 }
 
             } catch (error) {
