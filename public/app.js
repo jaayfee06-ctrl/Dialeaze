@@ -1536,7 +1536,12 @@ if (callHistoryList) {
             // CALL PREVIOUS NUMBER
             // -----------------------------------------
 
-            if (historyCallButton) {
+            if (historyCallButton) { console.log("🧪 HISTORY CALL HANDLER FIRED", {
+    isTrusted: event.isTrusted,
+    target: event.target,
+    currentTarget: event.currentTarget
+});
+console.trace("🧪 HISTORY CALL STACK");
 
                 phoneNumber.value =
                     call.phoneNumber || "";
@@ -1752,6 +1757,15 @@ phoneNumber.addEventListener(
     (event) => {
         if (event.key === "Enter") {
             event.preventDefault();
+
+            // Never allow Enter to start another call while
+            // an outbound call session is active.
+            if (window.dialeazeOutboundLocked) {
+                console.warn(
+                    "⚠️ Enter key ignored because outbound call session is locked."
+                );
+                return;
+            }
 
             if (
                 callButton &&
@@ -2200,7 +2214,7 @@ if (callButton) {
            console.log("🧪 OUTBOUND CALL BUTTON CLICKED");
                       if (window.dialeazeOutboundLocked) {
     console.warn(
-        "⚠️ Outbound call session is locked. Waiting for manual Call button."
+        "⚠️ Duplicate outbound call attempt blocked."
     );
     return;
 }
