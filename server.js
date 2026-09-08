@@ -2327,6 +2327,11 @@ app.post("/api/signalwire/outbound-swml", (req, res) => {
 // SIGNALWIRE OUTBOUND CALL STATE
 // =========================================================
 
+// Store the latest SignalWire PSTN state for each
+// parent WebRTC call. This lets the browser discover
+// when the real phone leg was rejected, busy, etc.
+const outboundProviderStates = new Map();
+
 app.post(
     "/api/signalwire/outbound-call-state",
     async (req, res) => {
@@ -2338,7 +2343,129 @@ app.post(
             JSON.stringify(req.body, null, 2)
         );
 
+        const params = req.body?.params || {};
+
+        const parentCallId =
+            params.parent?.call_id ||
+            params.call_id ||
+            null;
+
+        const callState =
+            params.call_state || null;
+
+        const endReason =
+            params.end_reason || null;
+
+        if (parentCallId && callState) {
+            outboundProviderStates.set(
+                parentCallId,
+                {
+                    state: callState,
+                    reason: endReason,
+                    updatedAt: Date.now()
+                }
+            );
+
+            console.log(
+                "📌 Stored SignalWire call state:",
+                {
+                    parentCallId,
+                    state: callState,
+                    reason: endReason
+                }
+            );
+        }
+
         return res.sendStatus(204);
+    }
+);
+
+
+// =========================================================
+// SIGNALWIRE OUTBOUND CONNECT STATUS
+// =========================================================
+
+app.post(
+    "/api/signalwire/outbound-connect-status",
+    async (req, res) => {
+        console.log(
+            "📡 SIGNALWIRE OUTBOUND CONNECT STATUS"
+        );
+
+        console.log(
+            JSON.stringify(req.body, null, 2)
+        );
+
+        const params = req.body?.params || {};
+
+        const callId =
+            params.call_id || null;
+
+        const connectState =
+            params.connect_state || null;
+
+        const failedReason =
+            params.failed_reason || null;
+
+        if (callId && connectState) {
+            outboundProviderStates.set(
+                callId,
+                {
+                    state:
+                        connectState === "failed"
+                            ? "ended"
+                            : connectState,
+                    reason:
+                        failedReason || null,
+                    updatedAt: Date.now()
+                }
+            );
+
+            console.log(
+                "📌 Stored SignalWire connect state:",
+                {
+                    callId,
+                    state:
+                        connectState === "failed"
+                            ? "ended"
+                            : connectState,
+                    reason:
+                        failedReason || null
+                }
+            );
+        }
+
+        return res.sendStatus(204);
+    }
+);
+
+
+// =========================================================
+// SIGNALWIRE OUTBOUND CALL STATE CHECK
+// =========================================================
+
+app.get(
+    "/api/signalwire/outbound-call-state/:callId",
+    async (req, res) => {
+        const callId =
+            req.params.callId;
+
+        const providerState =
+            outboundProviderStates.get(callId);
+
+        if (!providerState) {
+            return res.json({
+                success: true,
+                found: false
+            });
+        }
+
+        return res.json({
+            success: true,
+            found: true,
+            state: providerState.state,
+            reason: providerState.reason || null
+        });
     }
 );
 // =========================================================

@@ -1977,7 +1977,28 @@ console.log("🧪 RAW OUTBOUND STATUS:", JSON.stringify(callStatus));
                     incomingCallPanel.style.display = "none";
                 }
 
-                status.textContent = "Call ended";
+                if (providerEndReason === "cancel") {
+    status.textContent =
+        "Call declined";
+} else if (
+    providerEndReason === "declined"
+) {
+    status.textContent =
+        "Call declined";
+} else if (
+    providerEndReason === "busy"
+) {
+    status.textContent =
+        "Busy";
+} else if (
+    providerEndReason === "no_answer"
+) {
+    status.textContent =
+        "No answer";
+} else {
+    status.textContent =
+        "Call ended";
+}
 
                 stopCallTimer();
 
@@ -2408,6 +2429,134 @@ console.log(
     "🔗 SignalWire Provider Call ID:",
     providerCallId
 );
+
+// =====================================================
+// MONITOR PSTN PROVIDER CALL STATE
+// =====================================================
+
+let providerStatePollingInterval = null;
+let providerEndReason = null;
+
+if (providerCallId) {
+    providerStatePollingInterval =
+        setInterval(async () => {
+            try {
+                const response =
+                    await authFetch(
+                        `/api/signalwire/outbound-call-state/${encodeURIComponent(
+                            providerCallId
+                        )}`
+                    );
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const data =
+                    await response.json();
+
+                if (
+                    !data.success ||
+                    !data.found
+                ) {
+                    return;
+                }
+
+                const state =
+                    String(
+                        data.state || ""
+                    ).toLowerCase();
+
+                const reason =
+                    String(
+                        data.reason || ""
+                    ).toLowerCase();
+
+                console.log(
+                    "📡 PSTN provider state:",
+                    {
+                        state,
+                        reason
+                    }
+                );
+
+                // -------------------------------------------------
+                // REMOTE PARTY REJECTED / CALL FAILED BEFORE ANSWER
+                // -------------------------------------------------
+
+                if (
+                    state === "ended" &&
+                    (
+                        reason === "cancel" ||
+                        reason === "declined" ||
+                        reason === "busy" ||
+                        reason === "no_answer"
+                    )
+                ) {
+                    if (
+                        providerStatePollingInterval
+                    ) {
+                        clearInterval(
+                            providerStatePollingInterval
+                        );
+
+                        providerStatePollingInterval =
+                            null;
+                    }
+
+                    providerEndReason =
+                        reason;
+
+                    if (reason === "cancel") {
+                        status.textContent =
+                            "Call declined";
+                    } else if (
+                        reason === "declined"
+                    ) {
+                        status.textContent =
+                            "Call declined";
+                    } else if (
+                        reason === "busy"
+                    ) {
+                        status.textContent =
+                            "Busy";
+                    } else if (
+                        reason === "no_answer"
+                    ) {
+                        status.textContent =
+                            "No answer";
+                    }
+
+                    console.log(
+                        "📴 PSTN call ended remotely:",
+                        reason
+                    );
+
+                    if (
+                        currentCall &&
+                        typeof currentCall.hangup ===
+                            "function"
+                    ) {
+                        try {
+                            await currentCall.hangup();
+                        } catch (hangupError) {
+                            console.error(
+                                "Remote-end hangup error:",
+                                hangupError
+                            );
+                        }
+                    }
+                }
+
+            } catch (error) {
+                console.error(
+                    "PSTN state polling error:",
+                    error
+                );
+            }
+        }, 1000);
+}
+
 let recordingStarted = false;
 if (currentCall && currentCall.remoteStream$) {
 
@@ -2768,10 +2917,19 @@ if (!outboundHistorySaved) {
             callerNumber:
                 customerAccount?.phoneNumber || "",
             direction: "Outbound",
-            status:
-                outboundAnswered
-                    ? "Completed"
-                    : "No answer",
+           status:
+    outboundAnswered
+        ? "Completed"
+        : (
+            providerEndReason === "cancel" ||
+            providerEndReason === "declined"
+                ? "Declined"
+                : providerEndReason === "busy"
+                    ? "Busy"
+                    : providerEndReason === "no_answer"
+                        ? "No answer"
+                        : "Failed"
+        ),
             startedAt: callStartTime,
             connectedAt: outboundAnsweredAt,
             endedAt: endedAt,
@@ -2889,7 +3047,14 @@ hangupButton.addEventListener(
             true;
 
         stopCallTimer();
+if (providerStatePollingInterval) {
+    clearInterval(
+        providerStatePollingInterval
+    );
 
+    providerStatePollingInterval =
+        null;
+}
 currentCall =
     null;
 
