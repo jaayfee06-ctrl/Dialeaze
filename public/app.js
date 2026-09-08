@@ -2486,55 +2486,102 @@ if (providerCallId) {
                 // -------------------------------------------------
 
                 if (
-                    state === "ended" &&
-                    (
-                        reason === "cancel" ||
-                        reason === "declined" ||
-                        reason === "busy" ||
-                        reason === "no_answer"
-                    )
-                ) {
-                    if (
-                        providerStatePollingInterval
-                    ) {
-                        clearInterval(
-                            providerStatePollingInterval
-                        );
+    state === "ended" &&
+    (
+        reason === "cancel" ||
+        reason === "declined" ||
+        reason === "busy" ||
+        reason === "no_answer"
+    )
+) {
+    if (
+        providerStatePollingInterval
+    ) {
+        clearInterval(
+            providerStatePollingInterval
+        );
 
-                        providerStatePollingInterval =
-                            null;
-                    }
+        providerStatePollingInterval =
+            null;
+    }
 
-                    providerEndReason =
-                        reason;
+    providerEndReason =
+        reason;
 
-                    if (reason === "cancel") {
-                        status.textContent =
-                            "Call declined";
-                    } else if (
-                        reason === "declined"
-                    ) {
-                        status.textContent =
-                            "Call declined";
-                    } else if (
-                        reason === "busy"
-                    ) {
-                        status.textContent =
-                            "Busy";
-                    } else if (
-                        reason === "no_answer"
-                    ) {
-                        status.textContent =
-                            "No answer";
-                    }
+    if (reason === "cancel") {
+        status.textContent =
+            "Call declined";
+    } else if (
+        reason === "declined"
+    ) {
+        status.textContent =
+            "Call declined";
+    } else if (
+        reason === "busy"
+    ) {
+        status.textContent =
+            "Busy";
+    } else if (
+        reason === "no_answer"
+    ) {
+        status.textContent =
+            "No answer";
+    }
 
-                    console.log(
-                        "📴 PSTN call ended remotely:",
-                        reason
-                    );
+    console.log(
+        "📴 PSTN call ended remotely:",
+        reason
+    );
 
-                   
-                }
+    // -------------------------------------------------
+    // TERMINATE THE BROWSER SDK CALL
+    // -------------------------------------------------
+    // SignalWire has already ended the PSTN leg.
+    // Now end the WebRTC/browser leg so the browser
+    // receives its normal terminal call status.
+    //
+    // Do NOT clear currentCall or unlock here.
+    // The normal status$ terminal handler below will
+    // perform the final cleanup and call-history save.
+    // -------------------------------------------------
+
+    if (currentCall) {
+        try {
+            if (
+                typeof currentCall.hangup ===
+                "function"
+            ) {
+                console.log(
+                    "📴 Ending Browser SDK call after remote PSTN termination..."
+                );
+
+                await currentCall.hangup();
+
+            } else if (
+                typeof currentCall.disconnect ===
+                "function"
+            ) {
+                console.log(
+                    "📴 Disconnecting Browser SDK call after remote PSTN termination..."
+                );
+
+                await currentCall.disconnect();
+
+            } else {
+                console.warn(
+                    "⚠️ Browser SDK call has no hangup/disconnect method."
+                );
+            }
+
+        } catch (browserCallError) {
+
+            console.warn(
+                "⚠️ Browser SDK call was already ending/ended:",
+                browserCallError
+            );
+        }
+    }
+}
 
             } catch (error) {
                 console.error(
@@ -2965,11 +3012,17 @@ if (!outboundHistorySaved) {
 
 
                 currentCall =
-                    null;
+    null;
 
+currentOutboundUsageId =
+    null;
 
-                currentOutboundUsageId =
-                    null;
+window.dialeazeOutboundLocked =
+    false;
+
+console.log(
+    "🔓 Outbound call session UNLOCKED after call ended."
+);
 
             }
 
