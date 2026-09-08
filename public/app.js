@@ -1170,9 +1170,8 @@ async function loadCustomerAccount() {
         if (businessNumber) {
 
             const displayNumber =
-                customerAccount.phoneNumber ||
-                customerAccount.telnyxPhoneNumber ||
-                "";
+    customerAccount.phoneNumber ||
+    "";
 
             businessNumber.textContent =
                 displayNumber
@@ -1193,9 +1192,8 @@ async function loadCustomerAccount() {
         ) {
 
             const displayNumber =
-                customerAccount.phoneNumber ||
-                customerAccount.telnyxPhoneNumber ||
-                "";
+    customerAccount.phoneNumber ||
+    "";
 
 
             messagesBusinessNumber.textContent =
