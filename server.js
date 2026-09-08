@@ -2323,56 +2323,193 @@ app.post("/api/signalwire/outbound-swml", (req, res) => {
 });
 
 
-// =========================================================
+/// =========================================================
 // SIGNALWIRE OUTBOUND CALL STATE
 // =========================================================
 
-// Store the latest SignalWire PSTN state for each
-// parent WebRTC call. This lets the browser discover
-// when the real phone leg was rejected, busy, etc.
-const outboundProviderStates = new Map();
+// Supabase is the permanent source of truth for SignalWire
+// PSTN call state.
+//
+// IMPORTANT:
+// Do NOT use an in-memory Map here.
+// SignalWire webhooks and browser polling must always see
+// the same state even if Render restarts or requests are
+// handled by different processes.
+
+// ---------------------------------------------------------
+// SAVE SIGNALWIRE CALL STATE
+// ---------------------------------------------------------
+
+async function saveSignalWireCallState({
+    parentCallId,
+    childCallId = null,
+    state,
+    reason = null
+}) {
+    if (!parentCallId || !state) {
+        console.warn(
+            "⚠️ Cannot save SignalWire state: missing call ID or state."
+        );
+
+        return null;
+    }
+
+    if (!SUPABASE_URL || !SUPABASE_SECRET_KEY) {
+        console.error(
+            "❌ Supabase secret configuration missing."
+        );
+
+        return null;
+    }
+
+    try {
+        const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/rpc/record_signalwire_call_state`,
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "application/json",
+
+                    apikey:
+                        SUPABASE_SECRET_KEY,
+
+                    Authorization:
+                        `Bearer ${SUPABASE_SECRET_KEY}`
+                },
+
+                body: JSON.stringify({
+                    p_parent_call_id:
+                        parentCallId,
+
+                    p_child_call_id:
+                        childCallId,
+
+                    p_state:
+                        state,
+
+                    p_reason:
+                        reason
+                })
+            }
+        );
+
+        const text =
+            await response.text();
+
+        if (!response.ok) {
+            console.error(
+                "❌ Supabase SignalWire state save failed:",
+                response.status,
+                text
+            );
+
+            return null;
+        }
+
+        let data = null;
+
+        try {
+            data =
+                text
+                    ? JSON.parse(text)
+                    : null;
+        } catch {
+            data = text;
+        }
+
+        console.log(
+            "💾 Supabase SignalWire state saved:",
+            {
+                parentCallId,
+                childCallId,
+                state,
+                reason
+            }
+        );
+
+        return data;
+
+    } catch (error) {
+
+        console.error(
+            "❌ Error saving SignalWire call state:",
+            error
+        );
+
+        return null;
+    }
+}
+
+
+// =========================================================
+// SIGNALWIRE OUTBOUND CALL STATE WEBHOOK
+// =========================================================
 
 app.post(
     "/api/signalwire/outbound-call-state",
     async (req, res) => {
+
         console.log(
             "📡 SIGNALWIRE OUTBOUND CALL STATE"
         );
 
         console.log(
-            JSON.stringify(req.body, null, 2)
+            JSON.stringify(
+                req.body,
+                null,
+                2
+            )
         );
 
-        const params = req.body?.params || {};
+        const params =
+            req.body?.params || {};
 
         const parentCallId =
             params.parent?.call_id ||
             params.call_id ||
             null;
 
+        const childCallId =
+            params.call_id ||
+            null;
+
         const callState =
-            params.call_state || null;
+            String(
+                params.call_state || ""
+            ).toLowerCase();
 
         const endReason =
-            params.end_reason || null;
+            params.end_reason ||
+            null;
 
-        if (parentCallId && callState) {
-            outboundProviderStates.set(
+        if (
+            parentCallId &&
+            callState
+        ) {
+
+            await saveSignalWireCallState({
                 parentCallId,
-                {
-                    state: callState,
-                    reason: endReason,
-                    updatedAt: Date.now()
-                }
-            );
+                childCallId,
+                state: callState,
+                reason: endReason
+            });
 
             console.log(
-                "📌 Stored SignalWire call state:",
+                "📌 Stored SignalWire call state in Supabase:",
                 {
                     parentCallId,
+                    childCallId,
                     state: callState,
                     reason: endReason
                 }
+            );
+
+        } else {
+
+            console.warn(
+                "⚠️ SignalWire call-state webhook missing call ID or state."
             );
         }
 
@@ -2381,6 +2518,208 @@ app.post(
 );
 
 
+// =========================================================
+// SIGNALWIRE OUTBOUND CONNECT STATUS WEBHOOK
+// =========================================================
+
+app.post(
+    "/api/signalwire/outbound-connect-status",
+    async (req, res) => {
+
+        console.log(
+            "📡 SIGNALWIRE OUTBOUND CONNECT STATUS"
+        );
+
+        console.log(
+            JSON.stringify(
+                req.body,
+                null,
+                2
+            )
+        );
+
+        const params =
+            req.body?.params || {};
+
+        const callId =
+            params.call_id ||
+            null;
+
+        const connectState =
+            String(
+                params.connect_state || ""
+            ).toLowerCase();
+
+        const failedReason =
+            params.failed_reason ||
+            null;
+
+        if (
+            callId &&
+            connectState
+        ) {
+
+            const normalizedState =
+                connectState === "failed"
+                    ? "ended"
+                    : connectState;
+
+            await saveSignalWireCallState({
+                parentCallId:
+                    callId,
+
+                childCallId:
+                    null,
+
+                state:
+                    normalizedState,
+
+                reason:
+                    failedReason
+            });
+
+            console.log(
+                "📌 Stored SignalWire connect state in Supabase:",
+                {
+                    callId,
+                    state:
+                        normalizedState,
+                    reason:
+                        failedReason
+                }
+            );
+
+        } else {
+
+            console.warn(
+                "⚠️ SignalWire connect-status webhook missing call ID or state."
+            );
+        }
+
+        return res.sendStatus(204);
+    }
+);
+
+
+// =========================================================
+// SIGNALWIRE OUTBOUND CALL STATE CHECK
+// =========================================================
+
+app.get(
+    "/api/signalwire/outbound-call-state/:callId",
+    async (req, res) => {
+
+        const callId =
+            req.params.callId;
+
+        if (
+            !callId ||
+            !SUPABASE_URL ||
+            !SUPABASE_SECRET_KEY
+        ) {
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    "SignalWire state configuration is missing."
+            });
+        }
+
+        try {
+
+            const response =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/signalwire_call_states` +
+                    `?parent_call_id=eq.${encodeURIComponent(callId)}` +
+                    `&select=parent_call_id,child_call_id,state,reason,updated_at` +
+                    `&limit=1`,
+                    {
+                        method: "GET",
+
+                        headers: {
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`
+                        }
+                    }
+                );
+
+            const data =
+                await response.json();
+
+            if (!response.ok) {
+
+                console.error(
+                    "❌ Supabase SignalWire state lookup failed:",
+                    response.status,
+                    data
+                );
+
+                return res.status(500).json({
+                    success: false,
+                    error:
+                        "Unable to retrieve SignalWire call state."
+                });
+            }
+
+            if (
+                !Array.isArray(data) ||
+                data.length === 0
+            ) {
+
+                return res.json({
+                    success: true,
+                    found: false
+                });
+            }
+
+            const providerState =
+                data[0];
+
+            console.log(
+                "📤 SignalWire state returned to browser:",
+                {
+                    callId,
+                    state:
+                        providerState.state,
+                    reason:
+                        providerState.reason
+                }
+            );
+
+            return res.json({
+                success: true,
+                found: true,
+
+                state:
+                    providerState.state,
+
+                reason:
+                    providerState.reason ||
+                    null,
+
+                updatedAt:
+                    providerState.updated_at ||
+                    null
+            });
+
+        } catch (error) {
+
+            console.error(
+                "❌ SignalWire state lookup error:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    "Unable to retrieve SignalWire call state."
+            });
+        }
+    }
+);
 // =========================================================
 // SIGNALWIRE OUTBOUND CONNECT STATUS
 // =========================================================
