@@ -3876,7 +3876,7 @@ app.post("/api/signalwire/voicemail-recording-callback", (req, res) => {
 // SIGNALWIRE INBOUND CALL STATE WEBHOOK
 // =========================================================
 
-aapp.post(
+app.post(
     "/api/signalwire/inbound-call-state",
     async (req, res) => {
 
