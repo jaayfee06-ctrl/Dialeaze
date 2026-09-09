@@ -4422,7 +4422,267 @@ app.use((req, res) => {
         path.join(__dirname, "public", "index.html")
     );
 });
-    
+    // =========================================================
+// DIALEAZE VOICEMAIL API
+// =========================================================
+
+app.get(
+    "/api/voicemails",
+    async (req, res) => {
+
+        try {
+
+            // -------------------------------------------------
+            // Authenticate the logged-in Dialeaze customer
+            // -------------------------------------------------
+
+            const auth =
+                await authenticateRequest(req);
+
+            if (!auth.success) {
+
+                return res
+                    .status(auth.status)
+                    .json({
+                        success: false,
+                        error: auth.error
+                    });
+
+            }
+
+            const userId =
+                auth.user.id;
+
+            // -------------------------------------------------
+            // Load only this customer's voicemails
+            // -------------------------------------------------
+
+            const voicemailResponse =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/voicemails` +
+                    `?user_id=eq.${encodeURIComponent(userId)}` +
+                    `&select=id,provider_call_id,caller_number,dialed_number,recording_id,recording_url,duration_seconds,status,created_at,updated_at` +
+                    `&order=created_at.desc`,
+                    {
+                        method: "GET",
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+
+                            Accept:
+                                "application/json"
+                        }
+                    }
+                );
+
+            const voicemailData =
+                await voicemailResponse.json();
+
+            if (!voicemailResponse.ok) {
+
+                console.error(
+                    "❌ Failed to load voicemails:",
+                    voicemailData
+                );
+
+                return res
+                    .status(500)
+                    .json({
+                        success: false,
+                        error:
+                            "Unable to load your voicemails."
+                    });
+
+            }
+
+            // -------------------------------------------------
+            // Return the customer's voicemail list
+            // -------------------------------------------------
+
+            return res.json({
+                success: true,
+                voicemails:
+                    Array.isArray(voicemailData)
+                        ? voicemailData
+                        : []
+            });
+
+        } catch (error) {
+
+            console.error(
+                "❌ Voicemail API error:",
+                error
+            );
+
+            return res
+                .status(500)
+                .json({
+                    success: false,
+                    error:
+                        "Unable to load your voicemails."
+                });
+
+        }
+
+    }
+);
+
+// =========================================================
+// DIALEAZE DELETE VOICEMAIL API
+// =========================================================
+
+app.delete(
+    "/api/voicemails/:id",
+    async (req, res) => {
+
+        try {
+
+            // -------------------------------------------------
+            // Authenticate the logged-in Dialeaze customer
+            // -------------------------------------------------
+
+            const auth =
+                await authenticateRequest(req);
+
+            if (!auth.success) {
+
+                return res
+                    .status(auth.status)
+                    .json({
+                        success: false,
+                        error: auth.error
+                    });
+
+            }
+
+            const userId =
+                auth.user.id;
+
+            const voicemailId =
+                req.params.id;
+
+            if (!voicemailId) {
+
+                return res
+                    .status(400)
+                    .json({
+                        success: false,
+                        error:
+                            "Voicemail ID is required."
+                    });
+
+            }
+
+            // -------------------------------------------------
+            // Delete ONLY a voicemail belonging to this user
+            // -------------------------------------------------
+
+            const deleteResponse =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/voicemails` +
+                    `?id=eq.${encodeURIComponent(voicemailId)}` +
+                    `&user_id=eq.${encodeURIComponent(userId)}`,
+                    {
+                        method: "DELETE",
+
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+
+                            Accept:
+                                "application/json",
+
+                            Prefer:
+                                "return=representation"
+                        }
+                    }
+                );
+
+            const deleteData =
+                await deleteResponse.json();
+
+            if (!deleteResponse.ok) {
+
+                console.error(
+                    "❌ Failed to delete voicemail:",
+                    deleteData
+                );
+
+                return res
+                    .status(500)
+                    .json({
+                        success: false,
+                        error:
+                            "Unable to delete voicemail."
+                    });
+
+            }
+
+            // -------------------------------------------------
+            // No matching voicemail means:
+            // - voicemail does not exist
+            // - OR it belongs to another user
+            // -------------------------------------------------
+
+            if (
+                !Array.isArray(deleteData) ||
+                deleteData.length === 0
+            ) {
+
+                return res
+                    .status(404)
+                    .json({
+                        success: false,
+                        error:
+                            "Voicemail not found."
+                    });
+
+            }
+
+            // -------------------------------------------------
+            // Successfully deleted
+            // -------------------------------------------------
+
+            console.log(
+                "🗑️ Voicemail deleted:",
+                {
+                    voicemailId,
+                    userId
+                }
+            );
+
+            return res.json({
+                success: true,
+                message:
+                    "Voicemail deleted successfully."
+            });
+
+        } catch (error) {
+
+            console.error(
+                "❌ Delete voicemail API error:",
+                error
+            );
+
+            return res
+                .status(500)
+                .json({
+                    success: false,
+                    error:
+                        "Unable to delete voicemail."
+                });
+
+        }
+
+    }
+);
+
 app.listen(PORT, () => {
     console.log("");
     console.log("==========================================");
