@@ -3770,10 +3770,8 @@ app.post("/api/signalwire/inbound-swml", (req, res) => {
 
         sections: {
             main: [
-
                 {
                     connect: {
-
                         to: "/private/junaid-sabir",
 
                         timeout: 30,
@@ -3793,17 +3791,11 @@ app.post("/api/signalwire/inbound-swml", (req, res) => {
                         status_url:
                             "https://dialeaze.onrender.com/api/signalwire/inbound-connect-status",
 
-                        result: {
-                            variable: "return_value",
+                        result: [
+                            {
+                                when: "return_value == 'failed'",
 
-                            case: {
-                                connected: [
-                                    {
-                                        hangup: {}
-                                    }
-                                ],
-
-                                failed: [
+                                then: [
                                     {
                                         play: {
                                             url: "say: This is the Dialeaze voicemail test. The call was not answered."
@@ -3816,16 +3808,16 @@ app.post("/api/signalwire/inbound-swml", (req, res) => {
                                 ]
                             },
 
-                            default: [
-                                {
-                                    hangup: {}
-                                }
-                            ]
-                        }
-
+                            {
+                                else: [
+                                    {
+                                        hangup: {}
+                                    }
+                                ]
+                            }
+                        ]
                     }
                 }
-
             ]
         }
     });
