@@ -3795,72 +3795,68 @@ app.post("/api/signalwire/inbound-swml", (req, res) => {
 
                         result: {
 
-                            switch: {
+                            variable: "return_value",
 
-                                variable: "return_value",
+                            case: {
 
-                                case: {
+                                connected: [
 
-                                    connected: [
-                                        {
-                                            hangup: {}
-                                        }
-                                    ],
-
-                                    failed: [
-
-                                        {
-                                            play: {
-                                                url:
-                                                    "say: Sorry, we are unable to answer your call right now. Please leave your name, phone number, and a message after the beep."
-                                            }
-                                        },
-
-                                        {
-                                            record: {
-                                                beep: true,
-
-                                                terminators: "#",
-
-                                                initial_timeout: 5,
-
-                                                end_silence_timeout: 5,
-
-                                                max_length: 120,
-
-                                                format: "mp3",
-
-                                                status_url:
-                                                    "https://dialeaze.onrender.com/api/signalwire/voicemail-recording-callback"
-                                            }
-                                        },
-
-                                        {
-                                            play: {
-                                                url:
-                                                    "say: Thank you for your message. Goodbye."
-                                            }
-                                        },
-
-                                        {
-                                            hangup: {}
-                                        }
-
-                                    ]
-
-                                },
-
-                                default: [
                                     {
                                         hangup: {}
                                     }
+
+                                ],
+
+                                failed: [
+
+                                    {
+                                        play: {
+                                            url:
+                                                "say: Sorry, we are unable to answer your call right now. Please leave your name, phone number, and a message after the beep."
+                                        }
+                                    },
+
+                                    {
+                                        record: {
+                                            beep: true,
+                                            terminators: "#",
+                                            initial_timeout: 5,
+                                            end_silence_timeout: 5,
+                                            max_length: 120,
+                                            format: "mp3",
+
+                                            status_url:
+                                                "https://dialeaze.onrender.com/api/signalwire/voicemail-recording-callback"
+                                        }
+                                    },
+
+                                    {
+                                        play: {
+                                            url:
+                                                "say: Thank you for your message. Goodbye."
+                                        }
+                                    },
+
+                                    {
+                                        hangup: {}
+                                    }
+
                                 ]
 
-                            }
+                            },
+
+                            default: [
+
+                                {
+                                    hangup: {}
+                                }
+
+                            ]
 
                         }
 
                     }
+
                 }
 
             ]
