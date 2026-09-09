@@ -3841,6 +3841,17 @@ app.post("/api/signalwire/inbound-swml", (req, res) => {
         }
     });
 });
+
+app.post("/api/signalwire/inbound-connect-status", (req, res) => {
+    console.log("📡 SIGNALWIRE INBOUND CONNECT STATUS");
+
+    console.log(
+        JSON.stringify(req.body, null, 2)
+    );
+
+    return res.sendStatus(200);
+});
+
 // =========================================================
 // SIGNALWIRE INBOUND CALL STATE WEBHOOK
 // =========================================================
