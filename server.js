@@ -2239,9 +2239,7 @@ app.post("/api/outbound-call/update", async (req, res) => {
         });
     }
 });
-        // =========================================================
-// SIGNALWIRE OUTBOUND RECORDING SWML
-// =========================================================
+        
 // =========================================================
 // SIGNALWIRE OUTBOUND SWML
 // =========================================================
@@ -2301,7 +2299,7 @@ app.post("/api/signalwire/outbound-swml", (req, res) => {
                 connect: {
                     from: callerNumber,
                     to: destination,
-                    timeout: 60,
+                    timeout: 30,
                     call_state_events: [
                         "created",
                         "ringing",
