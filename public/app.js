@@ -2235,8 +2235,12 @@ if (callButton) {
         "click",
         async (event) => {
 
-           console.log("🧪 OUTBOUND CALL BUTTON CLICKED");
-                      if (window.dialeazeOutboundLocked) {
+          console.log(
+    "🧪 OUTBOUND CALL BUTTON CLICKED — LOCK STATE:",
+    window.dialeazeOutboundLocked
+);
+
+if (window.dialeazeOutboundLocked) {
     console.warn(
         "⚠️ Duplicate outbound call attempt blocked."
     );

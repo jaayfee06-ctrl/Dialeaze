@@ -610,7 +610,524 @@ app.post("/api/phone-numbers/claim", async (req, res) => {
         });
     }
 });
+// =========================================================
+// DIALEAZE BILLING - PROVISION ACCOUNT AFTER PAYMENT
+// =========================================================
 
+app.post("/api/billing/provision", async (req, res) => {
+    let paymentCode = null;
+    let provisioningStarted = false;
+    let purchasedSignalWireNumberId = null;
+    let createdSignalWireSubscriberId = null;
+
+    try {
+        const auth = await authenticateRequest(req);
+
+        if (!auth.success) {
+            return res.status(auth.status).json({
+                success: false,
+                error: auth.error
+            });
+        }
+
+        paymentCode =
+            String(req.body?.code || "")
+                .trim()
+                .toUpperCase();
+
+        if (!paymentCode) {
+            return res.status(400).json({
+                success: false,
+                error: "Payment code is required."
+            });
+        }
+
+        if (
+            !SUPABASE_URL ||
+            !SUPABASE_SECRET_KEY ||
+            !SIGNALWIRE_SPACE_NAME ||
+            !SIGNALWIRE_PROJECT_ID ||
+            !SIGNALWIRE_API_TOKEN
+        ) {
+            console.error(
+                "❌ Provisioning configuration is missing."
+            );
+
+            return res.status(500).json({
+                success: false,
+                error: "Provisioning configuration is missing on the server."
+            });
+        }
+
+        const customerEmail =
+            String(auth.user?.email || "").trim();
+
+        if (!customerEmail) {
+            return res.status(400).json({
+                success: false,
+                error:
+                    "Your Dialeaze account does not have an email address."
+            });
+        }
+
+        console.log(
+            "🚀 Starting Dialeaze provisioning:",
+            {
+                userId: auth.user.id,
+                email: customerEmail,
+                paymentCode
+            }
+        );
+
+
+        // =====================================================
+        // STEP 1: LOCK PAYMENT + RESERVED PHONE NUMBER
+        // =====================================================
+
+        const beginResponse = await fetch(
+            `${SUPABASE_URL}/rest/v1/rpc/begin_dialeaze_provisioning`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    apikey: SUPABASE_SECRET_KEY,
+                    Authorization:
+                        `Bearer ${SUPABASE_SECRET_KEY}`
+                },
+                body: JSON.stringify({
+                    p_code: paymentCode,
+                    p_user_id: auth.user.id
+                })
+            }
+        );
+
+        const beginData = await beginResponse.json();
+
+        if (!beginResponse.ok) {
+            console.error(
+                "❌ Begin provisioning RPC error:",
+                beginData
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    beginData?.message ||
+                    beginData?.error ||
+                    "Unable to begin account provisioning."
+            });
+        }
+
+        if (!beginData?.success) {
+            return res.status(400).json({
+                success: false,
+                error:
+                    beginData?.error ||
+                    "Payment verification could not begin."
+            });
+        }
+
+        provisioningStarted = true;
+
+        const reservedPhoneNumber =
+            String(beginData.phone_number || "").trim();
+
+        if (!reservedPhoneNumber) {
+            throw new Error(
+                "Provisioning did not return a reserved phone number."
+            );
+        }
+
+        console.log(
+            "📌 Provisioning locked payment and phone reservation:",
+            {
+                userId: auth.user.id,
+                phoneNumber: reservedPhoneNumber,
+                plan: beginData.plan
+            }
+        );
+
+
+        // =====================================================
+        // SIGNALWIRE AUTH
+        // =====================================================
+
+        const signalWireAuth = Buffer.from(
+            `${SIGNALWIRE_PROJECT_ID}:${SIGNALWIRE_API_TOKEN}`
+        ).toString("base64");
+
+
+        // =====================================================
+        // STEP 2: PURCHASE THE RESERVED PHONE NUMBER
+        // =====================================================
+
+        console.log(
+            "📞 Purchasing SignalWire phone number:",
+            reservedPhoneNumber
+        );
+
+        const purchaseResponse = await fetch(
+            `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/relay/rest/phone_numbers`,
+            {
+                method: "POST",
+                headers: {
+                    Authorization:
+                        `Basic ${signalWireAuth}`,
+                    "Content-Type": "application/json",
+                    Accept: "application/json"
+                },
+                body: JSON.stringify({
+                    number: reservedPhoneNumber
+                })
+            }
+        );
+
+        const purchaseData =
+            await purchaseResponse.json();
+
+        if (!purchaseResponse.ok) {
+            console.error(
+                "❌ SignalWire phone number purchase failed:",
+                purchaseData
+            );
+
+            throw new Error(
+                purchaseData?.message ||
+                purchaseData?.error ||
+                "SignalWire could not purchase the reserved phone number."
+            );
+        }
+
+        purchasedSignalWireNumberId =
+            purchaseData?.id || null;
+
+        if (!purchasedSignalWireNumberId) {
+            throw new Error(
+                "SignalWire purchased the number but did not return a phone number ID."
+            );
+        }
+
+        console.log(
+            "✅ SignalWire phone number purchased:",
+            {
+                id: purchasedSignalWireNumberId,
+                number:
+                    purchaseData?.number ||
+                    reservedPhoneNumber
+            }
+        );
+
+
+        // =====================================================
+        // STEP 3: CREATE SIGNALWIRE SUBSCRIBER
+        // =====================================================
+
+        console.log(
+            "👤 Creating SignalWire Subscriber:",
+            customerEmail
+        );
+
+        const subscriberResponse = await fetch(
+            `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/fabric/resources/subscribers`,
+            {
+                method: "POST",
+                headers: {
+                    Authorization:
+                        `Basic ${signalWireAuth}`,
+                    "Content-Type": "application/json",
+                    Accept: "application/json"
+                },
+                body: JSON.stringify({
+                    email: customerEmail
+                })
+            }
+        );
+
+        const subscriberData =
+            await subscriberResponse.json();
+
+        if (!subscriberResponse.ok) {
+            console.error(
+                "❌ SignalWire Subscriber creation failed:",
+                subscriberData
+            );
+
+            throw new Error(
+                subscriberData?.message ||
+                subscriberData?.error ||
+                "SignalWire could not create the Subscriber."
+            );
+        }
+
+        createdSignalWireSubscriberId =
+            subscriberData?.subscriber?.id ||
+            subscriberData?.subscriber_id ||
+            subscriberData?.id ||
+            null;
+
+        if (!createdSignalWireSubscriberId) {
+            throw new Error(
+                "SignalWire created the Subscriber but did not return its ID."
+            );
+        }
+
+        console.log(
+            "✅ SignalWire Subscriber created:",
+            {
+                subscriberId:
+                    createdSignalWireSubscriberId
+            }
+        );
+
+
+        // =====================================================
+        // STEP 4: FINALIZE SUPABASE PROVISIONING
+        // =====================================================
+
+        const finalizeResponse = await fetch(
+            `${SUPABASE_URL}/rest/v1/rpc/finalize_dialeaze_provisioning`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    apikey: SUPABASE_SECRET_KEY,
+                    Authorization:
+                        `Bearer ${SUPABASE_SECRET_KEY}`
+                },
+                body: JSON.stringify({
+                    p_code: paymentCode,
+                    p_user_id: auth.user.id,
+                    p_phone_number:
+                        reservedPhoneNumber,
+                    p_signalwire_number_id:
+                        purchasedSignalWireNumberId,
+                    p_signalwire_subscriber_id:
+                        createdSignalWireSubscriberId
+                })
+            }
+        );
+
+        const finalizeData =
+            await finalizeResponse.json();
+
+        if (!finalizeResponse.ok) {
+            console.error(
+                "❌ Finalize provisioning RPC error:",
+                finalizeData
+            );
+
+            throw new Error(
+                finalizeData?.message ||
+                finalizeData?.error ||
+                "Unable to finalize Dialeaze provisioning."
+            );
+        }
+
+        if (!finalizeData?.success) {
+            throw new Error(
+                finalizeData?.error ||
+                "Dialeaze provisioning could not be finalized."
+            );
+        }
+
+
+        // =====================================================
+        // SUCCESS
+        // =====================================================
+
+        provisioningStarted = false;
+
+        console.log(
+            "🎉 DIALEAZE PROVISIONING COMPLETE:",
+            {
+                userId: auth.user.id,
+                phoneNumber: reservedPhoneNumber,
+                subscriberId:
+                    createdSignalWireSubscriberId,
+                signalWireNumberId:
+                    purchasedSignalWireNumberId
+            }
+        );
+
+        return res.json({
+            success: true,
+            message:
+                "Your Dialeaze account has been successfully provisioned.",
+            plan: finalizeData.plan,
+            status: finalizeData.status,
+            phoneNumber:
+                finalizeData.phone_number ||
+                reservedPhoneNumber,
+            signalwireSubscriberId:
+                createdSignalWireSubscriberId,
+            signalwireNumberId:
+                purchasedSignalWireNumberId
+        });
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ Dialeaze provisioning failed:",
+            error
+        );
+
+
+        // =====================================================
+        // ROLLBACK SIGNALWIRE SUBSCRIBER
+        // =====================================================
+
+        if (createdSignalWireSubscriberId) {
+            try {
+
+                const deleteSubscriberResponse =
+                    await fetch(
+                        `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/fabric/resources/subscribers/${encodeURIComponent(
+                            createdSignalWireSubscriberId
+                        )}`,
+                        {
+                            method: "DELETE",
+                            headers: {
+                                Authorization:
+                                    `Basic ${Buffer.from(
+                                        `${SIGNALWIRE_PROJECT_ID}:${SIGNALWIRE_API_TOKEN}`
+                                    ).toString("base64")}`,
+                                Accept: "application/json"
+                            }
+                        }
+                    );
+
+                if (
+                    deleteSubscriberResponse.ok ||
+                    deleteSubscriberResponse.status === 204
+                ) {
+                    console.log(
+                        "↩️ SignalWire Subscriber rolled back:",
+                        createdSignalWireSubscriberId
+                    );
+                } else {
+                    const rollbackData =
+                        await deleteSubscriberResponse
+                            .text();
+
+                    console.error(
+                        "❌ Failed to roll back SignalWire Subscriber:",
+                        rollbackData
+                    );
+                }
+
+            } catch (rollbackError) {
+                console.error(
+                    "❌ Subscriber rollback exception:",
+                    rollbackError
+                );
+            }
+        }
+
+
+        // =====================================================
+        // ROLLBACK SIGNALWIRE PHONE NUMBER
+        // =====================================================
+
+        if (purchasedSignalWireNumberId) {
+            try {
+
+                const releaseNumberResponse =
+                    await fetch(
+                        `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/relay/rest/phone_numbers/${encodeURIComponent(
+                            purchasedSignalWireNumberId
+                        )}`,
+                        {
+                            method: "DELETE",
+                            headers: {
+                                Authorization:
+                                    `Basic ${Buffer.from(
+                                        `${SIGNALWIRE_PROJECT_ID}:${SIGNALWIRE_API_TOKEN}`
+                                    ).toString("base64")}`,
+                                Accept: "application/json"
+                            }
+                        }
+                    );
+
+                if (
+                    releaseNumberResponse.ok ||
+                    releaseNumberResponse.status === 204
+                ) {
+                    console.log(
+                        "↩️ SignalWire phone number rolled back:",
+                        purchasedSignalWireNumberId
+                    );
+                } else {
+                    const rollbackData =
+                        await releaseNumberResponse
+                            .text();
+
+                    console.error(
+                        "❌ Failed to release SignalWire phone number:",
+                        rollbackData
+                    );
+                }
+
+            } catch (rollbackError) {
+                console.error(
+                    "❌ Phone number rollback exception:",
+                    rollbackError
+                );
+            }
+        }
+
+
+        // =====================================================
+        // ROLLBACK SUPABASE PAYMENT STATE
+        // =====================================================
+
+        if (provisioningStarted && paymentCode) {
+            try {
+
+                const cancelResponse =
+                    await fetch(
+                        `${SUPABASE_URL}/rest/v1/rpc/cancel_dialeaze_provisioning`,
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type":
+                                    "application/json",
+                                apikey:
+                                    SUPABASE_SECRET_KEY,
+                                Authorization:
+                                    `Bearer ${SUPABASE_SECRET_KEY}`
+                            },
+                            body: JSON.stringify({
+                                p_code: paymentCode,
+                                p_user_id: auth?.user?.id
+                            })
+                        }
+                    );
+
+                const cancelData =
+                    await cancelResponse.json();
+
+                console.log(
+                    "↩️ Provisioning payment rollback:",
+                    cancelData
+                );
+
+            } catch (rollbackError) {
+                console.error(
+                    "❌ Payment rollback exception:",
+                    rollbackError
+                );
+            }
+        }
+
+
+        return res.status(500).json({
+            success: false,
+            error:
+                "Dialeaze provisioning could not be completed. No calling access was activated."
+        });
+    }
+});
 // =========================================================
 // DIALEAZE BILLING - REDEEM PAYMENT CODE
 // =========================================================
