@@ -2491,7 +2491,8 @@ if (providerCallId) {
         reason === "cancel" ||
         reason === "declined" ||
         reason === "busy" ||
-        reason === "no_answer"
+        reason === "no_answer" ||
+    reason === "noanswer"
     )
 ) {
     if (
@@ -2521,12 +2522,13 @@ if (providerCallId) {
     ) {
         status.textContent =
             "Busy";
-    } else if (
-        reason === "no_answer"
-    ) {
-        status.textContent =
-            "No answer";
-    }
+    }  else if (
+    reason === "no_answer" ||
+    reason === "noanswer"
+) {
+    status.textContent =
+        "No answer";
+}
 
     console.log(
         "📴 PSTN call ended remotely:",
