@@ -540,8 +540,7 @@ app.post("/api/phone-numbers/claim", async (req, res) => {
                 error: auth.error
             });
         }
-        
-        
+
         const { phoneNumber } = req.body;
 
         if (!phoneNumber) {
@@ -552,7 +551,7 @@ app.post("/api/phone-numbers/claim", async (req, res) => {
         }
 
         const response = await fetch(
-            `${SUPABASE_URL}/rest/v1/rpc/claim_phone_number`,
+            `${SUPABASE_URL}/rest/v1/rpc/reserve_phone_number`,
             {
                 method: "POST",
                 headers: {
@@ -569,28 +568,45 @@ app.post("/api/phone-numbers/claim", async (req, res) => {
         const data = await response.json();
 
         if (!response.ok) {
-            console.error("Phone number claim error:", data);
+            console.error(
+                "Phone number reservation error:",
+                data
+            );
 
             return res.status(response.status).json({
                 success: false,
                 error:
                     data?.message ||
                     data?.hint ||
-                    "Unable to claim this phone number."
+                    "Unable to reserve this phone number."
             });
         }
 
+        console.log(
+            "📌 Phone number reserved for customer:",
+            {
+                userId: auth.user.id,
+                phoneNumber
+            }
+        );
+
         return res.json({
             success: true,
-            number: data
+            number: data,
+            message:
+                "Phone number reserved for 30 minutes."
         });
 
     } catch (error) {
-        console.error("Phone number claim error:", error);
+        console.error(
+            "Phone number reservation error:",
+            error
+        );
 
         return res.status(500).json({
             success: false,
-            error: "Unable to claim this phone number."
+            error:
+                "Unable to reserve this phone number."
         });
     }
 });
