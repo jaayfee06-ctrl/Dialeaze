@@ -3793,7 +3793,7 @@ app.post("/api/signalwire/inbound-swml", (req, res) => {
 
                         result: [
                             {
-                                when: "return_value == 'failed'",
+                                when: "connect_result == 'failed'",
 
                                 then: [
                                     {
