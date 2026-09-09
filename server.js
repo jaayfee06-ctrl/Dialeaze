@@ -3798,7 +3798,24 @@ app.post("/api/signalwire/inbound-swml", (req, res) => {
                                 then: [
                                     {
                                         play: {
-                                            url: "say: This is the Dialeaze voicemail test. The call was not answered."
+                                            url: "say: This is the Dialeaze voicemail. Please leave your message after the beep. Press pound when you are finished."
+                                        }
+                                    },
+
+                                    {
+                                        record: {
+                                            beep: true,
+                                            terminators: "#",
+                                            initial_timeout: 5,
+                                            end_silence_timeout: 5,
+                                            max_length: 120,
+                                            format: "mp3"
+                                        }
+                                    },
+
+                                    {
+                                        play: {
+                                            url: "say: Thank you for your message. We will get back to you as soon as possible. Goodbye."
                                         }
                                     },
 
