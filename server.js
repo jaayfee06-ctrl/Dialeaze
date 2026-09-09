@@ -2364,7 +2364,7 @@ async function saveSignalWireCallState({
 
     try {
         const response = await fetch(
-            `${SUPABASE_URL}/rest/v1/rpc/record_signalwire_call_state`,
+            `${SUPABASE_URL}/rest/v1/rpc/store_signalwire_call_state`,
             {
                 method: "POST",
 
@@ -2720,63 +2720,6 @@ app.get(
         }
     }
 );
-// =========================================================
-// SIGNALWIRE OUTBOUND CONNECT STATUS
-// =========================================================
-
-app.post(
-    "/api/signalwire/outbound-connect-status",
-    async (req, res) => {
-        console.log(
-            "📡 SIGNALWIRE OUTBOUND CONNECT STATUS"
-        );
-
-        console.log(
-            JSON.stringify(req.body, null, 2)
-        );
-
-        const params = req.body?.params || {};
-
-        const callId =
-            params.call_id || null;
-
-        const connectState =
-            params.connect_state || null;
-
-        const failedReason =
-            params.failed_reason || null;
-
-        if (callId && connectState) {
-            outboundProviderStates.set(
-                callId,
-                {
-                    state:
-                        connectState === "failed"
-                            ? "ended"
-                            : connectState,
-                    reason:
-                        failedReason || null,
-                    updatedAt: Date.now()
-                }
-            );
-
-            console.log(
-                "📌 Stored SignalWire connect state:",
-                {
-                    callId,
-                    state:
-                        connectState === "failed"
-                            ? "ended"
-                            : connectState,
-                    reason:
-                        failedReason || null
-                }
-            );
-        }
-
-        return res.sendStatus(204);
-    }
-);
 
 
 // =========================================================
@@ -2786,45 +2729,101 @@ app.post(
 app.get(
     "/api/signalwire/outbound-call-state/:callId",
     async (req, res) => {
+
         const callId =
             req.params.callId;
 
-        const providerState =
-            outboundProviderStates.get(callId);
+        try {
 
-        if (!providerState) {
+            const response =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/signalwire_call_states` +
+                    `?parent_call_id=eq.${encodeURIComponent(callId)}` +
+                    `&select=parent_call_id,child_call_id,state,reason,updated_at` +
+                    `&limit=1`,
+                    {
+                        method: "GET",
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+                            apikey:
+                                SUPABASE_SECRET_KEY
+                        }
+                    }
+                );
+
+            const data =
+                await response.json();
+
+            if (!response.ok) {
+
+                console.error(
+                    "❌ Failed to read SignalWire call state:",
+                    data
+                );
+
+                return res.status(500).json({
+                    success: false,
+                    error:
+                        "Unable to read call state."
+                });
+            }
+
+            res.set(
+                "Cache-Control",
+                "no-store, no-cache, must-revalidate, proxy-revalidate"
+            );
+
+            res.set(
+                "Pragma",
+                "no-cache"
+            );
+
+            res.set(
+                "Expires",
+                "0"
+            );
+
+            const providerState =
+                data?.[0];
+
+            if (!providerState) {
+
+                return res.json({
+                    success: true,
+                    found: false
+                });
+            }
+
             return res.json({
                 success: true,
-                found: false
+                found: true,
+                state:
+                    providerState.state,
+                reason:
+                    providerState.reason || null,
+                childCallId:
+                    providerState.child_call_id || null,
+                updatedAt:
+                    providerState.updated_at
+            });
+
+        } catch (error) {
+
+            console.error(
+                "❌ SignalWire call-state GET error:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    "Unable to check call state."
             });
         }
-
-        return res.json({
-            success: true,
-            found: true,
-            state: providerState.state,
-            reason: providerState.reason || null
-        });
     }
 );
-// =========================================================
-// SIGNALWIRE OUTBOUND CONNECT STATUS
-// =========================================================
 
-app.post(
-    "/api/signalwire/outbound-connect-status",
-    async (req, res) => {
-        console.log(
-            "📡 SIGNALWIRE OUTBOUND CONNECT STATUS"
-        );
-
-        console.log(
-            JSON.stringify(req.body, null, 2)
-        );
-
-        return res.sendStatus(204);
-    }
-);
 app.post("/api/signalwire/inbound-swml", (req, res) => {
     console.log("📞 SIGNALWIRE INBOUND CALL RECEIVED");
     console.log("SWML request:", req.body);
