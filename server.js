@@ -3778,7 +3778,7 @@ app.post("/api/signalwire/inbound-swml", (req, res) => {
 
                         timeout: 30,
 
-                        answer_on_bridge: true,
+                        answer_on_bridge: false,
 
                         call_state_events: [
                             "created",
