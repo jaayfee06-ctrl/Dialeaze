@@ -3793,47 +3793,50 @@ app.post("/api/signalwire/inbound-swml", (req, res) => {
                         status_url:
                             "https://dialeaze.onrender.com/api/signalwire/inbound-connect-status",
 
-                        result: {
+                     result: {
 
-                            variable: "return_value",
+    switch: {
 
-                            case: {
+        variable: "return_value",
 
-                                connected: [
+        case: {
 
-                                    {
-                                        hangup: {}
-                                    }
+            connected: [
 
-                                ],
+                {
+                    hangup: {}
+                }
 
-                                failed: [
+            ],
 
-    {
-        play: {
-            url:
-                "say: This is the Dialeaze voicemail test. The call was not answered."
-        }
-    },
+            failed: [
 
-    {
-        hangup: {}
+                {
+                    play: {
+                        url:
+                            "say: This is the Dialeaze voicemail test. The call was not answered."
+                    }
+                },
+
+                {
+                    hangup: {}
+                }
+
+            ]
+
+        },
+
+        default: [
+
+            {
+                hangup: {}
+            }
+
+        ]
+
     }
 
-]
-                            },
-
-                            default: [
-
-                                {
-                                    hangup: {}
-                                }
-
-                            ]
-
-                        }
-
-                    }
+} }
 
                 }
 
