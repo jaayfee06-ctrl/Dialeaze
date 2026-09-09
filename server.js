@@ -595,6 +595,116 @@ app.post("/api/phone-numbers/claim", async (req, res) => {
     }
 });
 
+// =========================================================
+// DIALEAZE BILLING - REDEEM PAYMENT CODE
+// =========================================================
+
+app.post("/api/billing/redeem-code", async (req, res) => {
+    try {
+        const auth = await authenticateRequest(req);
+
+        if (!auth.success) {
+            return res.status(auth.status).json({
+                success: false,
+                error: auth.error
+            });
+        }
+
+        const code =
+            String(req.body?.code || "")
+                .trim()
+                .toUpperCase();
+
+        if (!code) {
+            return res.status(400).json({
+                success: false,
+                error: "Payment code is required."
+            });
+        }
+
+        if (!SUPABASE_URL || !SUPABASE_SECRET_KEY) {
+            console.error(
+                "❌ Billing: Supabase server configuration is missing."
+            );
+
+            return res.status(500).json({
+                success: false,
+                error: "Billing configuration is missing on the server."
+            });
+        }
+
+        const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/rpc/redeem_dialeaze_payment_code`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    apikey: SUPABASE_SECRET_KEY,
+                    Authorization:
+                        `Bearer ${SUPABASE_SECRET_KEY}`
+                },
+                body: JSON.stringify({
+                    p_code: code,
+                    p_user_id: auth.user.id
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error(
+                "❌ Payment code RPC error:",
+                data
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    data?.message ||
+                    data?.error ||
+                    "Unable to verify payment code."
+            });
+        }
+
+        if (!data || data.success !== true) {
+            return res.status(400).json({
+                success: false,
+                error:
+                    data?.error ||
+                    "Invalid or unavailable payment code."
+            });
+        }
+
+        console.log(
+            "💳 Dialeaze payment code redeemed successfully:",
+            {
+                userId: auth.user.id,
+                plan: data.plan,
+                status: data.status
+            }
+        );
+
+        return res.json({
+            success: true,
+            message: "Payment verified successfully.",
+            plan: data.plan,
+            status: data.status
+        });
+
+    } catch (error) {
+        console.error(
+            "❌ Payment code redemption error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            error: "Unable to verify payment code."
+        });
+    }
+});
+
 app.post("/api/call-history", async (req, res) => {
     try {
         const auth = await authenticateRequest(req);
