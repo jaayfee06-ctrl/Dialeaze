@@ -465,35 +465,143 @@ app.get("/api/phone-numbers", async (req, res) => {
                 error: auth.error
             });
         }
-        const areaCode = String(req.query.area_code || "").trim();
 
-if (areaCode && !/^\d{3}$/.test(areaCode)) {
-    return res.status(400).json({
-        success: false,
-        error: "Area code must be exactly 3 digits."
-    });
-}
+        const areaCode = String(
+            req.query.area_code || ""
+        ).trim();
 
-const signalWireAuth = Buffer.from(
-    `${SIGNALWIRE_PROJECT_ID}:${SIGNALWIRE_API_TOKEN}`
-).toString("base64");
-
-const response = await fetch(
-    `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/relay/rest/phone_numbers/search?max_results=100${areaCode ? `&areacode=${areaCode}` : ""}`,
-    {
-        method: "GET",
-        headers: {
-            Authorization: `Basic ${signalWireAuth}`,
-            Accept: "application/json"
+        if (areaCode && !/^\d{3}$/.test(areaCode)) {
+            return res.status(400).json({
+                success: false,
+                error: "Area code must be exactly 3 digits."
+            });
         }
-    }
-);
-               const data = await response.json();
+
+        /*
+         * Get the customer's own reserved/assigned numbers
+         * from Supabase.
+         *
+         * We use the server secret here because this endpoint
+         * must be able to see the customer's reserved row.
+         */
+        const customerNumbersResponse = await fetch(
+            `${SUPABASE_URL}/rest/v1/phone_numbers` +
+            `?select=id,phone_number,status,reserved_until,signalwire_number_id,purchased_at` +
+            `&user_id=eq.${encodeURIComponent(auth.user.id)}` +
+            `&status=in.(reserved,assigned)` +
+            `&order=created_at.desc`,
+            {
+                method: "GET",
+                headers: {
+                    Authorization:
+                        `Bearer ${SUPABASE_SECRET_KEY}`,
+                    apikey:
+                        SUPABASE_SECRET_KEY,
+                    Accept:
+                        "application/json"
+                }
+            }
+        );
+
+        const customerNumbers =
+            await customerNumbersResponse.json();
+
+        if (!customerNumbersResponse.ok) {
+            console.error(
+                "Customer phone numbers fetch error:",
+                customerNumbers
+            );
+
+            return res.status(
+                customerNumbersResponse.status
+            ).json({
+                success: false,
+                error:
+                    customerNumbers?.message ||
+                    "Unable to load your phone number."
+            });
+        }
+
+        /*
+         * Remove expired reservations from the response.
+         * Assigned numbers are always kept.
+         */
+        const now = Date.now();
+
+        const customerNumberList =
+            Array.isArray(customerNumbers)
+                ? customerNumbers
+                    .filter(number => {
+                        if (number.status === "assigned") {
+                            return true;
+                        }
+
+                        if (
+                            number.status === "reserved" &&
+                            number.reserved_until
+                        ) {
+                            return (
+                                new Date(
+                                    number.reserved_until
+                                ).getTime() > now
+                            );
+                        }
+
+                        return false;
+                    })
+                    .map(number => ({
+                        phone_number:
+                            number.phone_number,
+                        status:
+                            number.status,
+                        reserved_until:
+                            number.reserved_until || null,
+                        signalwire_number_id:
+                            number.signalwire_number_id ||
+                            null,
+                        purchased_at:
+                            number.purchased_at ||
+                            null
+                    }))
+                    .filter(
+                        number =>
+                            number.phone_number
+                    )
+                : [];
+
+        /*
+         * Get currently available numbers from SignalWire.
+         */
+        const signalWireAuth =
+            Buffer.from(
+                `${SIGNALWIRE_PROJECT_ID}:${SIGNALWIRE_API_TOKEN}`
+            ).toString("base64");
+
+        const response = await fetch(
+            `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/relay/rest/phone_numbers/search?max_results=100${areaCode ? `&areacode=${areaCode}` : ""}`,
+            {
+                method: "GET",
+                headers: {
+                    Authorization:
+                        `Basic ${signalWireAuth}`,
+                    Accept:
+                        "application/json"
+                }
+            }
+        );
+
+        const data =
+            await response.json();
 
         if (!response.ok) {
-            console.error("Phone numbers fetch error:", data);
+            console.error(
+                "Phone numbers fetch error:",
+                data
+            );
 
-            return res.status(response.status).json({
+            return res.status(
+                response.status
+            ).json({
                 success: false,
                 error:
                     data?.message ||
@@ -501,112 +609,70 @@ const response = await fetch(
             });
         }
 
-        const signalWireNumbers = Array.isArray(data)
-    ? data
-    : Array.isArray(data?.data)
-        ? data.data
-        : [];
+        const signalWireNumbers =
+            Array.isArray(data)
+                ? data
+                : Array.isArray(data?.data)
+                    ? data.data
+                    : [];
 
-return res.json({
-    success: true,
-    numbers: signalWireNumbers
-        .map(number => ({
-            phone_number:
-                number.phone_number ||
-                number.number ||
-                number.e164,
-            status: "available"
-        }))
-        .filter(number => number.phone_number)
-});
+        const availableNumbers =
+            signalWireNumbers
+                .map(number => ({
+                    phone_number:
+                        number.phone_number ||
+                        number.number ||
+                        number.e164,
+                    status:
+                        "available"
+                }))
+                .filter(
+                    number =>
+                        number.phone_number
+                );
 
-    } catch (error) {
-        console.error("Phone numbers GET error:", error);
-
-        return res.status(500).json({
-            success: false,
-            error: "Unable to load phone numbers."
-        });
-    }
-});
-
-app.post("/api/phone-numbers/claim", async (req, res) => {
-    try {
-        const auth = await authenticateRequest(req);
-
-        if (!auth.success) {
-            return res.status(auth.status).json({
-                success: false,
-                error: auth.error
-            });
-        }
-
-        const { phoneNumber } = req.body;
-
-        if (!phoneNumber) {
-            return res.status(400).json({
-                success: false,
-                error: "Phone number is required."
-            });
-        }
-
-        const response = await fetch(
-            `${SUPABASE_URL}/rest/v1/rpc/reserve_phone_number`,
-            {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${auth.token}`,
-                    apikey: SUPABASE_PUBLISHABLE_KEY,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    requested_phone_number: phoneNumber
-                })
-            }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            console.error(
-                "Phone number reservation error:",
-                data
+        /*
+         * Prevent the customer's reserved/assigned number
+         * from appearing again as an available number.
+         */
+        const customerPhoneSet =
+            new Set(
+                customerNumberList.map(
+                    number =>
+                        number.phone_number
+                )
             );
 
-            return res.status(response.status).json({
-                success: false,
-                error:
-                    data?.message ||
-                    data?.hint ||
-                    "Unable to reserve this phone number."
-            });
-        }
+        const filteredAvailableNumbers =
+            availableNumbers.filter(
+                number =>
+                    !customerPhoneSet.has(
+                        number.phone_number
+                    )
+            );
 
-        console.log(
-            "📌 Phone number reserved for customer:",
-            {
-                userId: auth.user.id,
-                phoneNumber
-            }
-        );
-
+        /*
+         * Customer's own number comes first.
+         * SignalWire's available numbers come after it.
+         */
         return res.json({
             success: true,
-            number: data,
-            message:
-                "Phone number reserved for 30 minutes."
+            numbers: [
+                ...customerNumberList,
+                ...filteredAvailableNumbers
+            ]
         });
 
     } catch (error) {
         console.error(
-            "Phone number reservation error:",
+            "Phone numbers GET error:",
             error
         );
 
         return res.status(500).json({
             success: false,
             error:
-                "Unable to reserve this phone number."
+                "Unable to load phone numbers."
         });
     }
 });
@@ -2727,6 +2793,232 @@ app.post("/api/signalwire/recording-callback", async (req, res) => {
         });
     }
 });
+
+// =========================================================
+// SIGNALWIRE VOICEMAIL RECORDING CALLBACK
+// =========================================================
+
+app.post(
+    "/api/signalwire/voicemail-recording-callback",
+    async (req, res) => {
+
+        try {
+
+            console.log(
+                "📨 SIGNALWIRE VOICEMAIL RECORDING CALLBACK"
+            );
+
+            console.log(
+                JSON.stringify(
+                    req.body,
+                    null,
+                    2
+                )
+            );
+
+            const params =
+                req.body?.params ||
+                {};
+
+            const callId =
+                params.call_id ||
+                null;
+
+            const state =
+                String(
+                    params.state ||
+                    ""
+                ).toLowerCase();
+
+            const recording =
+                params.record ||
+                {};
+
+            const recordingUrl =
+                params.url ||
+                recording.url ||
+                null;
+
+            const recordingId =
+                params.recording_id ||
+                recording.recording_id ||
+                null;
+
+            const duration =
+                params.duration ??
+                recording.duration ??
+                null;
+
+            if (!callId) {
+
+                console.warn(
+                    "⚠️ Voicemail callback missing call ID."
+                );
+
+                return res.sendStatus(204);
+            }
+
+            console.log(
+                "🎙️ Voicemail recording event:",
+                {
+                    callId,
+                    state,
+                    recordingId,
+                    recordingUrl,
+                    duration
+                }
+            );
+
+            // -----------------------------------------
+            // Recording successfully completed
+            // -----------------------------------------
+
+            if (
+                state === "finished" ||
+                state === "no_input"
+            ) {
+
+                const updateData = {
+
+                    status:
+                        state === "no_input"
+                            ? "no_input"
+                            : "completed",
+
+                    recording_id:
+                        recordingId,
+
+                    recording_url:
+                        recordingUrl,
+
+                    duration_seconds:
+                        duration !== null
+                            ? Math.floor(
+                                Number(duration)
+                            )
+                            : null,
+
+                    updated_at:
+                        new Date().toISOString()
+
+                };
+
+                const updateResponse =
+                    await fetch(
+                        `${SUPABASE_URL}/rest/v1/voicemails` +
+                        `?provider_call_id=eq.${encodeURIComponent(callId)}`,
+
+                        {
+                            method: "PATCH",
+
+                            headers: {
+
+                                Authorization:
+                                    `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                                apikey:
+                                    SUPABASE_SECRET_KEY,
+
+                                "Content-Type":
+                                    "application/json",
+
+                                Prefer:
+                                    "return=representation"
+                            },
+
+                            body:
+                                JSON.stringify(
+                                    updateData
+                                )
+                        }
+                    );
+
+                const updateResult =
+                    await updateResponse.json();
+
+                if (!updateResponse.ok) {
+
+                    console.error(
+                        "❌ Failed to save voicemail recording:",
+                        updateResult
+                    );
+
+                } else {
+
+                    console.log(
+                        "✅ Voicemail recording saved:",
+                        updateResult
+                    );
+
+                }
+
+            }
+
+            // -----------------------------------------
+            // Recording error
+            // -----------------------------------------
+
+            if (state === "error") {
+
+                const updateResponse =
+                    await fetch(
+                        `${SUPABASE_URL}/rest/v1/voicemails` +
+                        `?provider_call_id=eq.${encodeURIComponent(callId)}`,
+
+                        {
+                            method: "PATCH",
+
+                            headers: {
+
+                                Authorization:
+                                    `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                                apikey:
+                                    SUPABASE_SECRET_KEY,
+
+                                "Content-Type":
+                                    "application/json"
+                            },
+
+                            body:
+                                JSON.stringify({
+                                    status:
+                                        "failed",
+
+                                    updated_at:
+                                        new Date().toISOString()
+                                })
+                        }
+                    );
+
+                if (!updateResponse.ok) {
+
+                    console.error(
+                        "❌ Failed to mark voicemail as failed."
+                    );
+
+                }
+
+            }
+
+            return res.sendStatus(204);
+
+        } catch (error) {
+
+            console.error(
+                "❌ Voicemail recording callback error:",
+                error
+            );
+
+            // SignalWire callbacks should not be
+            // repeatedly retried because our internal
+            // processing failed.
+
+            return res.sendStatus(204);
+        }
+
+    }
+);
 // =========================================================
 // UPDATE OUTBOUND CALL USAGE LIFECYCLE
 // =========================================================
@@ -3467,24 +3759,349 @@ app.get(
 
 app.post("/api/signalwire/inbound-swml", (req, res) => {
     console.log("📞 SIGNALWIRE INBOUND CALL RECEIVED");
-    console.log("SWML request:", req.body);
+
+    console.log(
+        "Inbound SWML request:",
+        JSON.stringify(req.body, null, 2)
+    );
 
     return res.json({
         version: "1.0.0",
+
         sections: {
+
             main: [
+
+                // -----------------------------------------
+                // RING THE DIALIAZE USER
+                // -----------------------------------------
+
                 {
                     connect: {
+
                         to: "/private/junaid-sabir",
-                        timeout: 60,
-                        answer_on_bridge: true
+
+                        timeout: 30,
+
+                        answer_on_bridge: true,
+
+                        call_state_events: [
+                            "created",
+                            "ringing",
+                            "answered",
+                            "ended"
+                        ],
+
+                        call_state_url:
+                            "https://dialeaze.onrender.com/api/signalwire/inbound-call-state",
+
+                        // ---------------------------------
+                        // ONLY GO TO VOICEMAIL IF THE
+                        // CONNECTION FAILED / NO ANSWER
+                        // ---------------------------------
+
+                        result: {
+
+                            failed: [
+
+                                {
+                                    play: {
+                                        url:
+                                            "say: Sorry, we are unable to answer your call right now. Please leave your name, phone number, and a message after the beep."
+                                    }
+                                },
+
+                                {
+                                    record: {
+                                        beep: true,
+
+                                        terminators: "#",
+
+                                        initial_timeout: 5,
+
+                                        end_silence_timeout: 5,
+
+                                        max_length: 120,
+
+                                        format: "mp3",
+
+                                        status_url:
+                                            "https://dialeaze.onrender.com/api/signalwire/voicemail-recording-callback"
+                                    }
+                                },
+
+                                {
+                                    play: {
+                                        url:
+                                            "say: Thank you for your message. Goodbye."
+                                    }
+                                },
+
+                                {
+                                    hangup: {}
+                                }
+
+                            ],
+
+                            connected: [
+                                {
+                                    hangup: {}
+                                }
+                            ]
+
                         }
+
+                    }
                 }
+
             ]
+
         }
+
     });
 });
+// =========================================================
+// SIGNALWIRE INBOUND CALL STATE WEBHOOK
+// =========================================================
 
+app.post(
+    "/api/signalwire/inbound-call-state",
+    async (req, res) => {
+
+        try {
+
+            console.log(
+                "📡 SIGNALWIRE INBOUND CALL STATE"
+            );
+
+            console.log(
+                JSON.stringify(
+                    req.body,
+                    null,
+                    2
+                )
+            );
+
+            const call =
+                req.body?.call ||
+                {};
+
+            const params =
+                req.body?.params ||
+                {};
+
+            const callId =
+                call.call_id ||
+                params.call_id ||
+                null;
+
+            const callState =
+                call.call_state ||
+                params.call_state ||
+                null;
+
+            const fromNumber =
+                call.from_number ||
+                call.from ||
+                call.device?.params?.from_number ||
+                null;
+
+            const toNumber =
+                call.to_number ||
+                call.to ||
+                call.device?.params?.to_number ||
+                null;
+
+            if (!callId) {
+
+                console.warn(
+                    "⚠️ Inbound call-state missing call ID."
+                );
+
+                return res.sendStatus(204);
+            }
+
+            // -----------------------------------------
+            // Find the Dialeaze customer who owns
+            // the SignalWire number.
+            // -----------------------------------------
+
+            let userId = null;
+
+            if (toNumber) {
+
+                const phoneResponse =
+                    await fetch(
+                        `${SUPABASE_URL}/rest/v1/phone_numbers` +
+                        `?phone_number=eq.${encodeURIComponent(toNumber)}` +
+                        `&status=eq.assigned` +
+                        `&select=user_id`,
+
+                        {
+                            method: "GET",
+
+                            headers: {
+                                Authorization:
+                                    `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                                apikey:
+                                    SUPABASE_SECRET_KEY,
+
+                                Accept:
+                                    "application/json"
+                            }
+                        }
+                    );
+
+                const phoneData =
+                    await phoneResponse.json();
+
+                if (
+                    phoneResponse.ok &&
+                    Array.isArray(phoneData) &&
+                    phoneData.length
+                ) {
+
+                    userId =
+                        phoneData[0].user_id;
+
+                }
+
+            }
+
+            console.log(
+                "📞 Inbound call mapping:",
+                {
+                    callId,
+                    callState,
+                    fromNumber,
+                    toNumber,
+                    userId
+                }
+            );
+
+            // -----------------------------------------
+            // When we know the owner, create a
+            // processing voicemail record.
+            //
+            // We create it only once when the call
+            // starts.
+            // -----------------------------------------
+
+            if (
+                userId &&
+                callState === "created"
+            ) {
+
+                const existingResponse =
+                    await fetch(
+                        `${SUPABASE_URL}/rest/v1/voicemails` +
+                        `?provider_call_id=eq.${encodeURIComponent(callId)}` +
+                        `&select=id`,
+
+                        {
+                            method: "GET",
+
+                            headers: {
+                                Authorization:
+                                    `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                                apikey:
+                                    SUPABASE_SECRET_KEY,
+
+                                Accept:
+                                    "application/json"
+                            }
+                        }
+                    );
+
+                const existingData =
+                    await existingResponse.json();
+
+                if (
+                    existingResponse.ok &&
+                    Array.isArray(existingData) &&
+                    existingData.length === 0
+                ) {
+
+                    const insertResponse =
+                        await fetch(
+                            `${SUPABASE_URL}/rest/v1/voicemails`,
+
+                            {
+                                method: "POST",
+
+                                headers: {
+                                    Authorization:
+                                        `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                                    apikey:
+                                        SUPABASE_SECRET_KEY,
+
+                                    "Content-Type":
+                                        "application/json",
+
+                                    Prefer:
+                                        "return=minimal"
+                                },
+
+                                body:
+                                    JSON.stringify({
+                                        user_id:
+                                            userId,
+
+                                        provider_call_id:
+                                            callId,
+
+                                        caller_number:
+                                            fromNumber,
+
+                                        dialed_number:
+                                            toNumber,
+
+                                        status:
+                                            "processing"
+                                    })
+                            }
+                        );
+
+                    if (!insertResponse.ok) {
+
+                        const insertData =
+                            await insertResponse.text();
+
+                        console.error(
+                            "❌ Failed to create voicemail record:",
+                            insertData
+                        );
+
+                    } else {
+
+                        console.log(
+                            "✅ Voicemail placeholder created:",
+                            callId
+                        );
+
+                    }
+
+                }
+
+            }
+
+            return res.sendStatus(204);
+
+        } catch (error) {
+
+            console.error(
+                "❌ Inbound call-state error:",
+                error
+            );
+
+            return res.sendStatus(204);
+        }
+
+    }
+);
 // =========================================================
 // SIGNALWIRE INBOUND SMS WEBHOOK
 // =========================================================
