@@ -3902,9 +3902,19 @@ app.post(
                 req.body?.params ||
                 {};
 
+            const deviceParams =
+                params.device?.params ||
+                call.device?.params ||
+                {};
+
             const callId =
                 call.call_id ||
                 params.call_id ||
+                null;
+
+            const parentCallId =
+                params.parent?.call_id ||
+                call.parent?.call_id ||
                 null;
 
             const callState =
@@ -3912,17 +3922,41 @@ app.post(
                 params.call_state ||
                 null;
 
-            const fromNumber =
+            // SignalWire sends these inside:
+            // params.device.params.from
+            // params.device.params.to
+
+            const rawFrom =
+                deviceParams.from ||
                 call.from_number ||
                 call.from ||
-                call.device?.params?.from_number ||
                 null;
 
-            const toNumber =
+            const rawTo =
+                deviceParams.to ||
                 call.to_number ||
                 call.to ||
-                call.device?.params?.to_number ||
                 null;
+
+            // Convert SIP addresses into usable phone numbers.
+            // Example:
+            // sip:+14157919670@sip.signalwire.com
+            // becomes:
+            // +14157919670
+
+            const fromNumber =
+                rawFrom
+                    ? String(rawFrom)
+                        .replace(/^sip:/i, "")
+                        .split("@")[0]
+                    : null;
+
+            const toNumber =
+                rawTo
+                    ? String(rawTo)
+                        .replace(/^sip:/i, "")
+                        .split("@")[0]
+                    : null;
 
             if (!callId) {
 
@@ -3935,12 +3969,12 @@ app.post(
 
             // -----------------------------------------
             // Find the Dialeaze customer who owns
-            // the SignalWire number.
+            // the SignalWire phone number.
             // -----------------------------------------
 
             let userId = null;
 
-            if (toNumber) {
+            if (toNumber && toNumber.startsWith("+")) {
 
                 const phoneResponse =
                     await fetch(
@@ -3976,7 +4010,6 @@ app.post(
 
                     userId =
                         phoneData[0].user_id;
-
                 }
 
             }
@@ -3985,6 +4018,7 @@ app.post(
                 "📞 Inbound call mapping:",
                 {
                     callId,
+                    parentCallId,
                     callState,
                     fromNumber,
                     toNumber,
@@ -3993,12 +4027,17 @@ app.post(
             );
 
             // -----------------------------------------
-            // When we know the owner, create a
-            // processing voicemail record.
+            // Create voicemail placeholder.
             //
-            // We create it only once when the call
-            // starts.
+            // IMPORTANT:
+            // The recording callback uses the parent
+            // call ID, so we store parentCallId when
+            // available.
             // -----------------------------------------
+
+            const voicemailCallId =
+                parentCallId ||
+                callId;
 
             if (
                 userId &&
@@ -4008,7 +4047,7 @@ app.post(
                 const existingResponse =
                     await fetch(
                         `${SUPABASE_URL}/rest/v1/voicemails` +
-                        `?provider_call_id=eq.${encodeURIComponent(callId)}` +
+                        `?provider_call_id=eq.${encodeURIComponent(voicemailCallId)}` +
                         `&select=id`,
 
                         {
@@ -4063,7 +4102,7 @@ app.post(
                                             userId,
 
                                         provider_call_id:
-                                            callId,
+                                            voicemailCallId,
 
                                         caller_number:
                                             fromNumber,
@@ -4091,10 +4130,17 @@ app.post(
 
                         console.log(
                             "✅ Voicemail placeholder created:",
-                            callId
+                            voicemailCallId
                         );
 
                     }
+
+                } else if (!existingResponse.ok) {
+
+                    console.error(
+                        "❌ Failed to check existing voicemail:",
+                        existingData
+                    );
 
                 }
 
