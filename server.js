@@ -3769,12 +3769,7 @@ app.post("/api/signalwire/inbound-swml", (req, res) => {
         version: "1.0.0",
 
         sections: {
-
             main: [
-
-                // -----------------------------------------
-                // RING THE DIALIAZE USER
-                // -----------------------------------------
 
                 {
                     connect: {
@@ -3795,59 +3790,73 @@ app.post("/api/signalwire/inbound-swml", (req, res) => {
                         call_state_url:
                             "https://dialeaze.onrender.com/api/signalwire/inbound-call-state",
 
-                        // ---------------------------------
-                        // ONLY GO TO VOICEMAIL IF THE
-                        // CONNECTION FAILED / NO ANSWER
-                        // ---------------------------------
+                        status_url:
+                            "https://dialeaze.onrender.com/api/signalwire/inbound-connect-status",
 
                         result: {
 
-                            failed: [
+                            switch: {
 
-                                {
-                                    play: {
-                                        url:
-                                            "say: Sorry, we are unable to answer your call right now. Please leave your name, phone number, and a message after the beep."
-                                    }
+                                variable: "return_value",
+
+                                case: {
+
+                                    connected: [
+                                        {
+                                            hangup: {}
+                                        }
+                                    ],
+
+                                    failed: [
+
+                                        {
+                                            play: {
+                                                url:
+                                                    "say: Sorry, we are unable to answer your call right now. Please leave your name, phone number, and a message after the beep."
+                                            }
+                                        },
+
+                                        {
+                                            record: {
+                                                beep: true,
+
+                                                terminators: "#",
+
+                                                initial_timeout: 5,
+
+                                                end_silence_timeout: 5,
+
+                                                max_length: 120,
+
+                                                format: "mp3",
+
+                                                status_url:
+                                                    "https://dialeaze.onrender.com/api/signalwire/voicemail-recording-callback"
+                                            }
+                                        },
+
+                                        {
+                                            play: {
+                                                url:
+                                                    "say: Thank you for your message. Goodbye."
+                                            }
+                                        },
+
+                                        {
+                                            hangup: {}
+                                        }
+
+                                    ]
+
                                 },
 
-                                {
-                                    record: {
-                                        beep: true,
-
-                                        terminators: "#",
-
-                                        initial_timeout: 5,
-
-                                        end_silence_timeout: 5,
-
-                                        max_length: 120,
-
-                                        format: "mp3",
-
-                                        status_url:
-                                            "https://dialeaze.onrender.com/api/signalwire/voicemail-recording-callback"
+                                default: [
+                                    {
+                                        hangup: {}
                                     }
-                                },
+                                ]
 
-                                {
-                                    play: {
-                                        url:
-                                            "say: Thank you for your message. Goodbye."
-                                    }
-                                },
-
-                                {
-                                    hangup: {}
-                                }
-
-                            ],
-
-                            connected: [
-                                {
-                                    hangup: {}
-                                }
-                            ]
+                            }
 
                         }
 
@@ -3855,9 +3864,7 @@ app.post("/api/signalwire/inbound-swml", (req, res) => {
                 }
 
             ]
-
         }
-
     });
 });
 // =========================================================
