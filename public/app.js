@@ -2510,26 +2510,30 @@ if (providerCallId) {
         reason;
 
     if (reason === "cancel") {
-        status.textContent =
-            "Call declined";
-    } else if (
-        reason === "declined"
-    ) {
-        status.textContent =
-            "Call declined";
-    } else if (
-        reason === "busy"
-    ) {
-        status.textContent =
-            "Busy";
-    }  else if (
+    status.textContent =
+        "Call declined";
+} else if (
+    reason === "declined"
+) {
+    status.textContent =
+        "Call declined";
+} else if (
+    reason === "busy"
+) {
+    status.textContent =
+        "Busy";
+} else if (
     reason === "no_answer" ||
     reason === "noanswer"
 ) {
     status.textContent =
         "No answer";
+} else if (
+    reason === "error"
+) {
+    status.textContent =
+        "Call failed";
 }
-
     console.log(
         "📴 PSTN call ended remotely:",
         reason
@@ -2873,7 +2877,18 @@ if (currentCall?.answered$) {
                                 console.log(
                                     "📴 SignalWire call ended."
                                 );
+                                                                    if (providerStatePollingInterval) {
+                                    clearInterval(
+                                        providerStatePollingInterval
+                                    );
 
+                                    providerStatePollingInterval =
+                                        null;
+
+                                    console.log(
+                                        "🛑 PSTN provider-state polling stopped because SignalWire call ended."
+                                    );
+                                }
                                 status.textContent =
                                     "Call ended";
 
@@ -2961,9 +2976,12 @@ if (!outboundHistorySaved) {
             providerEndReason === "cancel" ||
             providerEndReason === "declined"
                 ? "Declined"
-                : providerEndReason === "busy"
+                                : providerEndReason === "busy"
                     ? "Busy"
-                    : providerEndReason === "no_answer"
+                    : (
+                        providerEndReason === "no_answer" ||
+                        providerEndReason === "noanswer"
+                    )
                         ? "No answer"
                         : "Failed"
         ),
