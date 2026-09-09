@@ -3803,15 +3803,18 @@ app.post("/api/signalwire/inbound-swml", (req, res) => {
                                     },
 
                                     {
-                                        record: {
-                                            beep: true,
-                                            terminators: "#",
-                                            initial_timeout: 5,
-                                            end_silence_timeout: 5,
-                                            max_length: 120,
-                                            format: "mp3"
-                                        }
-                                    },
+    record: {
+        beep: true,
+        terminators: "#",
+        initial_timeout: 5,
+        end_silence_timeout: 5,
+        max_length: 120,
+        format: "mp3",
+
+        status_url:
+            "https://dialeaze.onrender.com/api/signalwire/voicemail-recording-callback"
+    }
+},
 
                                     {
                                         play: {
@@ -3846,6 +3849,25 @@ app.post("/api/signalwire/inbound-connect-status", (req, res) => {
     console.log(
         JSON.stringify(req.body, null, 2)
     );
+
+    return res.sendStatus(200);
+});
+
+app.post("/api/signalwire/voicemail-recording-callback", (req, res) => {
+    console.log("🎙️ SIGNALWIRE VOICEMAIL RECORDING CALLBACK");
+
+    console.log(
+        "Voicemail recording payload:",
+        JSON.stringify(req.body, null, 2)
+    );
+
+    const params = req.body?.params || {};
+
+    console.log("📼 Voicemail recording state:", params.state);
+    console.log("📼 Voicemail recording ID:", params.recording_id);
+    console.log("📼 Voicemail recording URL:", params.url);
+    console.log("📼 Voicemail duration:", params.duration);
+    console.log("📞 Voicemail call ID:", params.call_id);
 
     return res.sendStatus(200);
 });
