@@ -3876,7 +3876,7 @@ app.post("/api/signalwire/voicemail-recording-callback", (req, res) => {
 // SIGNALWIRE INBOUND CALL STATE WEBHOOK
 // =========================================================
 
-app.post(
+aapp.post(
     "/api/signalwire/inbound-call-state",
     async (req, res) => {
 
@@ -3922,10 +3922,6 @@ app.post(
                 params.call_state ||
                 null;
 
-            // SignalWire sends these inside:
-            // params.device.params.from
-            // params.device.params.to
-
             const rawFrom =
                 deviceParams.from ||
                 call.from_number ||
@@ -3938,12 +3934,6 @@ app.post(
                 call.to ||
                 null;
 
-            // Convert SIP addresses into usable phone numbers.
-            // Example:
-            // sip:+14157919670@sip.signalwire.com
-            // becomes:
-            // +14157919670
-
             const fromNumber =
                 rawFrom
                     ? String(rawFrom)
@@ -3951,12 +3941,45 @@ app.post(
                         .split("@")[0]
                     : null;
 
-            const toNumber =
+            const rawDestination =
                 rawTo
                     ? String(rawTo)
                         .replace(/^sip:/i, "")
-                        .split("@")[0]
                     : null;
+
+            /*
+             * Example:
+             *
+             * sip:junaid-sabir@SPACE.call.signalwire.com;context=private
+             *
+             * becomes:
+             *
+             * /private/junaid-sabir
+             */
+
+            let privateAddress = null;
+
+            if (rawDestination) {
+
+                const destinationMatch =
+                    rawDestination.match(
+                        /^([^@]+)@[^;]+;context=([^;]+)$/i
+                    );
+
+                if (destinationMatch) {
+
+                    const subscriberName =
+                        destinationMatch[1];
+
+                    const context =
+                        destinationMatch[2];
+
+                    privateAddress =
+                        `/${context}/${subscriberName}`;
+
+                }
+
+            }
 
             if (!callId) {
 
@@ -3967,21 +3990,31 @@ app.post(
                 return res.sendStatus(204);
             }
 
+            console.log(
+                "📞 Parsed inbound destination:",
+                {
+                    rawDestination,
+                    privateAddress
+                }
+            );
+
             // -----------------------------------------
-            // Find the Dialeaze customer who owns
-            // the SignalWire phone number.
+            // Find the Dialeaze customer by the
+            // SignalWire private Subscriber address.
             // -----------------------------------------
 
             let userId = null;
 
-            if (toNumber && toNumber.startsWith("+")) {
+            let customerPhoneNumber = null;
 
-                const phoneResponse =
+            if (privateAddress) {
+
+                const profileResponse =
                     await fetch(
-                        `${SUPABASE_URL}/rest/v1/phone_numbers` +
-                        `?phone_number=eq.${encodeURIComponent(toNumber)}` +
-                        `&status=eq.assigned` +
-                        `&select=user_id`,
+                        `${SUPABASE_URL}/rest/v1/profiles` +
+                        `?signalwire_private_address=eq.${encodeURIComponent(privateAddress)}` +
+                        `&signalwire_provisioned=eq.true` +
+                        `&select=id,phone_number`,
 
                         {
                             method: "GET",
@@ -3999,17 +4032,29 @@ app.post(
                         }
                     );
 
-                const phoneData =
-                    await phoneResponse.json();
+                const profileData =
+                    await profileResponse.json();
 
                 if (
-                    phoneResponse.ok &&
-                    Array.isArray(phoneData) &&
-                    phoneData.length
+                    profileResponse.ok &&
+                    Array.isArray(profileData) &&
+                    profileData.length > 0
                 ) {
 
                     userId =
-                        phoneData[0].user_id;
+                        profileData[0].id;
+
+                    customerPhoneNumber =
+                        profileData[0].phone_number ||
+                        null;
+
+                } else if (!profileResponse.ok) {
+
+                    console.error(
+                        "❌ Failed to find Dialeaze profile:",
+                        profileData
+                    );
+
                 }
 
             }
@@ -4021,7 +4066,9 @@ app.post(
                     parentCallId,
                     callState,
                     fromNumber,
-                    toNumber,
+                    toNumber:
+                        customerPhoneNumber,
+                    privateAddress,
                     userId
                 }
             );
@@ -4030,9 +4077,8 @@ app.post(
             // Create voicemail placeholder.
             //
             // IMPORTANT:
-            // The recording callback uses the parent
-            // call ID, so we store parentCallId when
-            // available.
+            // SignalWire's recording callback uses
+            // the parent call ID.
             // -----------------------------------------
 
             const voicemailCallId =
@@ -4108,7 +4154,7 @@ app.post(
                                             fromNumber,
 
                                         dialed_number:
-                                            toNumber,
+                                            customerPhoneNumber,
 
                                         status:
                                             "processing"
