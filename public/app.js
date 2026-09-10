@@ -3445,6 +3445,7 @@ hangupButton.disabled =
 
 resetMuteControl();
 resetHoldControl();
+window.dialeazeOutboundLocked = false;
 
                                 const endedAt = Date.now();
 
@@ -3574,6 +3575,7 @@ if (!outboundHistorySaved) {
 
                 hangupButton.disabled =
                     true;
+                    window.dialeazeOutboundLocked = false;
 
 
                 currentCall =
