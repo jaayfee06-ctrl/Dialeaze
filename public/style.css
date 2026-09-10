@@ -3577,6 +3577,8 @@ body {
    ========================================================= */
 
 .contact-item {
+    cursor: pointer;
+
     transition:
         background-color 0.18s ease,
         transform 0.18s ease,
