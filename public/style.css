@@ -3571,3 +3571,46 @@ body {
     }
 
 }
+
+/* =========================================================
+   BUSINESS CONTACTS HOVER EFFECT
+   ========================================================= */
+
+.contact-item {
+    transition:
+        background-color 0.18s ease,
+        transform 0.18s ease,
+        box-shadow 0.18s ease,
+        border-color 0.18s ease;
+}
+
+.contact-item:hover {
+    background: #f8fafc;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+    border-color: #d7e3ef;
+}
+
+.contact-item:hover .contact-avatar {
+    transform: scale(1.05);
+}
+
+.contact-avatar {
+    transition: transform 0.18s ease;
+}
+
+.contact-item:hover .contact-name {
+    color: #0f172a;
+}
+
+.contact-item .contact-actions button {
+    transition:
+        background-color 0.18s ease,
+        color 0.18s ease,
+        border-color 0.18s ease,
+        transform 0.15s ease;
+}
+
+.contact-item .contact-actions button:hover {
+    transform: translateY(-1px);
+}

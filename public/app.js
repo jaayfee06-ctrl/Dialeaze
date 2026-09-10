@@ -791,6 +791,19 @@ async function loadLocalUserData() {
 
     }
 
+    try {
+
+        await loadContacts();
+
+    } catch (error) {
+
+        console.error(
+            "Unable to preload contacts:",
+            error
+        );
+
+    }
+
 
     renderRecentCalls();
 
@@ -1365,7 +1378,33 @@ async function loadCustomerAccount() {
     }
 
 }
+// =========================================================
+// CONTACT NAME LOOKUP FOR CALL HISTORY
+// =========================================================
 
+function getContactNameForNumber(number) {
+    if (!number || !Array.isArray(contacts)) {
+        return null;
+    }
+
+    const normalize = value =>
+        String(value || "")
+            .replace(/\D/g, "")
+            .replace(/^1(?=\d{10}$)/, "");
+
+    const target = normalize(number);
+
+    if (!target) {
+        return null;
+    }
+
+    const contact = contacts.find(
+        contact =>
+            normalize(contact.phone_number) === target
+    );
+
+    return contact?.name || null;
+}
 
 // =========================================================
 // RENDER RECENT CALLS
@@ -1427,8 +1466,12 @@ function renderRecentCalls() {
                     <div>
 
                         <div class="recent-number">
-                            ${call.phoneNumber}
-                        </div>
+    ${getContactNameForNumber(call.phoneNumber) || call.phoneNumber}
+</div>
+
+<div class="recent-contact-number">
+    ${getContactNameForNumber(call.phoneNumber) ? call.phoneNumber : ""}
+</div>
 
                         <div class="recent-details">
                             Outbound · ${call.status}
@@ -1508,8 +1551,12 @@ function renderCallHistory() {
     <div>
 
         <div class="call-history-number">
-            ${call.phoneNumber}
-        </div>
+    ${getContactNameForNumber(call.phoneNumber) || call.phoneNumber}
+</div>
+
+<div class="call-history-contact-number">
+    ${getContactNameForNumber(call.phoneNumber) ? call.phoneNumber : ""}
+</div>
 
         <div class="call-history-details">
             Outbound · ${call.status}
