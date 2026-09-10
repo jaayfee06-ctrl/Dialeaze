@@ -323,12 +323,6 @@ body {
 }
 
 
-.mute-button {
-
-    background: #d40021;
-}
-
-
 /* ========================================
    RECENT CALLS
 ======================================== */
@@ -949,9 +943,8 @@ body {
 
 .hangup-button {
 
-    background: white;
-
-    color: #6f7881;
+      background: #dc2626;
+    color: #ffffff;
 
     border: 1px solid #d8dee3;
 }
@@ -959,7 +952,7 @@ body {
 
 .hangup-button:hover:not(:disabled) {
 
-    background: #f1f3f5;
+     background: #b91c1c;
 }
 
 
@@ -3638,13 +3631,19 @@ body {
    MUTE / UNMUTE CALL CONTROL
 ========================================================= */
 
+/* =========================================================
+   MUTE / UNMUTE CALL CONTROL
+========================================================= */
+
 .mute-button {
     border: none;
-    background: #eef2ff;
-    color: #3730a3;
+    background: #f3e5d0;
+    color: #7a4f2b;
     border-radius: 50%;
-    width: 52px;
-    height: 52px;
+    height: 39px;
+min-width: 90px;
+padding: 0 16px;
+border-radius: 22px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -3654,12 +3653,14 @@ body {
     transition:
         background-color 0.18s ease,
         color 0.18s ease,
-        transform 0.18s ease;
+        transform 0.18s ease,
+        box-shadow 0.18s ease;
 }
 
 .mute-button:hover:not(:disabled) {
-    background: #e0e7ff;
+    background: #ead5ba;
     transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(122, 79, 43, 0.15);
 }
 
 .mute-button:disabled {
@@ -3668,12 +3669,12 @@ body {
 }
 
 .mute-button.is-muted {
-    background: #fee2e2;
-    color: #b91c1c;
+    background: #d6b38a;
+    color: #5c371c;
 }
 
 .mute-button.is-muted:hover:not(:disabled) {
-    background: #fecaca;
+    background: #cda675;
 }
 
 .mute-button span:first-child {
