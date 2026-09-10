@@ -357,6 +357,8 @@ const callButton =
 
     const muteButton =
     document.getElementById("muteButton");
+    const holdButton =
+    document.getElementById("holdButton");
 
 const hangupButton =
     document.getElementById("hangupButton");
@@ -559,6 +561,8 @@ let signalWireInitializationPromise = null;
 let currentCall = null;
 let currentMuteSelf = null;
 let muteStateSubscription = null;
+let currentHoldCall = null;
+let holdStateSubscription = null;
 let providerStatePollingInterval = null;
 let providerEndReason = null;
 
@@ -2065,6 +2069,9 @@ if (client.session && client.session.incomingCalls$) {
         attachMuteControl(
     currentCall
 );
+attachHoldControl(
+    currentCall
+);
 
         const callerName =
             ringingCall.fromName &&
@@ -2147,6 +2154,7 @@ console.log("🧪 RAW OUTBOUND STATUS:", JSON.stringify(callStatus));
                 if (currentCall === ringingCall) {
 
     resetMuteControl();
+    resetHoldControl();
 
     currentCall = null;
 }
@@ -2290,6 +2298,7 @@ function resetMuteControl() {
 function attachMuteControl(call) {
 
     resetMuteControl();
+    
 
 
     if (!muteButton) {
@@ -2418,6 +2427,155 @@ if (muteButton) {
 
                 console.error(
                     "❌ Could not toggle microphone mute:",
+                    error
+                );
+
+            }
+
+        }
+    );
+
+}
+
+// =========================================================
+// HOLD / RESUME CALL CONTROL
+// =========================================================
+
+function resetHoldControl() {
+
+    currentHoldCall = null;
+
+    if (holdStateSubscription) {
+
+        try {
+            holdStateSubscription.unsubscribe();
+        } catch (error) {
+
+            console.warn(
+                "Could not remove hold subscription:",
+                error
+            );
+
+        }
+
+        holdStateSubscription = null;
+    }
+
+    if (holdButton) {
+
+        holdButton.disabled = true;
+
+        holdButton.classList.remove(
+            "is-on-hold"
+        );
+
+        holdButton.innerHTML = `
+            <span>⏸</span>
+            <span class="hold-button-text">
+                Hold
+            </span>
+        `;
+    }
+}
+
+
+function attachHoldControl(call) {
+
+    resetHoldControl();
+
+    if (!holdButton) {
+        return;
+    }
+
+    if (
+        !call ||
+        typeof call.toggleHold !== "function"
+    ) {
+
+        console.warn(
+            "⚠️ SignalWire call does not expose toggleHold()."
+        );
+
+        return;
+    }
+
+    currentHoldCall = call;
+
+    holdButton.disabled = false;
+
+    if (
+        call.hold$ &&
+        typeof call.hold$.subscribe === "function"
+    ) {
+
+        holdStateSubscription =
+            call.hold$.subscribe((onHold) => {
+
+                if (!holdButton) {
+                    return;
+                }
+
+                const held =
+                    Boolean(onHold);
+
+                holdButton.classList.toggle(
+                    "is-on-hold",
+                    held
+                );
+
+                holdButton.innerHTML =
+                    held
+                        ? `
+                            <span>▶</span>
+                            <span class="hold-button-text">
+                                Resume
+                            </span>
+                        `
+                        : `
+                            <span>⏸</span>
+                            <span class="hold-button-text">
+                                Hold
+                            </span>
+                        `;
+
+            });
+
+    } else {
+
+        console.warn(
+            "⚠️ SignalWire call does not expose hold$."
+        );
+    }
+}
+
+
+if (holdButton) {
+
+    holdButton.addEventListener(
+        "click",
+        async () => {
+
+            if (
+                !currentHoldCall ||
+                typeof currentHoldCall.toggleHold !==
+                    "function"
+            ) {
+
+                console.warn(
+                    "⚠️ Hold control is not ready."
+                );
+
+                return;
+            }
+
+            try {
+
+                await currentHoldCall.toggleHold();
+
+            } catch (error) {
+
+                console.error(
+                    "❌ Could not toggle call hold:",
                     error
                 );
 
@@ -2753,6 +2911,7 @@ if (digits.length === 10) {
     attachMuteControl(
     currentCall
 );
+attachHoldControl(currentCall);
 
                     const providerCallId =
     currentCall?.id ||
@@ -3222,17 +3381,19 @@ if (currentCall?.answered$) {
                                         "🛑 PSTN provider-state polling stopped because SignalWire call ended."
                                     );
                                 }
-                                status.textContent =
-                                    "Call ended";
+                               status.textContent =
+    "Call ended";
 
-                                stopCallTimer();
+stopCallTimer();
 
-                                callButton.disabled =
-                                    false;
+callButton.disabled =
+    false;
 
-                                hangupButton.disabled =
-                                    true;
+hangupButton.disabled =
+    true;
 
+resetMuteControl();
+resetHoldControl();
 
                                 const endedAt = Date.now();
 

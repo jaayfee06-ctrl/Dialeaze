@@ -3685,3 +3685,61 @@ border-radius: 22px;
     font-size: 12px;
     font-weight: 700;
 }
+
+/* =========================================================
+   HOLD / RESUME CALL CONTROL
+========================================================= */
+
+.hold-button {
+    border: none;
+    background: #e8eef3;
+    color: #475569;
+
+    height: 39px;
+    min-width: 90px;
+    padding: 0 16px;
+    border-radius: 22px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+
+    cursor: pointer;
+    font-size: 15px;
+
+    transition:
+        background-color 0.18s ease,
+        color 0.18s ease,
+        transform 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+.hold-button:hover:not(:disabled) {
+    background: #dce5ec;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(71, 85, 105, 0.15);
+}
+
+.hold-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.hold-button.is-on-hold {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.hold-button.is-on-hold:hover:not(:disabled) {
+    background: #bfdbfe;
+}
+
+.hold-button span:first-child {
+    font-size: 14px;
+}
+
+.hold-button-text {
+    font-size: 12px;
+    font-weight: 700;
+}
