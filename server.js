@@ -326,6 +326,140 @@ async function getUserOrganization(userId) {
         throw error;
     }
 }
+
+// =========================================================
+// DIALEAZE ORGANIZATION PERMISSIONS
+// =========================================================
+//
+// These helpers provide the authorization foundation for
+// multi-user Dialeaze organizations.
+//
+// ROLE HIERARCHY:
+//
+// owner  → full organization control
+// admin  → team + number management
+// member → own Dialeaze communications
+//
+// IMPORTANT:
+// These helpers do not change any existing communication
+// routes yet. They will be used by future organization
+// endpoints such as Team Members and Number Assignment.
+// =========================================================
+
+
+async function requireOrganizationMember(req) {
+    const auth =
+        await authenticateRequest(req);
+
+    if (!auth.success) {
+        return {
+            success: false,
+            status: auth.status,
+            error: auth.error
+        };
+    }
+
+    const organization =
+        await getUserOrganization(
+            auth.user.id
+        );
+
+    if (!organization) {
+        return {
+            success: false,
+            status: 403,
+            error:
+                "Your Dialeaze account is not connected to an active organization."
+        };
+    }
+
+    if (
+        organization.status !== "active"
+    ) {
+        return {
+            success: false,
+            status: 403,
+            error:
+                "Your Dialeaze organization is not active."
+        };
+    }
+
+    if (
+        organization.memberStatus !== "active"
+    ) {
+        return {
+            success: false,
+            status: 403,
+            error:
+                "Your organization membership is not active."
+        };
+    }
+
+    return {
+        success: true,
+        user: auth.user,
+        organization
+    };
+}
+
+
+async function requireOrganizationAdmin(req) {
+    const result =
+        await requireOrganizationMember(
+            req
+        );
+
+    if (!result.success) {
+        return result;
+    }
+
+    const role =
+        String(
+            result.organization.role || ""
+        ).toLowerCase();
+
+    if (
+        role !== "owner" &&
+        role !== "admin"
+    ) {
+        return {
+            success: false,
+            status: 403,
+            error:
+                "Owner or Admin permission is required."
+        };
+    }
+
+    return result;
+}
+
+
+async function requireOrganizationOwner(req) {
+    const result =
+        await requireOrganizationMember(
+            req
+        );
+
+    if (!result.success) {
+        return result;
+    }
+
+    const role =
+        String(
+            result.organization.role || ""
+        ).toLowerCase();
+
+    if (role !== "owner") {
+        return {
+            success: false,
+            status: 403,
+            error:
+                "Owner permission is required."
+        };
+    }
+
+    return result;
+}
 // =========================================================
 // SIGNALWIRE SUBSCRIBER ACCESS TOKEN
 // =========================================================
@@ -615,6 +749,108 @@ app.get("/api/organization", async (req, res) => {
     }
 });
 
+// =========================================================
+// ORGANIZATION PERMISSION TEST
+// =========================================================
+//
+// Temporary/diagnostic endpoint for verifying that the
+// authenticated user's organization role is being resolved
+// correctly.
+//
+// This endpoint is intentionally read-only.
+// =========================================================
+
+app.get(
+    "/api/organization/access",
+    async (req, res) => {
+        try {
+            const member =
+                await requireOrganizationMember(
+                    req
+                );
+
+            if (!member.success) {
+                return res.status(
+                    member.status
+                ).json({
+                    success: false,
+                    error: member.error
+                });
+            }
+
+            const role =
+                String(
+                    member.organization.role ||
+                    ""
+                ).toLowerCase();
+
+            return res.json({
+                success: true,
+
+                organization: {
+                    id:
+                        member.organization.id,
+
+                    name:
+                        member.organization.name,
+
+                    plan:
+                        member.organization.plan,
+
+                    status:
+                        member.organization.status
+                },
+
+                membership: {
+                    id:
+                        member.organization.membershipId,
+
+                    role:
+                        role,
+
+                    status:
+                        member.organization.memberStatus
+                },
+
+                permissions: {
+                    canUseDialer: true,
+
+                    canManageOwnAccount: true,
+
+                    canManageTeam:
+                        role === "owner" ||
+                        role === "admin",
+
+                    canManageNumbers:
+                        role === "owner" ||
+                        role === "admin",
+
+                    canViewTeamActivity:
+                        role === "owner" ||
+                        role === "admin",
+
+                    canManageBilling:
+                        role === "owner",
+
+                    canManageOrganization:
+                        role === "owner"
+                }
+            });
+
+        } catch (error) {
+            console.error(
+                "Organization access test error:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    "Unable to determine organization permissions."
+            });
+        }
+    }
+);
 
 app.get("/api/call-history", async (req, res) => {
     try {
