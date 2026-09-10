@@ -255,7 +255,7 @@
                      CONTACTS CARD
                 ================================== -->
 
-                <div class="contacts-card">
+                <div class="contacts-card" id="contactsCard">
 
                     <div class="contacts-icon">
                         👥
@@ -692,7 +692,197 @@
 
 </div>
 
+<!-- =========================================
+     BUSINESS CONTACTS MODAL
+========================================= -->
 
+<div
+    id="contactsOverlay"
+    class="contacts-overlay"
+>
+
+    <div class="contacts-window">
+
+        <div class="contacts-header">
+
+            <div>
+                <div class="contacts-window-title">
+                    Business Contacts
+                </div>
+
+                <div class="contacts-window-subtitle">
+                    Save and manage your business contacts
+                </div>
+            </div>
+
+            <button
+                id="closeContactsButton"
+                class="contacts-close"
+                type="button"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <div class="contacts-toolbar">
+
+            <input
+                id="contactsSearch"
+                type="text"
+                placeholder="Search contacts..."
+                autocomplete="off"
+            >
+
+            <button
+                id="addContactButton"
+                class="contacts-add-button"
+                type="button"
+            >
+                + Add Contact
+            </button>
+
+        </div>
+
+
+        <div
+            id="contactsList"
+            class="contacts-list"
+        >
+            <div class="contacts-empty">
+                No contacts yet.
+            </div>
+        </div>
+
+
+        <!-- ADD / EDIT CONTACT FORM -->
+
+        <div
+            id="contactFormPanel"
+            class="contact-form-panel"
+        >
+
+            <div class="contact-form-title">
+                Add Contact
+            </div>
+
+
+            <div class="contact-form-grid">
+
+                <div class="contact-field">
+
+                    <label for="contactName">
+                        Name
+                    </label>
+
+                    <input
+                        id="contactName"
+                        type="text"
+                        maxlength="150"
+                        placeholder="John Smith"
+                    >
+
+                </div>
+
+
+                <div class="contact-field">
+
+                    <label for="contactPhone">
+                        Phone Number
+                    </label>
+
+                    <input
+                        id="contactPhone"
+                        type="tel"
+                        maxlength="30"
+                        placeholder="+1 555 123 4567"
+                    >
+
+                </div>
+
+
+                <div class="contact-field">
+
+                    <label for="contactEmail">
+                        Email
+                    </label>
+
+                    <input
+                        id="contactEmail"
+                        type="email"
+                        maxlength="255"
+                        placeholder="john@example.com"
+                    >
+
+                </div>
+
+
+                <div class="contact-field">
+
+                    <label for="contactCompany">
+                        Company
+                    </label>
+
+                    <input
+                        id="contactCompany"
+                        type="text"
+                        maxlength="150"
+                        placeholder="ABC Company"
+                    >
+
+                </div>
+
+
+                <div class="contact-field contact-field-full">
+
+                    <label for="contactNotes">
+                        Notes
+                    </label>
+
+                    <textarea
+                        id="contactNotes"
+                        rows="3"
+                        maxlength="5000"
+                        placeholder="Additional notes..."
+                    ></textarea>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="contactFormNotice"
+                class="contact-form-notice"
+            ></div>
+
+
+            <div class="contact-form-actions">
+
+                <button
+                    id="cancelContactButton"
+                    class="contact-cancel-button"
+                    type="button"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    id="saveContactButton"
+                    class="contact-save-button"
+                    type="button"
+                >
+                    Save Contact
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
 
     <!-- Remote WebRTC Audio -->
 

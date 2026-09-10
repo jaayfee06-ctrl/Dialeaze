@@ -468,7 +468,84 @@ const sendMessageButton =
         "sendMessageButton"
     );
 
+// =========================================================
+// CONTACTS DOM ELEMENTS
+// =========================================================
 
+const contactsCard =
+    document.getElementById(
+        "contactsCard"
+    );
+
+const contactsOverlay =
+    document.getElementById(
+        "contactsOverlay"
+    );
+
+const closeContactsButton =
+    document.getElementById(
+        "closeContactsButton"
+    );
+
+const contactsSearch =
+    document.getElementById(
+        "contactsSearch"
+    );
+
+const addContactButton =
+    document.getElementById(
+        "addContactButton"
+    );
+
+const contactsList =
+    document.getElementById(
+        "contactsList"
+    );
+
+const contactFormPanel =
+    document.getElementById(
+        "contactFormPanel"
+    );
+
+const contactName =
+    document.getElementById(
+        "contactName"
+    );
+
+const contactPhone =
+    document.getElementById(
+        "contactPhone"
+    );
+
+const contactEmail =
+    document.getElementById(
+        "contactEmail"
+    );
+
+const contactCompany =
+    document.getElementById(
+        "contactCompany"
+    );
+
+const contactNotes =
+    document.getElementById(
+        "contactNotes"
+    );
+
+const contactFormNotice =
+    document.getElementById(
+        "contactFormNotice"
+    );
+
+const cancelContactButton =
+    document.getElementById(
+        "cancelContactButton"
+    );
+
+const saveContactButton =
+    document.getElementById(
+        "saveContactButton"
+    );
 // =========================================================
 // VARIABLES
 // =========================================================
@@ -499,6 +576,10 @@ let callTimerInterval = null;
 let messagePollingInterval = null;
 
 let currentUserId = null;
+
+let contacts = [];
+
+let editingContactId = null;
 
 // =========================================================
 // MESSAGES INBOX STATE
@@ -3132,7 +3213,1074 @@ console.log(
     }
 );
 
+// =========================================================
+// BUSINESS CONTACTS
+// =========================================================
 
+
+// ---------------------------------------------------------
+// OPEN CONTACTS
+// ---------------------------------------------------------
+
+function openContacts() {
+
+    if (!contactsOverlay) {
+        console.warn(
+            "Contacts overlay was not found."
+        );
+
+        return;
+    }
+
+    contactsOverlay.classList.add(
+        "open"
+    );
+
+    editingContactId = null;
+
+    if (contactFormPanel) {
+        contactFormPanel.classList.remove(
+            "open"
+        );
+    }
+
+    clearContactForm();
+
+    loadContacts();
+}
+
+
+// ---------------------------------------------------------
+// CLOSE CONTACTS
+// ---------------------------------------------------------
+
+function closeContacts() {
+
+    if (!contactsOverlay) {
+        return;
+    }
+
+    contactsOverlay.classList.remove(
+        "open"
+    );
+
+    editingContactId = null;
+
+    if (contactFormPanel) {
+        contactFormPanel.classList.remove(
+            "open"
+        );
+    }
+
+    clearContactForm();
+}
+
+
+// ---------------------------------------------------------
+// CLEAR CONTACT FORM
+// ---------------------------------------------------------
+
+function clearContactForm() {
+
+    if (contactName) {
+        contactName.value = "";
+    }
+
+    if (contactPhone) {
+        contactPhone.value = "";
+    }
+
+    if (contactEmail) {
+        contactEmail.value = "";
+    }
+
+    if (contactCompany) {
+        contactCompany.value = "";
+    }
+
+    if (contactNotes) {
+        contactNotes.value = "";
+    }
+
+    if (contactFormNotice) {
+        contactFormNotice.textContent = "";
+
+        contactFormNotice.classList.remove(
+            "error",
+            "success"
+        );
+    }
+
+    if (saveContactButton) {
+        saveContactButton.disabled = false;
+
+        saveContactButton.textContent =
+            "Save Contact";
+    }
+}
+
+
+// ---------------------------------------------------------
+// SHOW CONTACT FORM
+// ---------------------------------------------------------
+
+function showContactForm(
+    contact = null
+) {
+
+    if (!contactFormPanel) {
+        return;
+    }
+
+    contactFormPanel.classList.add(
+        "open"
+    );
+
+    clearContactForm();
+
+    if (contact) {
+
+        editingContactId =
+            contact.id;
+
+        if (contactName) {
+            contactName.value =
+                contact.name || "";
+        }
+
+        if (contactPhone) {
+            contactPhone.value =
+                contact.phone_number || "";
+        }
+
+        if (contactEmail) {
+            contactEmail.value =
+                contact.email || "";
+        }
+
+        if (contactCompany) {
+            contactCompany.value =
+                contact.company || "";
+        }
+
+        if (contactNotes) {
+            contactNotes.value =
+                contact.notes || "";
+        }
+
+        const title =
+            contactFormPanel.querySelector(
+                ".contact-form-title"
+            );
+
+        if (title) {
+            title.textContent =
+                "Edit Contact";
+        }
+
+        if (saveContactButton) {
+            saveContactButton.textContent =
+                "Update Contact";
+        }
+
+    } else {
+
+        editingContactId = null;
+
+        const title =
+            contactFormPanel.querySelector(
+                ".contact-form-title"
+            );
+
+        if (title) {
+            title.textContent =
+                "Add Contact";
+        }
+
+        if (saveContactButton) {
+            saveContactButton.textContent =
+                "Save Contact";
+        }
+
+        if (contactName) {
+            contactName.focus();
+        }
+    }
+}
+
+
+// ---------------------------------------------------------
+// LOAD CONTACTS
+// ---------------------------------------------------------
+
+async function loadContacts() {
+
+    if (!contactsList) {
+        return;
+    }
+
+    contactsList.innerHTML = `
+        <div class="contacts-empty">
+            Loading contacts...
+        </div>
+    `;
+
+    try {
+
+        const response =
+            await authFetch(
+                "/api/contacts"
+            );
+
+        const data =
+            await response.json();
+
+        if (
+            !response.ok ||
+            !data.success
+        ) {
+
+            throw new Error(
+                data?.error ||
+                "Unable to load contacts."
+            );
+        }
+
+        contacts =
+            Array.isArray(
+                data.contacts
+            )
+                ? data.contacts
+                : [];
+
+        renderContacts();
+
+    } catch (error) {
+
+        console.error(
+            "❌ Load contacts error:",
+            error
+        );
+
+        contactsList.innerHTML = `
+            <div class="contacts-empty">
+                Unable to load contacts.
+            </div>
+        `;
+    }
+}
+
+
+// ---------------------------------------------------------
+// RENDER CONTACTS
+// ---------------------------------------------------------
+
+function renderContacts() {
+
+    if (!contactsList) {
+        return;
+    }
+
+    const searchTerm =
+        contactsSearch
+            ? contactsSearch.value
+                .trim()
+                .toLowerCase()
+            : "";
+
+    const filteredContacts =
+        contacts.filter(
+            contact => {
+
+                if (!searchTerm) {
+                    return true;
+                }
+
+                const name =
+                    String(
+                        contact.name || ""
+                    ).toLowerCase();
+
+                const phone =
+                    String(
+                        contact.phone_number || ""
+                    ).toLowerCase();
+
+                const email =
+                    String(
+                        contact.email || ""
+                    ).toLowerCase();
+
+                const company =
+                    String(
+                        contact.company || ""
+                    ).toLowerCase();
+
+                return (
+                    name.includes(
+                        searchTerm
+                    ) ||
+                    phone.includes(
+                        searchTerm
+                    ) ||
+                    email.includes(
+                        searchTerm
+                    ) ||
+                    company.includes(
+                        searchTerm
+                    )
+                );
+            }
+        );
+
+    if (
+        filteredContacts.length === 0
+    ) {
+
+        contactsList.innerHTML = `
+            <div class="contacts-empty">
+                ${
+                    searchTerm
+                        ? "No contacts match your search."
+                        : "No contacts yet. Click + Add Contact to create one."
+                }
+            </div>
+        `;
+
+        return;
+    }
+
+    contactsList.innerHTML =
+        filteredContacts
+            .map(
+                contact => {
+
+                    const name =
+                        escapeHtml(
+                            contact.name ||
+                            "Unnamed Contact"
+                        );
+
+                    const phone =
+                        escapeHtml(
+                            contact.phone_number ||
+                            ""
+                        );
+
+                    const company =
+                        escapeHtml(
+                            contact.company ||
+                            ""
+                        );
+
+                    const initial =
+                        escapeHtml(
+                            (
+                                contact.name ||
+                                "?"
+                            )
+                                .trim()
+                                .charAt(0)
+                                .toUpperCase()
+                        );
+
+                    return `
+                        <div
+                            class="contact-item"
+                            data-contact-id="${contact.id}"
+                        >
+
+                            <div class="contact-avatar">
+                                ${initial}
+                            </div>
+
+                            <div class="contact-info">
+
+                                <div class="contact-name-display">
+                                    ${name}
+                                </div>
+
+                                <div class="contact-phone-display">
+                                    ${phone}
+                                </div>
+
+                                ${
+                                    company
+                                        ? `
+                                            <div class="contact-company-display">
+                                                ${company}
+                                            </div>
+                                        `
+                                        : ""
+                                }
+
+                            </div>
+
+                            <div class="contact-actions">
+
+                                <button
+                                    type="button"
+                                    class="contact-action-button"
+                                    data-action="call"
+                                    data-contact-id="${contact.id}"
+                                >
+                                    Call
+                                </button>
+
+                                <button
+                                    type="button"
+                                    class="contact-action-button"
+                                    data-action="message"
+                                    data-contact-id="${contact.id}"
+                                >
+                                    Message
+                                </button>
+
+                                <button
+                                    type="button"
+                                    class="contact-action-button"
+                                    data-action="edit"
+                                    data-contact-id="${contact.id}"
+                                >
+                                    Edit
+                                </button>
+
+                                <button
+                                    type="button"
+                                    class="contact-action-button contact-delete-button"
+                                    data-action="delete"
+                                    data-contact-id="${contact.id}"
+                                >
+                                    Delete
+                                </button>
+
+                            </div>
+
+                        </div>
+                    `;
+                }
+            )
+            .join("");
+}
+
+
+// ---------------------------------------------------------
+// SAVE CONTACT
+// ---------------------------------------------------------
+
+async function saveContact() {
+
+    if (!contactName || !contactPhone) {
+        return;
+    }
+
+    const name =
+        contactName.value.trim();
+
+    const phoneNumber =
+        contactPhone.value.trim();
+
+    const email =
+        contactEmail
+            ? contactEmail.value.trim()
+            : "";
+
+    const company =
+        contactCompany
+            ? contactCompany.value.trim()
+            : "";
+
+    const notes =
+        contactNotes
+            ? contactNotes.value.trim()
+            : "";
+
+    if (!name) {
+
+        showContactNotice(
+            "Please enter a contact name.",
+            "error"
+        );
+
+        contactName.focus();
+
+        return;
+    }
+
+    if (!phoneNumber) {
+
+        showContactNotice(
+            "Please enter a phone number.",
+            "error"
+        );
+
+        contactPhone.focus();
+
+        return;
+    }
+
+    if (saveContactButton) {
+
+        saveContactButton.disabled =
+            true;
+
+        saveContactButton.textContent =
+            editingContactId
+                ? "Updating..."
+                : "Saving...";
+    }
+
+    try {
+
+        const payload = {
+            name: name,
+            phone_number:
+                phoneNumber,
+            email:
+                email || null,
+            company:
+                company || null,
+            notes:
+                notes || null
+        };
+
+        const isEditing =
+            Boolean(
+                editingContactId
+            );
+
+        const url =
+            isEditing
+                ? `/api/contacts/${encodeURIComponent(
+                    editingContactId
+                )}`
+                : "/api/contacts";
+
+        const response =
+            await authFetch(
+                url,
+                {
+                    method:
+                        isEditing
+                            ? "PATCH"
+                            : "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify(
+                            payload
+                        )
+                }
+            );
+
+        const data =
+            await response.json();
+
+        if (
+            !response.ok ||
+            !data.success
+        ) {
+
+            throw new Error(
+                data?.error ||
+                "Unable to save contact."
+            );
+        }
+
+        showContactNotice(
+            isEditing
+                ? "Contact updated successfully."
+                : "Contact saved successfully.",
+            "success"
+        );
+
+        await loadContacts();
+
+        setTimeout(
+            () => {
+
+                if (
+                    contactFormPanel
+                ) {
+                    contactFormPanel.classList.remove(
+                        "open"
+                    );
+                }
+
+                clearContactForm();
+
+            },
+            600
+        );
+
+    } catch (error) {
+
+        console.error(
+            "❌ Save contact error:",
+            error
+        );
+
+        showContactNotice(
+            error.message ||
+                "Unable to save contact.",
+            "error"
+        );
+
+    } finally {
+
+        if (saveContactButton) {
+
+            saveContactButton.disabled =
+                false;
+
+            saveContactButton.textContent =
+                editingContactId
+                    ? "Update Contact"
+                    : "Save Contact";
+        }
+    }
+}
+
+
+// ---------------------------------------------------------
+// CONTACT NOTICE
+// ---------------------------------------------------------
+
+function showContactNotice(
+    message,
+    type
+) {
+
+    if (!contactFormNotice) {
+        return;
+    }
+
+    contactFormNotice.textContent =
+        message;
+
+    contactFormNotice.classList.remove(
+        "error",
+        "success"
+    );
+
+    if (type) {
+        contactFormNotice.classList.add(
+            type
+        );
+    }
+}
+
+
+// ---------------------------------------------------------
+// DELETE CONTACT
+// ---------------------------------------------------------
+
+async function deleteContact(
+    contactId
+) {
+
+    const contact =
+        contacts.find(
+            item =>
+                String(item.id) ===
+                String(contactId)
+        );
+
+    if (!contact) {
+        return;
+    }
+
+    const confirmed =
+        window.confirm(
+            `Delete ${contact.name}?`
+        );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+
+        const response =
+            await authFetch(
+                `/api/contacts/${encodeURIComponent(
+                    contactId
+                )}`,
+                {
+                    method:
+                        "DELETE"
+                }
+            );
+
+        const data =
+            await response.json();
+
+        if (
+            !response.ok ||
+            !data.success
+        ) {
+
+            throw new Error(
+                data?.error ||
+                "Unable to delete contact."
+            );
+        }
+
+        await loadContacts();
+
+    } catch (error) {
+
+        console.error(
+            "❌ Delete contact error:",
+            error
+        );
+
+        alert(
+            error.message ||
+            "Unable to delete contact."
+        );
+    }
+}
+
+
+// ---------------------------------------------------------
+// CALL CONTACT
+// ---------------------------------------------------------
+
+function callContact(
+    contactId
+) {
+
+    const contact =
+        contacts.find(
+            item =>
+                String(item.id) ===
+                String(contactId)
+        );
+
+    if (!contact) {
+        return;
+    }
+
+    const number =
+        contact.phone_number || "";
+
+    if (!number) {
+        return;
+    }
+
+    if (phoneNumber) {
+
+        phoneNumber.value =
+            number;
+
+        phoneNumber.dispatchEvent(
+            new Event(
+                "input",
+                {
+                    bubbles: true
+                }
+            )
+        );
+
+        phoneNumber.focus();
+    }
+
+    closeContacts();
+
+    /*
+     * We intentionally do NOT
+     * automatically click the Call
+     * button yet.
+     *
+     * This prevents a contact click
+     * from accidentally starting a call.
+     */
+
+}
+
+
+// ---------------------------------------------------------
+// MESSAGE CONTACT
+// ---------------------------------------------------------
+
+function messageContact(
+    contactId
+) {
+
+    const contact =
+        contacts.find(
+            item =>
+                String(item.id) ===
+                String(contactId)
+        );
+
+    if (!contact) {
+        return;
+    }
+
+    const number =
+        contact.phone_number || "";
+
+    if (!number) {
+        return;
+    }
+
+    closeContacts();
+
+    if (
+        typeof openMessages ===
+        "function"
+    ) {
+
+        openMessages();
+
+        if (messageRecipient) {
+
+            messageRecipient.value =
+                number;
+
+            messageRecipient.dispatchEvent(
+                new Event(
+                    "input",
+                    {
+                        bubbles: true
+                    }
+                )
+            );
+        }
+
+    } else {
+
+        console.warn(
+            "Messages function is not available."
+        );
+    }
+}
+
+
+// ---------------------------------------------------------
+// CONTACT LIST CLICK HANDLER
+// ---------------------------------------------------------
+
+if (contactsList) {
+
+    contactsList.addEventListener(
+        "click",
+        event => {
+
+            const button =
+                event.target.closest(
+                    "[data-action]"
+                );
+
+            if (!button) {
+                return;
+            }
+
+            const action =
+                button.dataset.action;
+
+            const contactId =
+                button.dataset.contactId;
+
+            if (
+                action === "call"
+            ) {
+
+                callContact(
+                    contactId
+                );
+
+            } else if (
+                action === "message"
+            ) {
+
+                messageContact(
+                    contactId
+                );
+
+            } else if (
+                action === "edit"
+            ) {
+
+                const contact =
+                    contacts.find(
+                        item =>
+                            String(
+                                item.id
+                            ) ===
+                            String(
+                                contactId
+                            )
+                    );
+
+                if (contact) {
+                    showContactForm(
+                        contact
+                    );
+                }
+
+            } else if (
+                action === "delete"
+            ) {
+
+                deleteContact(
+                    contactId
+                );
+            }
+        }
+    );
+}
+
+
+// ---------------------------------------------------------
+// CONTACTS BUTTON
+// ---------------------------------------------------------
+
+if (contactsCard) {
+
+    contactsCard.addEventListener(
+        "click",
+        () => {
+            openContacts();
+        }
+    );
+}
+
+
+// ---------------------------------------------------------
+// CLOSE CONTACTS BUTTON
+// ---------------------------------------------------------
+
+if (closeContactsButton) {
+
+    closeContactsButton.addEventListener(
+        "click",
+        () => {
+            closeContacts();
+        }
+    );
+}
+
+
+// ---------------------------------------------------------
+// CLICK OUTSIDE CONTACTS
+// ---------------------------------------------------------
+
+if (contactsOverlay) {
+
+    contactsOverlay.addEventListener(
+        "click",
+        event => {
+
+            if (
+                event.target ===
+                contactsOverlay
+            ) {
+
+                closeContacts();
+            }
+        }
+    );
+}
+
+
+// ---------------------------------------------------------
+// ADD CONTACT BUTTON
+// ---------------------------------------------------------
+
+if (addContactButton) {
+
+    addContactButton.addEventListener(
+        "click",
+        () => {
+
+            showContactForm();
+        }
+    );
+}
+
+
+// ---------------------------------------------------------
+// CANCEL CONTACT
+// ---------------------------------------------------------
+
+if (cancelContactButton) {
+
+    cancelContactButton.addEventListener(
+        "click",
+        () => {
+
+            if (
+                contactFormPanel
+            ) {
+                contactFormPanel.classList.remove(
+                    "open"
+                );
+            }
+
+            clearContactForm();
+
+            editingContactId =
+                null;
+        }
+    );
+}
+
+
+// ---------------------------------------------------------
+// SAVE CONTACT BUTTON
+// ---------------------------------------------------------
+
+if (saveContactButton) {
+
+    saveContactButton.addEventListener(
+        "click",
+        saveContact
+    );
+}
+
+
+// ---------------------------------------------------------
+// CONTACT SEARCH
+// ---------------------------------------------------------
+
+if (contactsSearch) {
+
+    contactsSearch.addEventListener(
+        "input",
+        renderContacts
+    );
+}
+
+
+// ---------------------------------------------------------
+// ENTER KEY IN PHONE FIELD
+// ---------------------------------------------------------
+
+if (contactPhone) {
+
+    contactPhone.addEventListener(
+        "keydown",
+        event => {
+
+            if (
+                event.key ===
+                "Enter"
+            ) {
+
+                event.preventDefault();
+
+                saveContact();
+            }
+        }
+    );
+}
 // =========================================================
 // OPEN MESSAGES
 // =========================================================
