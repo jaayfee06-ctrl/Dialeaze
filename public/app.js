@@ -3301,10 +3301,61 @@ if (currentCall?.answered$) {
     );
 }
                                 
-                                if (!recordingStarted && currentOutboundUsageId && providerCallId) {
+                                if (
+    !recordingStarted &&
+    currentOutboundUsageId &&
+    providerCallId
+) {
     recordingStarted = true;
 
-    
+    try {
+        const recordingResponse =
+            await authFetch(
+                "/api/outbound-call/record",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+                            callId:
+                                providerCallId,
+
+                            usageId:
+                                currentOutboundUsageId
+                        })
+                }
+            );
+
+        const recordingData =
+            await recordingResponse.json();
+
+        if (!recordingResponse.ok) {
+            console.error(
+                "❌ Could not start call recording:",
+                recordingData
+            );
+
+            recordingStarted = false;
+        } else {
+            console.log(
+                "🎙️ Call recording started:",
+                recordingData
+            );
+        }
+
+    } catch (error) {
+        console.error(
+            "❌ Recording request failed:",
+            error
+        );
+
+        recordingStarted = false;
+    }
 }
 
                                 status.textContent =

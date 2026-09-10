@@ -3091,97 +3091,169 @@ app.post("/api/outbound-call/link", async (req, res) => {
         });
     }
 });
+
+
+// =========================================================
+// START SIGNALWIRE CALL RECORDING
+// =========================================================
+
 // =========================================================
 // START SIGNALWIRE CALL RECORDING
 // =========================================================
 
 app.post("/api/outbound-call/record", async (req, res) => {
     try {
-        const auth = await authenticateRequest(req);
+        const user = await authenticateRequest(req);
 
-        if (!auth.success) {
-            return res.status(auth.status).json({
+        if (!user) {
+            return res.status(401).json({
                 success: false,
-                error: auth.error
+                error: "Unauthorized."
             });
         }
 
-        const userId = auth.user.id;
-        const { providerCallId, usageId } = req.body;
+        const {
+            callId,
+            providerCallId,
+            usageId
+        } = req.body || {};
 
-        if (!providerCallId) {
+        // Accept either field name so we do not have to
+        // immediately change the existing frontend.
+        const activeCallId =
+            callId ||
+            providerCallId;
+
+        if (!activeCallId) {
             return res.status(400).json({
                 success: false,
-                error: "providerCallId is required."
+                error:
+                    "Missing SignalWire call ID."
             });
         }
 
-        const signalWireAuth = Buffer.from(
-            `${SIGNALWIRE_PROJECT_ID}:${SIGNALWIRE_API_TOKEN}`
-        ).toString("base64");
-
-        const callbackUrl =
-            `${process.env.DIALEAZE_API_BASE || "https://dialeaze.onrender.com"}/api/signalwire/recording-callback`;
-
-        const recordingResponse = await fetch(
-            `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/laml/2010-04-01/Accounts/${SIGNALWIRE_PROJECT_ID}/Calls/${encodeURIComponent(providerCallId)}/Recordings`,
-            {
-                method: "POST",
-
-                headers: {
-                    Authorization:
-                        `Basic ${signalWireAuth}`,
-
-                    "Content-Type":
-                        "application/x-www-form-urlencoded",
-
-                    Accept:
-                        "application/json"
-                },
-
-                body: new URLSearchParams({
-                    RecordingChannels: "dual",
-                    RecordingTrack: "both",
-                    RecordingStatusCallback: callbackUrl,
-                    RecordingStatusCallbackEvent: "completed",
-                    RecordingStatusCallbackMethod: "POST"
-                }).toString()
-            }
-        );
-
-        const recordingData =
-            await recordingResponse.json();
-
-        if (!recordingResponse.ok) {
+        if (
+            !SIGNALWIRE_SPACE_NAME ||
+            !SIGNALWIRE_PROJECT_ID ||
+            !SIGNALWIRE_API_TOKEN
+        ) {
             console.error(
-                "❌ SignalWire recording start failed:",
-                recordingData
+                "❌ Missing SignalWire Calling API configuration."
             );
 
-            return res.status(recordingResponse.status).json({
+            return res.status(500).json({
                 success: false,
                 error:
-                    recordingData?.message ||
-                    "Unable to start call recording."
+                    "SignalWire recording configuration is incomplete."
+            });
+        }
+
+        const basicAuth =
+            Buffer
+                .from(
+                    `${SIGNALWIRE_PROJECT_ID}:${SIGNALWIRE_API_TOKEN}`
+                )
+                .toString("base64");
+
+        const response =
+            await fetch(
+                `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/calling/calls`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        Authorization:
+                            `Basic ${basicAuth}`,
+
+                        "Content-Type":
+                            "application/json",
+
+                        Accept:
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+                            command:
+                                "calling.record",
+
+                            id:
+                                activeCallId,
+
+                            params: {
+                                control_id:
+                                    `dialeaze-record-${Date.now()}`,
+
+                                audio: {
+                                    format:
+                                        "mp3",
+
+                                    stereo:
+                                        false,
+
+                                    beep:
+                                        false
+                                },
+
+                                status_url:
+                                    "https://dialeaze.onrender.com/api/signalwire/recording-callback"
+                            }
+                        })
+                }
+            );
+
+        const responseText =
+            await response.text();
+
+        let responseData = null;
+
+        try {
+            responseData =
+                responseText
+                    ? JSON.parse(responseText)
+                    : null;
+        } catch {
+            responseData =
+                responseText;
+        }
+
+        if (!response.ok) {
+            console.error(
+                "❌ SignalWire Calling API recording error:",
+                response.status,
+                responseData
+            );
+
+            return res.status(
+                response.status
+            ).json({
+                success: false,
+                error:
+                    "SignalWire could not start recording.",
+                signalwireStatus:
+                    response.status,
+                details:
+                    responseData
             });
         }
 
         console.log(
             "🎙️ SignalWire recording started:",
-            {
-                userId,
-                usageId,
-                providerCallId,
-                recordingId:
-                    recordingData.sid
-            }
+            JSON.stringify(
+                responseData,
+                null,
+                2
+            )
         );
 
         return res.json({
             success: true,
-            recordingId:
-                recordingData.sid,
-            providerCallId
+            usageId:
+                usageId || null,
+            callId:
+                activeCallId,
+            signalwire:
+                responseData
         });
 
     } catch (error) {
@@ -3193,7 +3265,7 @@ app.post("/api/outbound-call/record", async (req, res) => {
         return res.status(500).json({
             success: false,
             error:
-                "Unable to start call recording."
+                "Could not start call recording."
         });
     }
 });
@@ -3201,171 +3273,408 @@ app.post("/api/outbound-call/record", async (req, res) => {
 // SIGNALWIRE RECORDING CALLBACK
 // =========================================================
 
-app.post("/api/signalwire/recording-callback", async (req, res) => {
-    try {
-        console.log("🎙️ SIGNALWIRE RECORDING CALLBACK");
-        console.log("Recording callback data:", req.body);
+// =========================================================
+// SIGNALWIRE RECORDING CALLBACK
+// =========================================================
 
-        const {
-            RecordingSid,
-            RecordingUrl,
-            RecordingDuration,
-            CallSid
-        } = req.body;
-
-        if (!RecordingSid || !CallSid) {
-            console.warn(
-                "⚠️ Recording callback missing RecordingSid or CallSid."
+app.post(
+    "/api/signalwire/recording-callback",
+    async (req, res) => {
+        try {
+            console.log(
+                "🎙️ SIGNALWIRE RECORDING CALLBACK"
             );
 
-            return res.status(400).json({
-                success: false,
-                error: "Missing recording information."
-            });
-        }
+            console.log(
+                "Recording callback data:",
+                JSON.stringify(
+                    req.body,
+                    null,
+                    2
+                )
+            );
 
-        // Find the Dialeaze call associated with this SignalWire call.
-        const usageResponse = await fetch(
-            `${SUPABASE_URL}/rest/v1/customer_call_usage` +
-            `?provider_call_id=eq.${encodeURIComponent(CallSid)}` +
-            `&select=id,user_id`,
-            {
-                method: "GET",
+            const params =
+                req.body?.params ||
+                {};
 
-                headers: {
-                    Authorization:
-                        `Bearer ${SUPABASE_SECRET_KEY}`,
+            const eventType =
+                req.body?.event_type ||
+                "";
 
-                    apikey:
-                        SUPABASE_SECRET_KEY,
+            const callId =
+                params.call_id ||
+                null;
 
-                    Accept:
-                        "application/json"
+            const state =
+                String(
+                    params.state ||
+                    ""
+                ).toLowerCase();
+
+            const recordingId =
+                params.recording_id ||
+                null;
+
+            const recordingUrl =
+                params.url ||
+                null;
+
+            const duration =
+                params.duration != null
+                    ? Number(
+                        params.duration
+                    )
+                    : null;
+
+            console.log(
+                "📞 Recording call ID:",
+                callId
+            );
+
+            console.log(
+                "📼 Recording state:",
+                state
+            );
+
+            console.log(
+                "📼 Recording ID:",
+                recordingId
+            );
+
+            console.log(
+                "📼 Recording URL:",
+                recordingUrl
+            );
+
+            console.log(
+                "⏱️ Recording duration:",
+                duration
+            );
+
+            if (
+                eventType &&
+                eventType !==
+                    "calling.call.record"
+            ) {
+                console.warn(
+                    "⚠️ Unexpected recording event type:",
+                    eventType
+                );
+            }
+
+            if (!callId) {
+                console.warn(
+                    "⚠️ Recording callback missing call_id."
+                );
+
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Missing SignalWire call ID."
+                });
+            }
+
+            /*
+             * Find the Dialeaze call associated
+             * with this SignalWire call.
+             */
+            const usageResponse =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/customer_call_usage` +
+                    `?provider_call_id=eq.${encodeURIComponent(
+                        callId
+                    )}` +
+                    `&select=id,user_id`,
+                    {
+                        method:
+                            "GET",
+
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+
+                            Accept:
+                                "application/json"
+                        }
+                    }
+                );
+
+            if (!usageResponse.ok) {
+                const errorText =
+                    await usageResponse.text();
+
+                console.error(
+                    "❌ Could not find call usage:",
+                    usageResponse.status,
+                    errorText
+                );
+
+                return res.sendStatus(200);
+            }
+
+            const usageRows =
+                await usageResponse.json();
+
+            const usage =
+                Array.isArray(
+                    usageRows
+                )
+                    ? usageRows[0]
+                    : null;
+
+            if (!usage) {
+                console.warn(
+                    "⚠️ No customer_call_usage row found for recording call:",
+                    callId
+                );
+
+                /*
+                 * Return 200 so SignalWire does
+                 * not keep retrying a callback
+                 * that we cannot associate.
+                 */
+                return res.sendStatus(200);
+            }
+
+            /*
+             * The recording operation sends
+             * multiple states:
+             *
+             * recording
+             * paused
+             * finished
+             * no_input
+             * error
+             *
+             * We only mark the recording as
+             * completed once SignalWire gives
+             * us the finished recording.
+             */
+
+            let recordingStatus =
+                "processing";
+
+            if (
+                state === "finished"
+            ) {
+                recordingStatus =
+                    "completed";
+            } else if (
+                state === "error"
+            ) {
+                recordingStatus =
+                    "failed";
+            }
+
+            /*
+             * Check whether a recording row
+             * already exists for this call.
+             */
+            const existingResponse =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/call_recordings` +
+                    `?provider_call_id=eq.${encodeURIComponent(
+                        callId
+                    )}` +
+                    `&select=id`,
+                    {
+                        method:
+                            "GET",
+
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+
+                            Accept:
+                                "application/json"
+                        }
+                    }
+                );
+
+            if (!existingResponse.ok) {
+                const errorText =
+                    await existingResponse.text();
+
+                console.error(
+                    "❌ Could not check existing recording:",
+                    existingResponse.status,
+                    errorText
+                );
+
+                return res.sendStatus(200);
+            }
+
+            const existingRows =
+                await existingResponse.json();
+
+            const existing =
+                Array.isArray(
+                    existingRows
+                )
+                    ? existingRows[0]
+                    : null;
+
+            const recordingData = {
+                user_id:
+                    usage.user_id,
+
+                usage_id:
+                    usage.id,
+
+                provider_call_id:
+                    callId,
+
+                recording_id:
+                    recordingId,
+
+                recording_url:
+                    recordingUrl,
+
+                duration_seconds:
+                    Number.isFinite(
+                        duration
+                    )
+                        ? Math.round(
+                            duration
+                        )
+                        : null,
+
+                status:
+                    recordingStatus,
+
+                updated_at:
+                    new Date().toISOString()
+            };
+
+            if (existing?.id) {
+
+                const updateResponse =
+                    await fetch(
+                        `${SUPABASE_URL}/rest/v1/call_recordings` +
+                        `?id=eq.${encodeURIComponent(
+                            existing.id
+                        )}`,
+                        {
+                            method:
+                                "PATCH",
+
+                            headers: {
+                                Authorization:
+                                    `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                                apikey:
+                                    SUPABASE_SECRET_KEY,
+
+                                "Content-Type":
+                                    "application/json",
+
+                                Prefer:
+                                    "return=minimal"
+                            },
+
+                            body:
+                                JSON.stringify(
+                                    recordingData
+                                )
+                        }
+                    );
+
+                if (!updateResponse.ok) {
+                    const errorText =
+                        await updateResponse.text();
+
+                    console.error(
+                        "❌ Failed to update call recording:",
+                        updateResponse.status,
+                        errorText
+                    );
+
+                    return res.sendStatus(200);
+                }
+
+            } else {
+
+                recordingData.created_at =
+                    new Date().toISOString();
+
+                const insertResponse =
+                    await fetch(
+                        `${SUPABASE_URL}/rest/v1/call_recordings`,
+                        {
+                            method:
+                                "POST",
+
+                            headers: {
+                                Authorization:
+                                    `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                                apikey:
+                                    SUPABASE_SECRET_KEY,
+
+                                "Content-Type":
+                                    "application/json",
+
+                                Prefer:
+                                    "return=minimal"
+                            },
+
+                            body:
+                                JSON.stringify(
+                                    recordingData
+                                )
+                        }
+                    );
+
+                if (!insertResponse.ok) {
+                    const errorText =
+                        await insertResponse.text();
+
+                    console.error(
+                        "❌ Failed to save call recording:",
+                        insertResponse.status,
+                        errorText
+                    );
+
+                    return res.sendStatus(200);
                 }
             }
-        );
 
-        const usageData =
-            await usageResponse.json();
+            console.log(
+                "✅ Call recording saved:",
+                {
+                    callId,
+                    recordingId,
+                    state,
+                    recordingStatus
+                }
+            );
 
-        if (!usageResponse.ok) {
+            return res.sendStatus(200);
+
+        } catch (error) {
+
             console.error(
-                "❌ Failed to find call usage:",
-                usageData
+                "❌ Recording callback error:",
+                error
             );
 
-            return res.status(500).json({
-                success: false,
-                error:
-                    "Unable to find associated call."
-            });
+            /*
+             * Always acknowledge the webhook.
+             * We don't want SignalWire repeatedly
+             * retrying because of an internal
+             * Dialeaze database error.
+             */
+            return res.sendStatus(200);
         }
-
-        if (!usageData.length) {
-            console.warn(
-                "⚠️ No Dialeaze call found for SignalWire CallSid:",
-                CallSid
-            );
-
-            return res.status(404).json({
-                success: false,
-                error:
-                    "Associated Dialeaze call not found."
-            });
-        }
-
-        const usage = usageData[0];
-
-        // Save recording information in Supabase.
-        const recordingResponse = await fetch(
-            `${SUPABASE_URL}/rest/v1/call_recordings`,
-            {
-                method: "POST",
-
-                headers: {
-                    Authorization:
-                        `Bearer ${SUPABASE_SECRET_KEY}`,
-
-                    apikey:
-                        SUPABASE_SECRET_KEY,
-
-                    "Content-Type":
-                        "application/json",
-
-                    Prefer:
-                        "return=representation"
-                },
-
-                body: JSON.stringify({
-                    user_id:
-                        usage.user_id,
-
-                    usage_id:
-                        usage.id,
-
-                    provider_call_id:
-                        CallSid,
-
-                    recording_id:
-                        RecordingSid,
-
-                    recording_url:
-                        RecordingUrl || null,
-
-                    duration_seconds:
-                        RecordingDuration
-                            ? Number(RecordingDuration)
-                            : null,
-
-                    status:
-                        "completed"
-                })
-            }
-        );
-
-        const recordingData =
-            await recordingResponse.json();
-
-        if (!recordingResponse.ok) {
-            console.error(
-                "❌ Failed to save recording:",
-                recordingData
-            );
-
-            return res.status(500).json({
-                success: false,
-                error:
-                    "Unable to save recording."
-            });
-        }
-
-        console.log(
-            "✅ Recording saved to Supabase:",
-            {
-                recordingId: RecordingSid,
-                callSid: CallSid,
-                usageId: usage.id
-            }
-        );
-
-        return res.json({
-            success: true
-        });
-
-    } catch (error) {
-        console.error(
-            "❌ Recording callback error:",
-            error
-        );
-
-        return res.status(500).json({
-            success: false,
-            error:
-                "Recording callback failed."
-        });
     }
-});
-
+);
 // =========================================================
 // SIGNALWIRE VOICEMAIL RECORDING CALLBACK
 // =========================================================
