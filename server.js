@@ -852,6 +852,142 @@ app.get(
     }
 );
 
+// =========================================================
+// ORGANIZATION TEAM MEMBERS
+// =========================================================
+//
+// Returns all members belonging to the authenticated user's
+// organization.
+//
+// OWNER / ADMIN:
+//     Can see the complete organization member list.
+//
+// MEMBER:
+//     Can see the organization membership list as well,
+//     but future private communication data will still be
+//     protected separately.
+//
+// This endpoint is READ-ONLY.
+// =========================================================
+
+app.get(
+    "/api/organization/members",
+    async (req, res) => {
+        try {
+            const organizationAccess =
+                await requireOrganizationMember(
+                    req
+                );
+
+            if (!organizationAccess.success) {
+                return res.status(
+                    organizationAccess.status
+                ).json({
+                    success: false,
+                    error:
+                        organizationAccess.error
+                });
+            }
+
+            const organizationId =
+                organizationAccess.organization.id;
+
+            const response =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/organization_members` +
+                    `?organization_id=eq.${encodeURIComponent(
+                        organizationId
+                    )}` +
+                    `&select=id,organization_id,user_id,email,role,status,joined_at,created_at,updated_at` +
+                    `&order=created_at.asc`,
+                    {
+                        method: "GET",
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+                            Accept:
+                                "application/json"
+                        }
+                    }
+                );
+
+            const members =
+                await response.json();
+
+            if (!response.ok) {
+                console.error(
+                    "Organization members lookup error:",
+                    members
+                );
+
+                return res.status(
+                    response.status
+                ).json({
+                    success: false,
+                    error:
+                        members?.message ||
+                        "Unable to load organization members."
+                });
+            }
+
+            return res.json({
+                success: true,
+
+                organization: {
+                    id:
+                        organizationAccess
+                            .organization.id,
+
+                    name:
+                        organizationAccess
+                            .organization.name,
+
+                    plan:
+                        organizationAccess
+                            .organization.plan,
+
+                    status:
+                        organizationAccess
+                            .organization.status
+                },
+
+                currentUser: {
+                    userId:
+                        organizationAccess
+                            .user.id,
+
+                    role:
+                        organizationAccess
+                            .organization.role,
+
+                    status:
+                        organizationAccess
+                            .organization.memberStatus
+                },
+
+                members:
+                    Array.isArray(members)
+                        ? members
+                        : []
+            });
+
+        } catch (error) {
+            console.error(
+                "Organization members GET error:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    "Unable to load your organization members."
+            });
+        }
+    }
+);
+
 app.get("/api/call-history", async (req, res) => {
     try {
         const auth = await authenticateRequest(req);
