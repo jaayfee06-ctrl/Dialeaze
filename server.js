@@ -1854,6 +1854,578 @@ app.post("/api/messages/read", async (req, res) => {
 // =========================================================
 // GET MESSAGES - SUPABASE
 // =========================================================
+// =========================================================
+// DIALEAZE CONTACTS API
+// =========================================================
+
+// ---------------------------------------------------------
+// GET CONTACTS
+// ---------------------------------------------------------
+
+app.get("/api/contacts", async (req, res) => {
+    try {
+        const auth = await authenticateRequest(req);
+
+        if (!auth.success) {
+            return res.status(auth.status).json({
+                success: false,
+                error: auth.error
+            });
+        }
+
+        const userId = auth.user.id;
+
+        const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/contacts` +
+            `?user_id=eq.${encodeURIComponent(userId)}` +
+            `&select=id,name,phone_number,email,company,notes,created_at,updated_at` +
+            `&order=name.asc`,
+            {
+                method: "GET",
+                headers: {
+                    Authorization:
+                        `Bearer ${SUPABASE_SECRET_KEY}`,
+                    apikey:
+                        SUPABASE_SECRET_KEY,
+                    Accept:
+                        "application/json"
+                }
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error(
+                "❌ Failed to load contacts:",
+                data
+            );
+
+            return res.status(500).json({
+                success: false,
+                error: "Unable to load your contacts."
+            });
+        }
+
+        return res.json({
+            success: true,
+            contacts:
+                Array.isArray(data)
+                    ? data
+                    : []
+        });
+
+    } catch (error) {
+        console.error(
+            "❌ Get contacts error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            error: "Unable to load your contacts."
+        });
+    }
+});
+
+
+// ---------------------------------------------------------
+// CREATE CONTACT
+// ---------------------------------------------------------
+
+app.post("/api/contacts", async (req, res) => {
+    try {
+        const auth = await authenticateRequest(req);
+
+        if (!auth.success) {
+            return res.status(auth.status).json({
+                success: false,
+                error: auth.error
+            });
+        }
+
+        const userId = auth.user.id;
+
+        const name =
+            String(req.body?.name || "").trim();
+
+        const phoneNumber =
+            String(
+                req.body?.phone_number || ""
+            ).trim();
+
+        const email =
+            String(
+                req.body?.email || ""
+            ).trim();
+
+        const company =
+            String(
+                req.body?.company || ""
+            ).trim();
+
+        const notes =
+            String(
+                req.body?.notes || ""
+            ).trim();
+
+        if (!name) {
+            return res.status(400).json({
+                success: false,
+                error: "Contact name is required."
+            });
+        }
+
+        if (!phoneNumber) {
+            return res.status(400).json({
+                success: false,
+                error:
+                    "Contact phone number is required."
+            });
+        }
+
+        if (name.length > 150) {
+            return res.status(400).json({
+                success: false,
+                error:
+                    "Contact name is too long."
+            });
+        }
+
+        if (phoneNumber.length > 30) {
+            return res.status(400).json({
+                success: false,
+                error:
+                    "Phone number is too long."
+            });
+        }
+
+        if (email.length > 255) {
+            return res.status(400).json({
+                success: false,
+                error:
+                    "Email address is too long."
+            });
+        }
+
+        if (company.length > 150) {
+            return res.status(400).json({
+                success: false,
+                error:
+                    "Company name is too long."
+            });
+        }
+
+        if (notes.length > 5000) {
+            return res.status(400).json({
+                success: false,
+                error:
+                    "Notes are too long."
+            });
+        }
+
+        const contactRecord = {
+            user_id: userId,
+            name: name,
+            phone_number: phoneNumber,
+            email: email || null,
+            company: company || null,
+            notes: notes || null
+        };
+
+        const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/contacts`,
+            {
+                method: "POST",
+                headers: {
+                    Authorization:
+                        `Bearer ${SUPABASE_SECRET_KEY}`,
+                    apikey:
+                        SUPABASE_SECRET_KEY,
+                    "Content-Type":
+                        "application/json",
+                    Accept:
+                        "application/json",
+                    Prefer:
+                        "return=representation"
+                },
+                body:
+                    JSON.stringify(
+                        contactRecord
+                    )
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error(
+                "❌ Failed to create contact:",
+                data
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    "Unable to create contact."
+            });
+        }
+
+        return res.status(201).json({
+            success: true,
+            contact:
+                Array.isArray(data)
+                    ? data[0]
+                    : data
+        });
+
+    } catch (error) {
+        console.error(
+            "❌ Create contact error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            error:
+                "Unable to create contact."
+        });
+    }
+});
+
+
+// ---------------------------------------------------------
+// UPDATE CONTACT
+// ---------------------------------------------------------
+
+app.patch("/api/contacts/:id", async (req, res) => {
+    try {
+        const auth = await authenticateRequest(req);
+
+        if (!auth.success) {
+            return res.status(auth.status).json({
+                success: false,
+                error: auth.error
+            });
+        }
+
+        const userId = auth.user.id;
+        const contactId =
+            String(req.params.id || "").trim();
+
+        if (!contactId) {
+            return res.status(400).json({
+                success: false,
+                error: "Contact ID is required."
+            });
+        }
+
+        const updateData = {};
+
+        if (
+            Object.prototype.hasOwnProperty.call(
+                req.body || {},
+                "name"
+            )
+        ) {
+            const name =
+                String(
+                    req.body.name || ""
+                ).trim();
+
+            if (!name) {
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Contact name cannot be empty."
+                });
+            }
+
+            if (name.length > 150) {
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Contact name is too long."
+                });
+            }
+
+            updateData.name = name;
+        }
+
+        if (
+            Object.prototype.hasOwnProperty.call(
+                req.body || {},
+                "phone_number"
+            )
+        ) {
+            const phoneNumber =
+                String(
+                    req.body.phone_number || ""
+                ).trim();
+
+            if (!phoneNumber) {
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Contact phone number cannot be empty."
+                });
+            }
+
+            if (phoneNumber.length > 30) {
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Phone number is too long."
+                });
+            }
+
+            updateData.phone_number =
+                phoneNumber;
+        }
+
+        if (
+            Object.prototype.hasOwnProperty.call(
+                req.body || {},
+                "email"
+            )
+        ) {
+            const email =
+                String(
+                    req.body.email || ""
+                ).trim();
+
+            if (email.length > 255) {
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Email address is too long."
+                });
+            }
+
+            updateData.email =
+                email || null;
+        }
+
+        if (
+            Object.prototype.hasOwnProperty.call(
+                req.body || {},
+                "company"
+            )
+        ) {
+            const company =
+                String(
+                    req.body.company || ""
+                ).trim();
+
+            if (company.length > 150) {
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Company name is too long."
+                });
+            }
+
+            updateData.company =
+                company || null;
+        }
+
+        if (
+            Object.prototype.hasOwnProperty.call(
+                req.body || {},
+                "notes"
+            )
+        ) {
+            const notes =
+                String(
+                    req.body.notes || ""
+                ).trim();
+
+            if (notes.length > 5000) {
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Notes are too long."
+                });
+            }
+
+            updateData.notes =
+                notes || null;
+        }
+
+        if (
+            Object.keys(updateData).length === 0
+        ) {
+            return res.status(400).json({
+                success: false,
+                error:
+                    "No contact changes were provided."
+            });
+        }
+
+        updateData.updated_at =
+            new Date().toISOString();
+
+        const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/contacts` +
+            `?id=eq.${encodeURIComponent(contactId)}` +
+            `&user_id=eq.${encodeURIComponent(userId)}`,
+            {
+                method: "PATCH",
+                headers: {
+                    Authorization:
+                        `Bearer ${SUPABASE_SECRET_KEY}`,
+                    apikey:
+                        SUPABASE_SECRET_KEY,
+                    "Content-Type":
+                        "application/json",
+                    Accept:
+                        "application/json",
+                    Prefer:
+                        "return=representation"
+                },
+                body:
+                    JSON.stringify(updateData)
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error(
+                "❌ Failed to update contact:",
+                data
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    "Unable to update contact."
+            });
+        }
+
+        if (
+            !Array.isArray(data) ||
+            data.length === 0
+        ) {
+            return res.status(404).json({
+                success: false,
+                error:
+                    "Contact not found."
+            });
+        }
+
+        return res.json({
+            success: true,
+            contact: data[0]
+        });
+
+    } catch (error) {
+        console.error(
+            "❌ Update contact error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            error:
+                "Unable to update contact."
+        });
+    }
+});
+
+
+// ---------------------------------------------------------
+// DELETE CONTACT
+// ---------------------------------------------------------
+
+app.delete("/api/contacts/:id", async (req, res) => {
+    try {
+        const auth = await authenticateRequest(req);
+
+        if (!auth.success) {
+            return res.status(auth.status).json({
+                success: false,
+                error: auth.error
+            });
+        }
+
+        const userId = auth.user.id;
+
+        const contactId =
+            String(req.params.id || "").trim();
+
+        if (!contactId) {
+            return res.status(400).json({
+                success: false,
+                error:
+                    "Contact ID is required."
+            });
+        }
+
+        const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/contacts` +
+            `?id=eq.${encodeURIComponent(contactId)}` +
+            `&user_id=eq.${encodeURIComponent(userId)}`,
+            {
+                method: "DELETE",
+                headers: {
+                    Authorization:
+                        `Bearer ${SUPABASE_SECRET_KEY}`,
+                    apikey:
+                        SUPABASE_SECRET_KEY,
+                    Accept:
+                        "application/json",
+                    Prefer:
+                        "return=representation"
+                }
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error(
+                "❌ Failed to delete contact:",
+                data
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    "Unable to delete contact."
+            });
+        }
+
+        if (
+            !Array.isArray(data) ||
+            data.length === 0
+        ) {
+            return res.status(404).json({
+                success: false,
+                error:
+                    "Contact not found."
+            });
+        }
+
+        return res.json({
+            success: true,
+            message:
+                "Contact deleted successfully."
+        });
+
+    } catch (error) {
+        console.error(
+            "❌ Delete contact error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            error:
+                "Unable to delete contact."
+        });
+    }
+});
 
 app.get("/api/messages", async (req, res) => {
     try {
