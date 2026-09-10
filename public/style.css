@@ -3633,3 +3633,54 @@ body {
 .contact-actions button {
     cursor: pointer !important;
 }
+
+/* =========================================================
+   MUTE / UNMUTE CALL CONTROL
+========================================================= */
+
+.mute-button {
+    border: none;
+    background: #eef2ff;
+    color: #3730a3;
+    border-radius: 50%;
+    width: 52px;
+    height: 52px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    cursor: pointer;
+    font-size: 15px;
+    transition:
+        background-color 0.18s ease,
+        color 0.18s ease,
+        transform 0.18s ease;
+}
+
+.mute-button:hover:not(:disabled) {
+    background: #e0e7ff;
+    transform: translateY(-1px);
+}
+
+.mute-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.mute-button.is-muted {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.mute-button.is-muted:hover:not(:disabled) {
+    background: #fecaca;
+}
+
+.mute-button span:first-child {
+    font-size: 17px;
+}
+
+.mute-button-text {
+    font-size: 12px;
+    font-weight: 700;
+}

@@ -355,6 +355,9 @@ const status =
 const callButton =
     document.getElementById("callButton");
 
+    const muteButton =
+    document.getElementById("muteButton");
+
 const hangupButton =
     document.getElementById("hangupButton");
 
@@ -554,6 +557,8 @@ let client = null;
 let signalWireInitializationPromise = null;
 
 let currentCall = null;
+let currentMuteSelf = null;
+let muteStateSubscription = null;
 let providerStatePollingInterval = null;
 let providerEndReason = null;
 
@@ -2057,6 +2062,9 @@ if (client.session && client.session.incomingCalls$) {
         console.log("📲 INCOMING SIGNALWIRE CALL:", ringingCall);
 
         currentCall = ringingCall;
+        attachMuteControl(
+    currentCall
+);
 
         const callerName =
             ringingCall.fromName &&
@@ -2137,8 +2145,11 @@ console.log("🧪 RAW OUTBOUND STATUS:", JSON.stringify(callStatus));
                 window.dialeazeOutboundLocked = false;
 
                 if (currentCall === ringingCall) {
-                    currentCall = null;
-                }
+
+    resetMuteControl();
+
+    currentCall = null;
+}
             }
         });
 
@@ -2229,7 +2240,193 @@ console.log("🧪 RAW OUTBOUND STATUS:", JSON.stringify(callStatus));
 }
 
 
+// =========================================================
+// MUTE / UNMUTE CALL CONTROL
+// =========================================================
 
+function resetMuteControl() {
+
+    currentMuteSelf = null;
+
+
+    if (muteStateSubscription) {
+
+        try {
+            muteStateSubscription.unsubscribe();
+        } catch (error) {
+
+            console.warn(
+                "Could not remove mute subscription:",
+                error
+            );
+
+        }
+
+        muteStateSubscription = null;
+    }
+
+
+    if (muteButton) {
+
+        muteButton.disabled = true;
+
+        muteButton.classList.remove(
+            "is-muted"
+        );
+
+
+        muteButton.innerHTML = `
+            <span>🎙</span>
+            <span class="mute-button-text">
+                Mute
+            </span>
+        `;
+
+    }
+
+}
+
+
+function attachMuteControl(call) {
+
+    resetMuteControl();
+
+
+    if (!muteButton) {
+        return;
+    }
+
+
+    if (
+        !call ||
+        !call.self$ ||
+        typeof call.self$.subscribe !== "function"
+    ) {
+
+        console.warn(
+            "⚠️ SignalWire call does not expose self$."
+        );
+
+        return;
+    }
+
+
+    call.self$.subscribe((self) => {
+
+        if (!self) {
+            return;
+        }
+
+
+        currentMuteSelf =
+            self;
+
+
+        muteButton.disabled =
+            false;
+
+
+        if (
+            muteStateSubscription
+        ) {
+
+            try {
+                muteStateSubscription.unsubscribe();
+            } catch (error) {
+
+                console.warn(
+                    "Could not replace mute subscription:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        if (
+            self.audioMuted$ &&
+            typeof self.audioMuted$.subscribe ===
+                "function"
+        ) {
+
+            muteStateSubscription =
+                self.audioMuted$.subscribe(
+                    (muted) => {
+
+                        if (!muteButton) {
+                            return;
+                        }
+
+
+                        muteButton.classList.toggle(
+                            "is-muted",
+                            Boolean(muted)
+                        );
+
+
+                        muteButton.innerHTML =
+                            muted
+                                ? `
+                                    <span>🎙</span>
+                                    <span class="mute-button-text">
+                                        Unmute
+                                    </span>
+                                `
+                                : `
+                                    <span>🎙</span>
+                                    <span class="mute-button-text">
+                                        Mute
+                                    </span>
+                                `;
+
+                    }
+                );
+
+        }
+
+    });
+
+}
+
+
+if (muteButton) {
+
+    muteButton.addEventListener(
+        "click",
+        async () => {
+
+            if (
+                !currentMuteSelf ||
+                typeof currentMuteSelf.toggleMute !==
+                    "function"
+            ) {
+
+                console.warn(
+                    "⚠️ Mute control is not ready."
+                );
+
+                return;
+            }
+
+
+            try {
+
+                await currentMuteSelf.toggleMute();
+
+            } catch (error) {
+
+                console.error(
+                    "❌ Could not toggle microphone mute:",
+                    error
+                );
+
+            }
+
+        }
+    );
+
+}
 // =========================================================
 // INCOMING CALL CONTROLS
 // =========================================================
@@ -2552,6 +2749,10 @@ if (digits.length === 10) {
             }
         }
     );
+
+    attachMuteControl(
+    currentCall
+);
 
                     const providerCallId =
     currentCall?.id ||
