@@ -3616,3 +3616,20 @@ body {
 .contact-item .contact-actions button:hover {
     transform: translateY(-1px);
 }
+/* =========================================================
+   FORCE HAND CURSOR ON BUSINESS CONTACTS
+   ========================================================= */
+
+#contactsCard,
+#contactsCard *,
+#contactsOverlay,
+#contactsOverlay *,
+.contact-item,
+.contact-item *,
+.contact-avatar,
+.contact-name,
+.contact-phone,
+.contact-actions,
+.contact-actions button {
+    cursor: pointer !important;
+}
