@@ -170,7 +170,162 @@ async function getProfile(token, userId) {
         throw error;
     }
 }
+// =========================================================
+// HELPER: GET USER ORGANIZATION
+// =========================================================
+//
+// This is the central organization lookup for Dialeaze.
+// It determines which organization the authenticated user
+// belongs to and what role they have.
+//
+// IMPORTANT:
+// This does NOT modify any existing calling, messaging,
+// voicemail, recording, contacts, or billing data.
+// =========================================================
 
+async function getUserOrganization(userId) {
+    try {
+        if (
+            !SUPABASE_URL ||
+            !SUPABASE_SECRET_KEY
+        ) {
+            throw new Error(
+                "Supabase server configuration is missing."
+            );
+        }
+
+        // Find the user's active organization membership.
+        const membershipResponse =
+            await fetch(
+                `${SUPABASE_URL}/rest/v1/organization_members` +
+                `?user_id=eq.${encodeURIComponent(userId)}` +
+                `&status=eq.active` +
+                `&select=id,organization_id,user_id,email,role,status,joined_at` +
+                `&order=created_at.asc` +
+                `&limit=1`,
+                {
+                    method: "GET",
+                    headers: {
+                        Authorization:
+                            `Bearer ${SUPABASE_SECRET_KEY}`,
+                        apikey:
+                            SUPABASE_SECRET_KEY,
+                        Accept:
+                            "application/json"
+                    }
+                }
+            );
+
+        const membershipData =
+            await membershipResponse.json();
+
+        if (!membershipResponse.ok) {
+            console.error(
+                "Organization membership lookup error:",
+                membershipData
+            );
+
+            throw new Error(
+                membershipData?.message ||
+                "Unable to load organization membership."
+            );
+        }
+
+        if (
+            !Array.isArray(membershipData) ||
+            membershipData.length === 0
+        ) {
+            return null;
+        }
+
+        const membership =
+            membershipData[0];
+
+        // Load the organization itself.
+        const organizationResponse =
+            await fetch(
+                `${SUPABASE_URL}/rest/v1/organizations` +
+                `?id=eq.${encodeURIComponent(
+                    membership.organization_id
+                )}` +
+                `&select=id,name,owner_user_id,plan,status,created_at,updated_at` +
+                `&limit=1`,
+                {
+                    method: "GET",
+                    headers: {
+                        Authorization:
+                            `Bearer ${SUPABASE_SECRET_KEY}`,
+                        apikey:
+                            SUPABASE_SECRET_KEY,
+                        Accept:
+                            "application/json"
+                    }
+                }
+            );
+
+        const organizationData =
+            await organizationResponse.json();
+
+        if (!organizationResponse.ok) {
+            console.error(
+                "Organization lookup error:",
+                organizationData
+            );
+
+            throw new Error(
+                organizationData?.message ||
+                "Unable to load organization."
+            );
+        }
+
+        if (
+            !Array.isArray(organizationData) ||
+            organizationData.length === 0
+        ) {
+            return null;
+        }
+
+        const organization =
+            organizationData[0];
+
+        return {
+            id:
+                organization.id,
+
+            name:
+                organization.name,
+
+            ownerUserId:
+                organization.owner_user_id,
+
+            plan:
+                organization.plan,
+
+            status:
+                organization.status,
+
+            role:
+                membership.role,
+
+            memberStatus:
+                membership.status,
+
+            membershipId:
+                membership.id,
+
+            joinedAt:
+                membership.joined_at || null
+        };
+
+    } catch (error) {
+        console.error(
+            "getUserOrganization error:",
+            error
+        );
+
+        throw error;
+    }
+}
 // =========================================================
 // SIGNALWIRE SUBSCRIBER ACCESS TOKEN
 // =========================================================
@@ -405,6 +560,62 @@ telnyxPhoneNumber:
         });
     }
 });
+
+// =========================================================
+// ORGANIZATION
+// =========================================================
+//
+// Returns the organization and membership information
+// for the currently authenticated Dialeaze user.
+//
+// This is the first organization-aware backend endpoint.
+// =========================================================
+
+app.get("/api/organization", async (req, res) => {
+    try {
+        const auth =
+            await authenticateRequest(req);
+
+        if (!auth.success) {
+            return res.status(auth.status).json({
+                success: false,
+                error: auth.error
+            });
+        }
+
+        const organization =
+            await getUserOrganization(
+                auth.user.id
+            );
+
+        if (!organization) {
+            return res.status(404).json({
+                success: false,
+                error:
+                    "Your Dialeaze account is not connected to an organization yet."
+            });
+        }
+
+        return res.json({
+            success: true,
+            organization
+        });
+
+    } catch (error) {
+        console.error(
+            "Organization GET error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            error:
+                "Unable to load your Dialeaze organization."
+        });
+    }
+});
+
+
 app.get("/api/call-history", async (req, res) => {
     try {
         const auth = await authenticateRequest(req);
