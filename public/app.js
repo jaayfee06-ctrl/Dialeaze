@@ -3309,6 +3309,16 @@ if (currentCall?.answered$) {
     recordingStarted = true;
 
     try {
+        console.log(
+            "🎙️ Starting SignalWire call recording...",
+            {
+                usageId:
+                    currentOutboundUsageId,
+                providerCallId:
+                    providerCallId
+            }
+        );
+
         const recordingResponse =
             await authFetch(
                 "/api/outbound-call/record",
@@ -3322,11 +3332,11 @@ if (currentCall?.answered$) {
 
                     body:
                         JSON.stringify({
-                            callId:
-                                providerCallId,
-
                             usageId:
-                                currentOutboundUsageId
+                                currentOutboundUsageId,
+
+                            providerCallId:
+                                providerCallId
                         })
                 }
             );
@@ -3334,30 +3344,36 @@ if (currentCall?.answered$) {
         const recordingData =
             await recordingResponse.json();
 
+        console.log(
+            "🎙️ Recording response:",
+            recordingResponse.status,
+            recordingData
+        );
+
         if (!recordingResponse.ok) {
             console.error(
-                "❌ Could not start call recording:",
+                "❌ Recording failed:",
                 recordingData
             );
 
             recordingStarted = false;
         } else {
             console.log(
-                "🎙️ Call recording started:",
+                "✅ SignalWire recording started:",
                 recordingData
             );
         }
 
-    } catch (error) {
+    } catch (recordingError) {
+
         console.error(
-            "❌ Recording request failed:",
-            error
+            "❌ Recording request error:",
+            recordingError
         );
 
         recordingStarted = false;
     }
 }
-
                                 status.textContent =
                                     "Connected";
 
