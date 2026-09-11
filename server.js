@@ -3863,9 +3863,6 @@ app.post("/api/outbound-call/link", async (req, res) => {
 });
 
 
-// =========================================================
-// START SIGNALWIRE CALL RECORDING
-// =========================================================
 
 // =========================================================
 // START SIGNALWIRE CALL RECORDING
@@ -3955,15 +3952,18 @@ app.post("/api/outbound-call/record", async (req, res) => {
                                     `dialeaze-record-${Date.now()}`,
 
                                 audio: {
-                                    format:
-                                        "mp3",
+    format:
+        "mp3",
 
-                                    stereo:
-                                        false,
+    stereo:
+        false,
 
-                                    beep:
-                                        false
-                                },
+    direction:
+        "both",
+
+    beep:
+        false
+},
 
                                 status_url:
                                     "https://dialeaze.onrender.com/api/signalwire/recording-callback"
@@ -4039,9 +4039,6 @@ app.post("/api/outbound-call/record", async (req, res) => {
         });
     }
 });
-// =========================================================
-// SIGNALWIRE RECORDING CALLBACK
-// =========================================================
 
 // =========================================================
 // SIGNALWIRE RECORDING CALLBACK
