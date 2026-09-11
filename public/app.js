@@ -2971,12 +2971,13 @@ if (providerCallId) {
                     ).toLowerCase();
 
                 console.log(
-                    "📡 PSTN provider state:",
-                    {
-                        state,
-                        reason
-                    }
-                );
+    "📡 PSTN provider state:",
+    {
+        state,
+        reason,
+        pstnChildCallId
+    }
+);
 // -------------------------------------------------
 // START RECORDING AFTER PSTN LEG IS ACTUALLY ANSWERED
 // -------------------------------------------------
