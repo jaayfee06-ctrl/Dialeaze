@@ -2955,6 +2955,11 @@ if (providerCallId) {
                     return;
                 }
 
+                const pstnChildCallId =
+    data.childCallId ||
+    data.child_call_id ||
+    null;
+
                 const state =
                     String(
                         data.state || ""
@@ -2980,18 +2985,20 @@ if (
     state === "answered" &&
     !recordingStarted &&
     currentOutboundUsageId &&
-    providerCallId
+    pstnChildCallId
 ) {
     recordingStarted = true;
 
     try {
+
         console.log(
-            "🎙️ Starting SignalWire call recording after PSTN answered...",
+            "🎙️ Starting SignalWire call recording on PSTN child call...",
             {
                 usageId:
                     currentOutboundUsageId,
-                providerCallId:
-                    providerCallId
+
+                pstnChildCallId:
+                    pstnChildCallId
             }
         );
 
@@ -3012,7 +3019,7 @@ if (
                                 currentOutboundUsageId,
 
                             providerCallId:
-                                providerCallId
+                                pstnChildCallId
                         })
                 }
             );
@@ -3026,17 +3033,23 @@ if (
             recordingData
         );
 
-        if (!recordingResponse.ok) {
+        if (
+            !recordingResponse.ok ||
+            !recordingData.success
+        ) {
+
             console.error(
                 "❌ Recording failed:",
                 recordingData
             );
 
             recordingStarted = false;
+
         } else {
+
             console.log(
-                "✅ SignalWire recording started after PSTN answered:",
-                recordingData
+                "✅ SignalWire recording started on PSTN child call:",
+                pstnChildCallId
             );
         }
 
