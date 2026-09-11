@@ -3284,9 +3284,9 @@ if (currentCall?.answered$) {
                             // -----------------------------
 
                             else if (
-    statusValue ===
-        "answered"
-) {
+    statusValue === "answered" ||
+    statusValue === "connected"
+)  {
 
                                 console.log(
                                     "✅ Call answered."
