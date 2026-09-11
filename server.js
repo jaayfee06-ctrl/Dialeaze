@@ -5196,19 +5196,6 @@ app.get(
         const callId =
             req.params.callId;
 
-        if (
-            !callId ||
-            !SUPABASE_URL ||
-            !SUPABASE_SECRET_KEY
-        ) {
-
-            return res.status(500).json({
-                success: false,
-                error:
-                    "SignalWire state configuration is missing."
-            });
-        }
-
         try {
 
             const response =
@@ -5216,115 +5203,7 @@ app.get(
                     `${SUPABASE_URL}/rest/v1/signalwire_call_states` +
                     `?parent_call_id=eq.${encodeURIComponent(callId)}` +
                     `&select=parent_call_id,child_call_id,state,reason,updated_at` +
-                    `&limit=1`,
-                    {
-                        method: "GET",
-
-                        headers: {
-                            apikey:
-                                SUPABASE_SECRET_KEY,
-
-                            Authorization:
-                                `Bearer ${SUPABASE_SECRET_KEY}`
-                        }
-                    }
-                );
-
-            const data =
-                await response.json();
-
-            if (!response.ok) {
-
-                console.error(
-                    "❌ Supabase SignalWire state lookup failed:",
-                    response.status,
-                    data
-                );
-
-                return res.status(500).json({
-                    success: false,
-                    error:
-                        "Unable to retrieve SignalWire call state."
-                });
-            }
-
-            if (
-                !Array.isArray(data) ||
-                data.length === 0
-            ) {
-
-                return res.json({
-                    success: true,
-                    found: false
-                });
-            }
-
-            const providerState =
-                data[0];
-
-            console.log(
-                "📤 SignalWire state returned to browser:",
-                {
-                    callId,
-                    state:
-                        providerState.state,
-                    reason:
-                        providerState.reason
-                }
-            );
-
-            return res.json({
-                success: true,
-                found: true,
-
-                state:
-                    providerState.state,
-
-                reason:
-                    providerState.reason ||
-                    null,
-
-                updatedAt:
-                    providerState.updated_at ||
-                    null
-            });
-
-        } catch (error) {
-
-            console.error(
-                "❌ SignalWire state lookup error:",
-                error
-            );
-
-            return res.status(500).json({
-                success: false,
-                error:
-                    "Unable to retrieve SignalWire call state."
-            });
-        }
-    }
-);
-
-
-// =========================================================
-// SIGNALWIRE OUTBOUND CALL STATE CHECK
-// =========================================================
-
-app.get(
-    "/api/signalwire/outbound-call-state/:callId",
-    async (req, res) => {
-
-        const callId =
-            req.params.callId;
-
-        try {
-
-            const response =
-                await fetch(
-                    `${SUPABASE_URL}/rest/v1/signalwire_call_states` +
-                    `?parent_call_id=eq.${encodeURIComponent(callId)}` +
-                    `&select=parent_call_id,child_call_id,state,reason,updated_at` +
-                    `&limit=1`,
+                    `&order=updated_at.desc&limit=1`,
                     {
                         method: "GET",
                         headers: {
