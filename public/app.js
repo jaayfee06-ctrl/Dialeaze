@@ -2972,7 +2972,84 @@ if (providerCallId) {
                         reason
                     }
                 );
+// -------------------------------------------------
+// START RECORDING AFTER PSTN LEG IS ACTUALLY ANSWERED
+// -------------------------------------------------
 
+if (
+    state === "answered" &&
+    !recordingStarted &&
+    currentOutboundUsageId &&
+    providerCallId
+) {
+    recordingStarted = true;
+
+    try {
+        console.log(
+            "🎙️ Starting SignalWire call recording after PSTN answered...",
+            {
+                usageId:
+                    currentOutboundUsageId,
+                providerCallId:
+                    providerCallId
+            }
+        );
+
+        const recordingResponse =
+            await authFetch(
+                "/api/outbound-call/record",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+                            usageId:
+                                currentOutboundUsageId,
+
+                            providerCallId:
+                                providerCallId
+                        })
+                }
+            );
+
+        const recordingData =
+            await recordingResponse.json();
+
+        console.log(
+            "🎙️ Recording response after PSTN answered:",
+            recordingResponse.status,
+            recordingData
+        );
+
+        if (!recordingResponse.ok) {
+            console.error(
+                "❌ Recording failed:",
+                recordingData
+            );
+
+            recordingStarted = false;
+        } else {
+            console.log(
+                "✅ SignalWire recording started after PSTN answered:",
+                recordingData
+            );
+        }
+
+    } catch (recordingError) {
+
+        console.error(
+            "❌ Recording request error:",
+            recordingError
+        );
+
+        recordingStarted = false;
+    }
+}
                 // -------------------------------------------------
                 // REMOTE PARTY REJECTED / CALL FAILED BEFORE ANSWER
                 // -------------------------------------------------
@@ -3300,80 +3377,7 @@ if (currentCall?.answered$) {
         new Date(outboundAnsweredAt).toISOString()
     );
 }
-                                
-                                if (
-    !recordingStarted &&
-    currentOutboundUsageId &&
-    providerCallId
-) {
-    recordingStarted = true;
-
-    try {
-        console.log(
-            "🎙️ Starting SignalWire call recording...",
-            {
-                usageId:
-                    currentOutboundUsageId,
-                providerCallId:
-                    providerCallId
-            }
-        );
-
-        const recordingResponse =
-            await authFetch(
-                "/api/outbound-call/record",
-                {
-                    method: "POST",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body:
-                        JSON.stringify({
-                            usageId:
-                                currentOutboundUsageId,
-
-                            providerCallId:
-                                providerCallId
-                        })
-                }
-            );
-
-        const recordingData =
-            await recordingResponse.json();
-
-        console.log(
-            "🎙️ Recording response:",
-            recordingResponse.status,
-            recordingData
-        );
-
-        if (!recordingResponse.ok) {
-            console.error(
-                "❌ Recording failed:",
-                recordingData
-            );
-
-            recordingStarted = false;
-        } else {
-            console.log(
-                "✅ SignalWire recording started:",
-                recordingData
-            );
-        }
-
-    } catch (recordingError) {
-
-        console.error(
-            "❌ Recording request error:",
-            recordingError
-        );
-
-        recordingStarted = false;
-    }
-}
+                            
                                 status.textContent =
                                     "Connected";
 
