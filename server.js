@@ -345,7 +345,102 @@ async function getUserOrganization(userId) {
 // routes yet. They will be used by future organization
 // endpoints such as Team Members and Number Assignment.
 // =========================================================
+// =========================================================
+// DIALEAZE SUBSCRIPTION HELPERS
+// =========================================================
 
+async function getUserSubscription(userId) {
+    try {
+        if (!userId) {
+            return null;
+        }
+
+        const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/subscriptions` +
+            `?user_id=eq.${encodeURIComponent(userId)}` +
+            `&status=in.(pending,active,past_due,paused)` +
+            `&order=created_at.desc` +
+            `&limit=1`,
+            {
+                method: "GET",
+                headers: {
+                    Authorization:
+                        `Bearer ${SUPABASE_SECRET_KEY}`,
+                    apikey:
+                        SUPABASE_SECRET_KEY,
+                    Accept:
+                        "application/json"
+                }
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error(
+                "Subscription lookup error:",
+                data
+            );
+
+            return null;
+        }
+
+        if (
+            !Array.isArray(data) ||
+            data.length === 0
+        ) {
+            return null;
+        }
+
+        return data[0];
+
+    } catch (error) {
+        console.error(
+            "getUserSubscription error:",
+            error
+        );
+
+        return null;
+    }
+}
+
+
+// =========================================================
+// CHECK WHETHER SUBSCRIPTION IS ACTIVE
+// =========================================================
+
+function subscriptionAllowsService(subscription) {
+    if (!subscription) {
+        return false;
+    }
+
+    const status =
+        String(
+            subscription.status || ""
+        ).toLowerCase();
+
+    return (
+        status === "active" ||
+        status === "past_due"
+    );
+}
+
+
+// =========================================================
+// CHECK BUSINESS PLAN
+// =========================================================
+
+function subscriptionIsBusiness(subscription) {
+    if (!subscription) {
+        return false;
+    }
+
+    return (
+        String(
+            subscription.plan || ""
+        ).toLowerCase() === "business"
+    );
+}
 
 async function requireOrganizationMember(req) {
     const auth =
@@ -704,6 +799,98 @@ telnyxPhoneNumber:
 //
 // This is the first organization-aware backend endpoint.
 // =========================================================
+// =========================================================
+// GET CURRENT DIALEAZE SUBSCRIPTION
+// =========================================================
+
+app.get(
+    "/api/subscription",
+    async (req, res) => {
+        try {
+            const auth =
+                await authenticateRequest(req);
+
+            if (!auth.success) {
+                return res.status(
+                    auth.status
+                ).json({
+                    success: false,
+                    error: auth.error
+                });
+            }
+
+            const subscription =
+                await getUserSubscription(
+                    auth.user.id
+                );
+
+            if (!subscription) {
+                return res.status(404).json({
+                    success: false,
+                    error:
+                        "No active Dialeaze subscription was found."
+                });
+            }
+
+            return res.json({
+                success: true,
+
+                subscription: {
+                    id:
+                        subscription.id,
+
+                    plan:
+                        subscription.plan,
+
+                    status:
+                        subscription.status,
+
+                    amountCents:
+                        subscription.amount_cents,
+
+                    billingInterval:
+                        subscription.billing_interval,
+
+                    currentPeriodStart:
+                        subscription.current_period_start,
+
+                    currentPeriodEnd:
+                        subscription.current_period_end,
+
+                    nextBillingDate:
+                        subscription.next_billing_date,
+
+                    gateway:
+                        subscription.gateway,
+
+                    cancelAtPeriodEnd:
+                        subscription.cancel_at_period_end,
+
+                    cancelledAt:
+                        subscription.cancelled_at,
+
+                    lastPaymentAt:
+                        subscription.last_payment_at,
+
+                    lastPaymentStatus:
+                        subscription.last_payment_status
+                }
+            });
+
+        } catch (error) {
+            console.error(
+                "Subscription GET error:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    "Unable to load your subscription."
+            });
+        }
+    }
+);
 
 app.get("/api/organization", async (req, res) => {
     try {
