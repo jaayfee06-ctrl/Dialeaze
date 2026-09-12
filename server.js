@@ -4822,7 +4822,77 @@ app.post("/api/outbound-call/update", async (req, res) => {
         });
     }
 });
-        
+
+// =========================================================
+// SIGNALWIRE RECORDING SWML
+// =========================================================
+
+app.post(
+    "/api/signalwire/recording-swml",
+    (req, res) => {
+
+        console.log(
+            "🎙️ SIGNALWIRE RECORDING SWML REQUEST"
+        );
+
+        console.log(
+            "Recording SWML request:",
+            JSON.stringify(
+                req.body,
+                null,
+                2
+            )
+        );
+
+        const usageId =
+            req.query?.usageId ||
+            null;
+
+        const callId =
+            req.body?.call?.call_id ||
+            req.body?.params?.call_id ||
+            null;
+
+        const controlId =
+            usageId
+                ? `dialeaze-record-${usageId}`
+                : `dialeaze-record-${callId || Date.now()}`;
+
+        console.log(
+            "🎙️ Recording SWML call ID:",
+            callId
+        );
+
+        console.log(
+            "🎙️ Recording SWML usage ID:",
+            usageId
+        );
+
+        console.log(
+            "🎙️ Recording SWML control ID:",
+            controlId
+        );
+
+        return res.json({
+            version: "1.0.0",
+            sections: {
+                main: [
+                    {
+                        record_call: {
+                            control_id: controlId,
+                            format: "mp3",
+                            stereo: false,
+                            direction: "both",
+                            beep: false,
+                            status_url:
+                                "https://dialeaze.onrender.com/api/signalwire/recording-callback"
+                        }
+                    }
+                ]
+            }
+        });
+    }
+);
 // =========================================================
 // SIGNALWIRE OUTBOUND SWML
 // =========================================================
@@ -4880,20 +4950,22 @@ app.post("/api/signalwire/outbound-swml", (req, res) => {
         main: [
             {
                 connect: {
-                    from: callerNumber,
-                    to: destination,
-                    timeout: 30,
-                    call_state_events: [
-                        "created",
-                        "ringing",
-                        "answered",
-                        "ended"
-                    ],
-                    call_state_url:
-                        "https://dialeaze.onrender.com/api/signalwire/outbound-call-state",
-                    status_url:
-                        "https://dialeaze.onrender.com/api/signalwire/outbound-connect-status"
-                }
+    from: callerNumber,
+    to: destination,
+    timeout: 30,
+    confirm:
+        "https://dialeaze.onrender.com/api/signalwire/recording-swml",
+    call_state_events: [
+        "created",
+        "ringing",
+        "answered",
+        "ended"
+    ],
+    call_state_url:
+        "https://dialeaze.onrender.com/api/signalwire/outbound-call-state",
+    status_url:
+        "https://dialeaze.onrender.com/api/signalwire/outbound-connect-status"
+}
             },
             {
                 hangup: {}
