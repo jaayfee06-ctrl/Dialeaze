@@ -4070,8 +4070,21 @@ app.post(
                 "";
 
             const callId =
-                params.call_id ||
-                null;
+    params.call_id ||
+    null;
+
+const usageId =
+    params.control_id &&
+    String(params.control_id).startsWith("dialeaze-record-")
+        ? String(params.control_id).slice(
+            "dialeaze-record-".length
+        )
+        : null;
+
+console.log(
+    "🧾 Recording usage ID:",
+    usageId
+);
 
             const state =
                 String(
@@ -4147,12 +4160,12 @@ app.post(
              * with this SignalWire call.
              */
             const usageResponse =
-                await fetch(
-                    `${SUPABASE_URL}/rest/v1/customer_call_usage` +
-                    `?provider_call_id=eq.${encodeURIComponent(
-                        callId
-                    )}` +
-                    `&select=id,user_id`,
+    await fetch(
+        `${SUPABASE_URL}/rest/v1/customer_call_usage` +
+        `?id=eq.${encodeURIComponent(
+            usageId
+        )}` +
+        `&select=id,user_id`,
                     {
                         method:
                             "GET",
