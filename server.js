@@ -1,4 +1,4 @@
-const express = require("express");
+﻿const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
@@ -336,9 +336,9 @@ async function getUserOrganization(userId) {
 //
 // ROLE HIERARCHY:
 //
-// owner  → full organization control
-// admin  → team + number management
-// member → own Dialeaze communications
+// owner  â†’ full organization control
+// admin  â†’ team + number management
+// member â†’ own Dialeaze communications
 //
 // IMPORTANT:
 // These helpers do not change any existing communication
@@ -1486,7 +1486,7 @@ app.post("/api/billing/provision", async (req, res) => {
             !SIGNALWIRE_API_TOKEN
         ) {
             console.error(
-                "❌ Provisioning configuration is missing."
+                "âŒ Provisioning configuration is missing."
             );
 
             return res.status(500).json({
@@ -1507,7 +1507,7 @@ app.post("/api/billing/provision", async (req, res) => {
         }
 
         console.log(
-            "🚀 Starting Dialeaze provisioning:",
+            "ðŸš€ Starting Dialeaze provisioning:",
             {
                 userId: auth.user.id,
                 email: customerEmail,
@@ -1541,7 +1541,7 @@ app.post("/api/billing/provision", async (req, res) => {
 
         if (!beginResponse.ok) {
             console.error(
-                "❌ Begin provisioning RPC error:",
+                "âŒ Begin provisioning RPC error:",
                 beginData
             );
 
@@ -1575,7 +1575,7 @@ app.post("/api/billing/provision", async (req, res) => {
         }
 
         console.log(
-            "📌 Provisioning locked payment and phone reservation:",
+            "ðŸ“Œ Provisioning locked payment and phone reservation:",
             {
                 userId: auth.user.id,
                 phoneNumber: reservedPhoneNumber,
@@ -1598,7 +1598,7 @@ app.post("/api/billing/provision", async (req, res) => {
         // =====================================================
 
         console.log(
-            "📞 Purchasing SignalWire phone number:",
+            "ðŸ“ž Purchasing SignalWire phone number:",
             reservedPhoneNumber
         );
 
@@ -1623,7 +1623,7 @@ app.post("/api/billing/provision", async (req, res) => {
 
         if (!purchaseResponse.ok) {
             console.error(
-                "❌ SignalWire phone number purchase failed:",
+                "âŒ SignalWire phone number purchase failed:",
                 purchaseData
             );
 
@@ -1644,7 +1644,7 @@ app.post("/api/billing/provision", async (req, res) => {
         }
 
         console.log(
-            "✅ SignalWire phone number purchased:",
+            "âœ… SignalWire phone number purchased:",
             {
                 id: purchasedSignalWireNumberId,
                 number:
@@ -1659,7 +1659,7 @@ app.post("/api/billing/provision", async (req, res) => {
         // =====================================================
 
         console.log(
-            "👤 Creating SignalWire Subscriber:",
+            "ðŸ‘¤ Creating SignalWire Subscriber:",
             customerEmail
         );
 
@@ -1684,7 +1684,7 @@ app.post("/api/billing/provision", async (req, res) => {
 
         if (!subscriberResponse.ok) {
             console.error(
-                "❌ SignalWire Subscriber creation failed:",
+                "âŒ SignalWire Subscriber creation failed:",
                 subscriberData
             );
 
@@ -1708,7 +1708,7 @@ app.post("/api/billing/provision", async (req, res) => {
         }
 
         console.log(
-            "✅ SignalWire Subscriber created:",
+            "âœ… SignalWire Subscriber created:",
             {
                 subscriberId:
                     createdSignalWireSubscriberId
@@ -1748,7 +1748,7 @@ app.post("/api/billing/provision", async (req, res) => {
 
         if (!finalizeResponse.ok) {
             console.error(
-                "❌ Finalize provisioning RPC error:",
+                "âŒ Finalize provisioning RPC error:",
                 finalizeData
             );
 
@@ -1774,7 +1774,7 @@ app.post("/api/billing/provision", async (req, res) => {
         provisioningStarted = false;
 
         console.log(
-            "🎉 DIALEAZE PROVISIONING COMPLETE:",
+            "ðŸŽ‰ DIALEAZE PROVISIONING COMPLETE:",
             {
                 userId: auth.user.id,
                 phoneNumber: reservedPhoneNumber,
@@ -1804,7 +1804,7 @@ app.post("/api/billing/provision", async (req, res) => {
     } catch (error) {
 
         console.error(
-            "❌ Dialeaze provisioning failed:",
+            "âŒ Dialeaze provisioning failed:",
             error
         );
 
@@ -1838,7 +1838,7 @@ app.post("/api/billing/provision", async (req, res) => {
                     deleteSubscriberResponse.status === 204
                 ) {
                     console.log(
-                        "↩️ SignalWire Subscriber rolled back:",
+                        "â†©ï¸ SignalWire Subscriber rolled back:",
                         createdSignalWireSubscriberId
                     );
                 } else {
@@ -1847,14 +1847,14 @@ app.post("/api/billing/provision", async (req, res) => {
                             .text();
 
                     console.error(
-                        "❌ Failed to roll back SignalWire Subscriber:",
+                        "âŒ Failed to roll back SignalWire Subscriber:",
                         rollbackData
                     );
                 }
 
             } catch (rollbackError) {
                 console.error(
-                    "❌ Subscriber rollback exception:",
+                    "âŒ Subscriber rollback exception:",
                     rollbackError
                 );
             }
@@ -1890,7 +1890,7 @@ app.post("/api/billing/provision", async (req, res) => {
                     releaseNumberResponse.status === 204
                 ) {
                     console.log(
-                        "↩️ SignalWire phone number rolled back:",
+                        "â†©ï¸ SignalWire phone number rolled back:",
                         purchasedSignalWireNumberId
                     );
                 } else {
@@ -1899,14 +1899,14 @@ app.post("/api/billing/provision", async (req, res) => {
                             .text();
 
                     console.error(
-                        "❌ Failed to release SignalWire phone number:",
+                        "âŒ Failed to release SignalWire phone number:",
                         rollbackData
                     );
                 }
 
             } catch (rollbackError) {
                 console.error(
-                    "❌ Phone number rollback exception:",
+                    "âŒ Phone number rollback exception:",
                     rollbackError
                 );
             }
@@ -1944,13 +1944,13 @@ app.post("/api/billing/provision", async (req, res) => {
                     await cancelResponse.json();
 
                 console.log(
-                    "↩️ Provisioning payment rollback:",
+                    "â†©ï¸ Provisioning payment rollback:",
                     cancelData
                 );
 
             } catch (rollbackError) {
                 console.error(
-                    "❌ Payment rollback exception:",
+                    "âŒ Payment rollback exception:",
                     rollbackError
                 );
             }
@@ -1993,7 +1993,7 @@ app.post("/api/billing/redeem-code", async (req, res) => {
 
         if (!SUPABASE_URL || !SUPABASE_SECRET_KEY) {
             console.error(
-                "❌ Billing: Supabase server configuration is missing."
+                "âŒ Billing: Supabase server configuration is missing."
             );
 
             return res.status(500).json({
@@ -2023,7 +2023,7 @@ app.post("/api/billing/redeem-code", async (req, res) => {
 
         if (!response.ok) {
             console.error(
-                "❌ Payment code RPC error:",
+                "âŒ Payment code RPC error:",
                 data
             );
 
@@ -2046,7 +2046,7 @@ app.post("/api/billing/redeem-code", async (req, res) => {
         }
 
         console.log(
-            "💳 Dialeaze payment code redeemed successfully:",
+            "ðŸ’³ Dialeaze payment code redeemed successfully:",
             {
                 userId: auth.user.id,
                 plan: data.plan,
@@ -2063,7 +2063,7 @@ app.post("/api/billing/redeem-code", async (req, res) => {
 
     } catch (error) {
         console.error(
-            "❌ Payment code redemption error:",
+            "âŒ Payment code redemption error:",
             error
         );
 
@@ -2310,7 +2310,7 @@ app.post("/api/messages/send", async (req, res) => {
         if (!signalWireResponse.ok) {
 
             console.error(
-                "❌ SignalWire SMS send error:",
+                "âŒ SignalWire SMS send error:",
                 signalWireData
             );
 
@@ -2393,7 +2393,7 @@ app.post("/api/messages/send", async (req, res) => {
         if (!saveResponse.ok) {
 
             console.error(
-                "❌ Failed to save outbound SMS:",
+                "âŒ Failed to save outbound SMS:",
                 savedMessage
             );
 
@@ -2405,7 +2405,7 @@ app.post("/api/messages/send", async (req, res) => {
         }
 
         console.log(
-            "✅ SignalWire SMS sent and saved:",
+            "âœ… SignalWire SMS sent and saved:",
             {
                 from: senderNumber,
                 to: to
@@ -2450,7 +2450,7 @@ app.post("/api/messages/send", async (req, res) => {
     } catch (error) {
 
         console.error(
-            "❌ SMS sending error:",
+            "âŒ SMS sending error:",
             error
         );
 
@@ -2667,7 +2667,7 @@ app.get("/api/contacts", async (req, res) => {
 
         if (!response.ok) {
             console.error(
-                "❌ Failed to load contacts:",
+                "âŒ Failed to load contacts:",
                 data
             );
 
@@ -2687,7 +2687,7 @@ app.get("/api/contacts", async (req, res) => {
 
     } catch (error) {
         console.error(
-            "❌ Get contacts error:",
+            "âŒ Get contacts error:",
             error
         );
 
@@ -2830,7 +2830,7 @@ app.post("/api/contacts", async (req, res) => {
 
         if (!response.ok) {
             console.error(
-                "❌ Failed to create contact:",
+                "âŒ Failed to create contact:",
                 data
             );
 
@@ -2851,7 +2851,7 @@ app.post("/api/contacts", async (req, res) => {
 
     } catch (error) {
         console.error(
-            "❌ Create contact error:",
+            "âŒ Create contact error:",
             error
         );
 
@@ -3062,7 +3062,7 @@ app.patch("/api/contacts/:id", async (req, res) => {
 
         if (!response.ok) {
             console.error(
-                "❌ Failed to update contact:",
+                "âŒ Failed to update contact:",
                 data
             );
 
@@ -3091,7 +3091,7 @@ app.patch("/api/contacts/:id", async (req, res) => {
 
     } catch (error) {
         console.error(
-            "❌ Update contact error:",
+            "âŒ Update contact error:",
             error
         );
 
@@ -3155,7 +3155,7 @@ app.delete("/api/contacts/:id", async (req, res) => {
 
         if (!response.ok) {
             console.error(
-                "❌ Failed to delete contact:",
+                "âŒ Failed to delete contact:",
                 data
             );
 
@@ -3185,7 +3185,7 @@ app.delete("/api/contacts/:id", async (req, res) => {
 
     } catch (error) {
         console.error(
-            "❌ Delete contact error:",
+            "âŒ Delete contact error:",
             error
         );
 
@@ -3367,20 +3367,20 @@ async function updateCallUsageByProviderId(
 
         if (!response.ok) {
             console.error(
-                "❌ Failed to update call usage:",
+                "âŒ Failed to update call usage:",
                 data
             );
             return;
         }
 
         console.log(
-            "✅ Call usage updated:",
+            "âœ… Call usage updated:",
             data
         );
 
     } catch (error) {
         console.error(
-            "❌ Call usage update error:",
+            "âŒ Call usage update error:",
             error
         );
     }
@@ -3581,7 +3581,7 @@ app.post("/api/outbound-call/authorize", async (req, res) => {
         // -------------------------------------------------
 
         console.log(
-            "🔐 Requesting atomic outbound authorization:",
+            "ðŸ” Requesting atomic outbound authorization:",
             {
                 userId,
                 destinationNumber
@@ -3624,7 +3624,7 @@ app.post("/api/outbound-call/authorize", async (req, res) => {
 
 
         console.log(
-            "🔐 Supabase outbound authorization:",
+            "ðŸ” Supabase outbound authorization:",
             authorizationData
         );
 
@@ -3636,7 +3636,7 @@ app.post("/api/outbound-call/authorize", async (req, res) => {
         if (!rpcResponse.ok) {
 
             console.error(
-                "❌ Outbound authorization RPC error:",
+                "âŒ Outbound authorization RPC error:",
                 authorizationData
             );
 
@@ -3661,7 +3661,7 @@ app.post("/api/outbound-call/authorize", async (req, res) => {
         ) {
 
             console.warn(
-                "🚫 OUTBOUND CALL BLOCKED:",
+                "ðŸš« OUTBOUND CALL BLOCKED:",
                 {
                     userId,
                     reason:
@@ -3701,7 +3701,7 @@ app.post("/api/outbound-call/authorize", async (req, res) => {
         // -------------------------------------------------
 
         console.log(
-            "✅ OUTBOUND CALL AUTHORIZED:",
+            "âœ… OUTBOUND CALL AUTHORIZED:",
             {
                 userId,
                 usageId:
@@ -3749,7 +3749,7 @@ app.post("/api/outbound-call/authorize", async (req, res) => {
     } catch (error) {
 
         console.error(
-            "❌ Outbound call authorization error:",
+            "âŒ Outbound call authorization error:",
             error
         );
 
@@ -3824,7 +3824,7 @@ app.post("/api/outbound-call/link", async (req, res) => {
 
         if (!response.ok) {
             console.error(
-                "❌ Failed to link provider call:",
+                "âŒ Failed to link provider call:",
                 data
             );
 
@@ -3835,7 +3835,7 @@ app.post("/api/outbound-call/link", async (req, res) => {
         }
 
         console.log(
-            "✅ Provider call linked to usage:",
+            "âœ… Provider call linked to usage:",
             {
                 userId,
                 usageId,
@@ -3851,7 +3851,7 @@ app.post("/api/outbound-call/link", async (req, res) => {
 
     } catch (error) {
         console.error(
-            "❌ Provider call link error:",
+            "âŒ Provider call link error:",
             error
         );
 
@@ -3905,7 +3905,7 @@ app.post("/api/outbound-call/record", async (req, res) => {
             !SIGNALWIRE_API_TOKEN
         ) {
             console.error(
-                "❌ Missing SignalWire Calling API configuration."
+                "âŒ Missing SignalWire Calling API configuration."
             );
 
             return res.status(500).json({
@@ -3989,7 +3989,7 @@ app.post("/api/outbound-call/record", async (req, res) => {
 
         if (!response.ok) {
             console.error(
-                "❌ SignalWire Calling API recording error:",
+                "âŒ SignalWire Calling API recording error:",
                 response.status,
                 responseData
             );
@@ -4008,7 +4008,7 @@ app.post("/api/outbound-call/record", async (req, res) => {
         }
 
         console.log(
-            "🎙️ SignalWire recording started:",
+            "ðŸŽ™ï¸ SignalWire recording started:",
             JSON.stringify(
                 responseData,
                 null,
@@ -4028,7 +4028,7 @@ app.post("/api/outbound-call/record", async (req, res) => {
 
     } catch (error) {
         console.error(
-            "❌ Start recording error:",
+            "âŒ Start recording error:",
             error
         );
 
@@ -4049,7 +4049,7 @@ app.post(
     async (req, res) => {
         try {
             console.log(
-                "🎙️ SIGNALWIRE RECORDING CALLBACK"
+                "ðŸŽ™ï¸ SIGNALWIRE RECORDING CALLBACK"
             );
 
             console.log(
@@ -4082,7 +4082,7 @@ const usageId =
         : null;
 
 console.log(
-    "🧾 Recording usage ID:",
+    "ðŸ§¾ Recording usage ID:",
     usageId
 );
 
@@ -4108,27 +4108,27 @@ console.log(
                     : null;
 
             console.log(
-                "📞 Recording call ID:",
+                "ðŸ“ž Recording call ID:",
                 callId
             );
 
             console.log(
-                "📼 Recording state:",
+                "ðŸ“¼ Recording state:",
                 state
             );
 
             console.log(
-                "📼 Recording ID:",
+                "ðŸ“¼ Recording ID:",
                 recordingId
             );
 
             console.log(
-                "📼 Recording URL:",
+                "ðŸ“¼ Recording URL:",
                 recordingUrl
             );
 
             console.log(
-                "⏱️ Recording duration:",
+                "â±ï¸ Recording duration:",
                 duration
             );
 
@@ -4138,14 +4138,14 @@ console.log(
                     "calling.call.record"
             ) {
                 console.warn(
-                    "⚠️ Unexpected recording event type:",
+                    "âš ï¸ Unexpected recording event type:",
                     eventType
                 );
             }
 
             if (!callId) {
                 console.warn(
-                    "⚠️ Recording callback missing call_id."
+                    "âš ï¸ Recording callback missing call_id."
                 );
 
                 return res.status(400).json({
@@ -4188,7 +4188,7 @@ console.log(
                     await usageResponse.text();
 
                 console.error(
-                    "❌ Could not find call usage:",
+                    "âŒ Could not find call usage:",
                     usageResponse.status,
                     errorText
                 );
@@ -4208,7 +4208,7 @@ console.log(
 
             if (!usage) {
                 console.warn(
-                    "⚠️ No customer_call_usage row found for recording call:",
+                    "âš ï¸ No customer_call_usage row found for recording call:",
                     callId
                 );
 
@@ -4283,7 +4283,7 @@ console.log(
                     await existingResponse.text();
 
                 console.error(
-                    "❌ Could not check existing recording:",
+                    "âŒ Could not check existing recording:",
                     existingResponse.status,
                     errorText
                 );
@@ -4371,7 +4371,7 @@ console.log(
                         await updateResponse.text();
 
                     console.error(
-                        "❌ Failed to update call recording:",
+                        "âŒ Failed to update call recording:",
                         updateResponse.status,
                         errorText
                     );
@@ -4417,7 +4417,7 @@ console.log(
                         await insertResponse.text();
 
                     console.error(
-                        "❌ Failed to save call recording:",
+                        "âŒ Failed to save call recording:",
                         insertResponse.status,
                         errorText
                     );
@@ -4427,7 +4427,7 @@ console.log(
             }
 
             console.log(
-                "✅ Call recording saved:",
+                "âœ… Call recording saved:",
                 {
                     callId,
                     recordingId,
@@ -4441,7 +4441,7 @@ console.log(
         } catch (error) {
 
             console.error(
-                "❌ Recording callback error:",
+                "âŒ Recording callback error:",
                 error
             );
 
@@ -4466,7 +4466,7 @@ app.post(
         try {
 
             console.log(
-                "📨 SIGNALWIRE VOICEMAIL RECORDING CALLBACK"
+                "ðŸ“¨ SIGNALWIRE VOICEMAIL RECORDING CALLBACK"
             );
 
             console.log(
@@ -4513,14 +4513,14 @@ app.post(
             if (!callId) {
 
                 console.warn(
-                    "⚠️ Voicemail callback missing call ID."
+                    "âš ï¸ Voicemail callback missing call ID."
                 );
 
                 return res.sendStatus(204);
             }
 
             console.log(
-                "🎙️ Voicemail recording event:",
+                "ðŸŽ™ï¸ Voicemail recording event:",
                 {
                     callId,
                     state,
@@ -4600,14 +4600,14 @@ app.post(
                 if (!updateResponse.ok) {
 
                     console.error(
-                        "❌ Failed to save voicemail recording:",
+                        "âŒ Failed to save voicemail recording:",
                         updateResult
                     );
 
                 } else {
 
                     console.log(
-                        "✅ Voicemail recording saved:",
+                        "âœ… Voicemail recording saved:",
                         updateResult
                     );
 
@@ -4655,7 +4655,7 @@ app.post(
                 if (!updateResponse.ok) {
 
                     console.error(
-                        "❌ Failed to mark voicemail as failed."
+                        "âŒ Failed to mark voicemail as failed."
                     );
 
                 }
@@ -4667,7 +4667,7 @@ app.post(
         } catch (error) {
 
             console.error(
-                "❌ Voicemail recording callback error:",
+                "âŒ Voicemail recording callback error:",
                 error
             );
 
@@ -4684,6 +4684,68 @@ app.post(
 // UPDATE OUTBOUND CALL USAGE LIFECYCLE
 // =========================================================
 
+app.get("/api/call-recordings", async (req, res) => {
+    try {
+        const auth = await authenticateRequest(req);
+
+        if (!auth.success) {
+            return res.status(auth.status).json({
+                success: false,
+                error: auth.error
+            });
+        }
+
+        const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/call_recordings` +
+            `?user_id=eq.${encodeURIComponent(auth.user.id)}` +
+            `&order=created_at.desc`,
+            {
+                method: "GET",
+                headers: {
+                    Authorization:
+                        `Bearer ${SUPABASE_SECRET_KEY}`,
+                    apikey:
+                        SUPABASE_SECRET_KEY,
+                    Accept:
+                        "application/json"
+                }
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error(
+                "❌ Call recordings fetch error:",
+                data
+            );
+
+            return res.status(response.status).json({
+                success: false,
+                error:
+                    data?.message ||
+                    data?.error ||
+                    "Unable to load call recordings."
+            });
+        }
+
+        return res.json({
+            success: true,
+            recordings: data || []
+        });
+
+    } catch (error) {
+        console.error(
+            "❌ Call recordings GET error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            error: "Unable to load call recordings."
+        });
+    }
+});
 app.post("/api/outbound-call/update", async (req, res) => {
     try {
         const auth = await authenticateRequest(req);
@@ -4804,7 +4866,7 @@ app.post("/api/outbound-call/update", async (req, res) => {
 
         if (!response.ok) {
             console.error(
-                "❌ Failed to update outbound call usage:",
+                "âŒ Failed to update outbound call usage:",
                 data
             );
 
@@ -4824,7 +4886,7 @@ app.post("/api/outbound-call/update", async (req, res) => {
     } catch (error) {
 
         console.error(
-            "❌ Outbound call lifecycle update error:",
+            "âŒ Outbound call lifecycle update error:",
             error
         );
 
@@ -4845,7 +4907,7 @@ app.post(
     (req, res) => {
 
         console.log(
-            "🎙️ SIGNALWIRE RECORDING SWML REQUEST"
+            "ðŸŽ™ï¸ SIGNALWIRE RECORDING SWML REQUEST"
         );
 
         console.log(
@@ -4872,17 +4934,17 @@ app.post(
                 : `dialeaze-record-${callId || Date.now()}`;
 
         console.log(
-            "🎙️ Recording SWML call ID:",
+            "ðŸŽ™ï¸ Recording SWML call ID:",
             callId
         );
 
         console.log(
-            "🎙️ Recording SWML usage ID:",
+            "ðŸŽ™ï¸ Recording SWML usage ID:",
             usageId
         );
 
         console.log(
-            "🎙️ Recording SWML control ID:",
+            "ðŸŽ™ï¸ Recording SWML control ID:",
             controlId
         );
 
@@ -4911,7 +4973,7 @@ app.post(
 // =========================================================
 
 app.post("/api/signalwire/outbound-swml", (req, res) => {
-    console.log("📞 SIGNALWIRE OUTBOUND SWML RECEIVED");
+    console.log("ðŸ“ž SIGNALWIRE OUTBOUND SWML RECEIVED");
     console.log(
         "SWML outbound request:",
         JSON.stringify(req.body, null, 2)
@@ -4943,7 +5005,7 @@ app.post("/api/signalwire/outbound-swml", (req, res) => {
 
     if (!destination) {
         console.error(
-            "❌ OUTBOUND SWML: No destination received."
+            "âŒ OUTBOUND SWML: No destination received."
         );
 
         return res.status(400).json({
@@ -4953,12 +5015,12 @@ app.post("/api/signalwire/outbound-swml", (req, res) => {
     }
 
     console.log(
-        "📞 OUTBOUND SWML DESTINATION:",
+        "ðŸ“ž OUTBOUND SWML DESTINATION:",
         destination
     );
 
     console.log(
-        "📞 OUTBOUND SWML CALLER ID:",
+        "ðŸ“ž OUTBOUND SWML CALLER ID:",
         callerNumber
     );
 
@@ -5021,7 +5083,7 @@ async function saveSignalWireCallState({
 }) {
     if (!parentCallId || !state) {
         console.warn(
-            "⚠️ Cannot save SignalWire state: missing call ID or state."
+            "âš ï¸ Cannot save SignalWire state: missing call ID or state."
         );
 
         return null;
@@ -5029,7 +5091,7 @@ async function saveSignalWireCallState({
 
     if (!SUPABASE_URL || !SUPABASE_SECRET_KEY) {
         console.error(
-            "❌ Supabase secret configuration missing."
+            "âŒ Supabase secret configuration missing."
         );
 
         return null;
@@ -5073,7 +5135,7 @@ async function saveSignalWireCallState({
 
         if (!response.ok) {
             console.error(
-                "❌ Supabase SignalWire state save failed:",
+                "âŒ Supabase SignalWire state save failed:",
                 response.status,
                 text
             );
@@ -5093,7 +5155,7 @@ async function saveSignalWireCallState({
         }
 
         console.log(
-            "💾 Supabase SignalWire state saved:",
+            "ðŸ’¾ Supabase SignalWire state saved:",
             {
                 parentCallId,
                 childCallId,
@@ -5107,7 +5169,7 @@ async function saveSignalWireCallState({
     } catch (error) {
 
         console.error(
-            "❌ Error saving SignalWire call state:",
+            "âŒ Error saving SignalWire call state:",
             error
         );
 
@@ -5125,7 +5187,7 @@ app.post(
     async (req, res) => {
 
         console.log(
-            "📡 SIGNALWIRE OUTBOUND CALL STATE"
+            "ðŸ“¡ SIGNALWIRE OUTBOUND CALL STATE"
         );
 
         console.log(
@@ -5170,7 +5232,7 @@ app.post(
             });
 
             console.log(
-                "📌 Stored SignalWire call state in Supabase:",
+                "ðŸ“Œ Stored SignalWire call state in Supabase:",
                 {
                     parentCallId,
                     childCallId,
@@ -5182,7 +5244,7 @@ app.post(
         } else {
 
             console.warn(
-                "⚠️ SignalWire call-state webhook missing call ID or state."
+                "âš ï¸ SignalWire call-state webhook missing call ID or state."
             );
         }
 
@@ -5200,7 +5262,7 @@ app.post(
     async (req, res) => {
 
         console.log(
-            "📡 SIGNALWIRE OUTBOUND CONNECT STATUS"
+            "ðŸ“¡ SIGNALWIRE OUTBOUND CONNECT STATUS"
         );
 
         console.log(
@@ -5252,7 +5314,7 @@ app.post(
             });
 
             console.log(
-                "📌 Stored SignalWire connect state in Supabase:",
+                "ðŸ“Œ Stored SignalWire connect state in Supabase:",
                 {
                     callId,
                     state:
@@ -5265,7 +5327,7 @@ app.post(
         } else {
 
             console.warn(
-                "⚠️ SignalWire connect-status webhook missing call ID or state."
+                "âš ï¸ SignalWire connect-status webhook missing call ID or state."
             );
         }
 
@@ -5310,7 +5372,7 @@ app.get(
             if (!response.ok) {
 
                 console.error(
-                    "❌ Failed to read SignalWire call state:",
+                    "âŒ Failed to read SignalWire call state:",
                     data
                 );
 
@@ -5363,7 +5425,7 @@ app.get(
         } catch (error) {
 
             console.error(
-                "❌ SignalWire call-state GET error:",
+                "âŒ SignalWire call-state GET error:",
                 error
             );
 
@@ -5377,7 +5439,7 @@ app.get(
 );
 
 app.post("/api/signalwire/inbound-swml", (req, res) => {
-    console.log("📞 SIGNALWIRE INBOUND CALL RECEIVED");
+    console.log("ðŸ“ž SIGNALWIRE INBOUND CALL RECEIVED");
 
     console.log(
         "Inbound SWML request:",
@@ -5463,7 +5525,7 @@ app.post("/api/signalwire/inbound-swml", (req, res) => {
 });
 
 app.post("/api/signalwire/inbound-connect-status", (req, res) => {
-    console.log("📡 SIGNALWIRE INBOUND CONNECT STATUS");
+    console.log("ðŸ“¡ SIGNALWIRE INBOUND CONNECT STATUS");
 
     console.log(
         JSON.stringify(req.body, null, 2)
@@ -5473,7 +5535,7 @@ app.post("/api/signalwire/inbound-connect-status", (req, res) => {
 });
 
 app.post("/api/signalwire/voicemail-recording-callback", (req, res) => {
-    console.log("🎙️ SIGNALWIRE VOICEMAIL RECORDING CALLBACK");
+    console.log("ðŸŽ™ï¸ SIGNALWIRE VOICEMAIL RECORDING CALLBACK");
 
     console.log(
         "Voicemail recording payload:",
@@ -5482,11 +5544,11 @@ app.post("/api/signalwire/voicemail-recording-callback", (req, res) => {
 
     const params = req.body?.params || {};
 
-    console.log("📼 Voicemail recording state:", params.state);
-    console.log("📼 Voicemail recording ID:", params.recording_id);
-    console.log("📼 Voicemail recording URL:", params.url);
-    console.log("📼 Voicemail duration:", params.duration);
-    console.log("📞 Voicemail call ID:", params.call_id);
+    console.log("ðŸ“¼ Voicemail recording state:", params.state);
+    console.log("ðŸ“¼ Voicemail recording ID:", params.recording_id);
+    console.log("ðŸ“¼ Voicemail recording URL:", params.url);
+    console.log("ðŸ“¼ Voicemail duration:", params.duration);
+    console.log("ðŸ“ž Voicemail call ID:", params.call_id);
 
     return res.sendStatus(200);
 });
@@ -5502,7 +5564,7 @@ app.post(
         try {
 
             console.log(
-                "📡 SIGNALWIRE INBOUND CALL STATE"
+                "ðŸ“¡ SIGNALWIRE INBOUND CALL STATE"
             );
 
             console.log(
@@ -5603,14 +5665,14 @@ app.post(
             if (!callId) {
 
                 console.warn(
-                    "⚠️ Inbound call-state missing call ID."
+                    "âš ï¸ Inbound call-state missing call ID."
                 );
 
                 return res.sendStatus(204);
             }
 
             console.log(
-                "📞 Parsed inbound destination:",
+                "ðŸ“ž Parsed inbound destination:",
                 {
                     rawDestination,
                     privateAddress
@@ -5670,7 +5732,7 @@ app.post(
                 } else if (!profileResponse.ok) {
 
                     console.error(
-                        "❌ Failed to find Dialeaze profile:",
+                        "âŒ Failed to find Dialeaze profile:",
                         profileData
                     );
 
@@ -5679,7 +5741,7 @@ app.post(
             }
 
             console.log(
-                "📞 Inbound call mapping:",
+                "ðŸ“ž Inbound call mapping:",
                 {
                     callId,
                     parentCallId,
@@ -5787,14 +5849,14 @@ app.post(
                             await insertResponse.text();
 
                         console.error(
-                            "❌ Failed to create voicemail record:",
+                            "âŒ Failed to create voicemail record:",
                             insertData
                         );
 
                     } else {
 
                         console.log(
-                            "✅ Voicemail placeholder created:",
+                            "âœ… Voicemail placeholder created:",
                             voicemailCallId
                         );
 
@@ -5803,7 +5865,7 @@ app.post(
                 } else if (!existingResponse.ok) {
 
                     console.error(
-                        "❌ Failed to check existing voicemail:",
+                        "âŒ Failed to check existing voicemail:",
                         existingData
                     );
 
@@ -5816,7 +5878,7 @@ app.post(
         } catch (error) {
 
             console.error(
-                "❌ Inbound call-state error:",
+                "âŒ Inbound call-state error:",
                 error
             );
 
@@ -5835,7 +5897,7 @@ app.post(
         try {
 
             console.log(
-                "💬 SIGNALWIRE INBOUND SMS RECEIVED"
+                "ðŸ’¬ SIGNALWIRE INBOUND SMS RECEIVED"
             );
 
             console.log(
@@ -5871,7 +5933,7 @@ app.post(
             if (!from || !to || !body) {
 
                 console.warn(
-                    "⚠️ Inbound SMS missing required fields:",
+                    "âš ï¸ Inbound SMS missing required fields:",
                     {
                         from,
                         to,
@@ -5924,7 +5986,7 @@ if (
 ) {
 
     console.warn(
-        "⚠️ No Dialeaze user found for inbound SMS number:",
+        "âš ï¸ No Dialeaze user found for inbound SMS number:",
         to
     );
 
@@ -5994,7 +6056,7 @@ const userId =
             if (!saveResponse.ok) {
 
                 console.error(
-                    "❌ Failed to save inbound SMS:",
+                    "âŒ Failed to save inbound SMS:",
                     savedMessage
                 );
 
@@ -6006,7 +6068,7 @@ const userId =
             }
 
             console.log(
-                "✅ Inbound SMS saved to Supabase."
+                "âœ… Inbound SMS saved to Supabase."
             );
 
             return res.status(200).json({
@@ -6019,7 +6081,7 @@ const userId =
         } catch (error) {
 
             console.error(
-                "❌ Inbound SMS webhook error:",
+                "âŒ Inbound SMS webhook error:",
                 error
             );
 
@@ -6095,7 +6157,7 @@ app.get(
             if (!voicemailResponse.ok) {
 
                 console.error(
-                    "❌ Failed to load voicemails:",
+                    "âŒ Failed to load voicemails:",
                     voicemailData
                 );
 
@@ -6124,7 +6186,7 @@ app.get(
         } catch (error) {
 
             console.error(
-                "❌ Voicemail API error:",
+                "âŒ Voicemail API error:",
                 error
             );
 
@@ -6221,7 +6283,7 @@ app.delete(
             if (!deleteResponse.ok) {
 
                 console.error(
-                    "❌ Failed to delete voicemail:",
+                    "âŒ Failed to delete voicemail:",
                     deleteData
                 );
 
@@ -6261,7 +6323,7 @@ app.delete(
             // -------------------------------------------------
 
             console.log(
-                "🗑️ Voicemail deleted:",
+                "ðŸ—‘ï¸ Voicemail deleted:",
                 {
                     voicemailId,
                     userId
@@ -6277,7 +6339,7 @@ app.delete(
         } catch (error) {
 
             console.error(
-                "❌ Delete voicemail API error:",
+                "âŒ Delete voicemail API error:",
                 error
             );
 
