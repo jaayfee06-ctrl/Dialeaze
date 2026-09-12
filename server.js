@@ -4923,6 +4923,11 @@ app.post("/api/signalwire/outbound-swml", (req, res) => {
     userVariables.callerNumber ||
     null;
 
+    const usageId =
+    userVariables.usageId ||
+    userVariables.usage_id ||
+    null;
+
     if (!destination) {
         console.error(
             "❌ OUTBOUND SWML: No destination received."
@@ -4954,7 +4959,9 @@ app.post("/api/signalwire/outbound-swml", (req, res) => {
     to: destination,
     timeout: 30,
     confirm:
-        "https://dialeaze.onrender.com/api/signalwire/recording-swml",
+    `https://dialeaze.onrender.com/api/signalwire/recording-swml?usageId=${encodeURIComponent(
+        usageId || ""
+    )}`,
     call_state_events: [
         "created",
         "ringing",
