@@ -555,6 +555,99 @@ async function requireOrganizationOwner(req) {
 
     return result;
 }
+
+// =========================================================
+// DIALEAZE PLAN FEATURE PERMISSIONS
+// $41 SOLO vs $100 BUSINESS
+// =========================================================
+
+const DIALEAZE_PLAN_FEATURES = {
+  solo: {
+    dialer: true,
+    messaging: true,
+    contacts: true,
+    call_history: true,
+    recordings: true,
+    billing: true,
+    settings: true,
+
+    team: false,
+    shared_inbox: false,
+    live_monitoring: false,
+    ai_transcription: false,
+    crm_integrations: false,
+    call_forwarding: false,
+    advanced_routing: false
+  },
+
+  business: {
+    dialer: true,
+    messaging: true,
+    contacts: true,
+    call_history: true,
+    recordings: true,
+    billing: true,
+    settings: true,
+
+    team: true,
+    shared_inbox: true,
+    live_monitoring: true,
+    ai_transcription: true,
+    crm_integrations: true,
+    call_forwarding: true,
+    advanced_routing: true
+  }
+};
+
+function getPlanFeatures(subscription) {
+  const plan = String(subscription?.plan || "solo").toLowerCase();
+
+  return DIALEAZE_PLAN_FEATURES[plan] ||
+    DIALEAZE_PLAN_FEATURES.solo;
+}
+
+function planHasFeature(subscription, feature) {
+  const features = getPlanFeatures(subscription);
+  return features[feature] === true;
+}
+
+function requirePlanFeature(feature) {
+  return async (req, res, next) => {
+    try {
+      const auth = await authenticateRequest(req);
+      const subscription = await getUserSubscription(auth.user.id);
+
+      if (!subscriptionAllowsService(subscription)) {
+        return res.status(403).json({
+          error: "Active subscription required."
+        });
+      }
+
+      if (!planHasFeature(subscription, feature)) {
+        return res.status(403).json({
+          error: "This feature is available on the Business plan.",
+          feature,
+          plan: subscription?.plan || "solo",
+          required_plan: "business"
+        });
+      }
+
+      req.dialeazeSubscription = subscription;
+      req.dialeazePlanFeatures = getPlanFeatures(subscription);
+
+      next();
+    } catch (error) {
+      console.error(
+        `Plan feature check failed for ${feature}:`,
+        error
+      );
+
+      return res.status(401).json({
+        error: "Authentication required."
+      });
+    }
+  };
+}
 // =========================================================
 // SIGNALWIRE SUBSCRIBER ACCESS TOKEN
 // =========================================================
@@ -947,97 +1040,105 @@ app.get("/api/organization", async (req, res) => {
 // This endpoint is intentionally read-only.
 // =========================================================
 
-app.get(
-    "/api/organization/access",
-    async (req, res) => {
-        try {
-            const member =
-                await requireOrganizationMember(
-                    req
-                );
+app.get("/api/organization/access", async (req, res) => {
+  try {
+    const auth = await authenticateRequest(req);
 
-            if (!member.success) {
-                return res.status(
-                    member.status
-                ).json({
-                    success: false,
-                    error: member.error
-                });
-            }
+    const organization = await getUserOrganization(auth.user.id);
+    const subscription = await getUserSubscription(auth.user.id);
 
-            const role =
-                String(
-                    member.organization.role ||
-                    ""
-                ).toLowerCase();
+    const plan = String(
+      subscription?.plan ||
+      organization?.plan ||
+      "solo"
+    ).toLowerCase();
 
-            return res.json({
-                success: true,
+    const features = getPlanFeatures({
+      ...(subscription || {}),
+      plan
+    });
 
-                organization: {
-                    id:
-                        member.organization.id,
+    const isBusiness = plan === "business";
 
-                    name:
-                        member.organization.name,
+    const role = organization?.role || "member";
 
-                    plan:
-                        member.organization.plan,
+    return res.json({
+      organization: organization
+        ? {
+            id: organization.id,
+            name: organization.name,
+            plan,
+            status: organization.status,
+            role,
+            memberStatus: organization.memberStatus
+          }
+        : null,
 
-                    status:
-                        member.organization.status
-                },
+      subscription: subscription
+        ? {
+            plan: subscription.plan,
+            status: subscription.status
+          }
+        : null,
 
-                membership: {
-                    id:
-                        member.organization.membershipId,
+      permissions: {
+        // Core features
+        canUseDialer: features.dialer,
+        canManageOwnAccount: true,
 
-                    role:
-                        role,
+        // Organization features
+        canManageTeam:
+          isBusiness &&
+          (role === "owner" || role === "admin"),
 
-                    status:
-                        member.organization.memberStatus
-                },
+        canManageNumbers:
+          isBusiness &&
+          (role === "owner" || role === "admin"),
 
-                permissions: {
-                    canUseDialer: true,
+        canViewTeamActivity:
+          isBusiness &&
+          (role === "owner" || role === "admin"),
 
-                    canManageOwnAccount: true,
+        canManageBilling:
+          role === "owner",
 
-                    canManageTeam:
-                        role === "owner" ||
-                        role === "admin",
+        canManageOrganization:
+          role === "owner",
 
-                    canManageNumbers:
-                        role === "owner" ||
-                        role === "admin",
+        // Business-only features
+        canUseSharedInbox:
+          features.shared_inbox,
 
-                    canViewTeamActivity:
-                        role === "owner" ||
-                        role === "admin",
+        canUseLiveMonitoring:
+          features.live_monitoring,
 
-                    canManageBilling:
-                        role === "owner",
+        canUseAITranscription:
+          features.ai_transcription,
 
-                    canManageOrganization:
-                        role === "owner"
-                }
-            });
+        canUseCRMIntegrations:
+          features.crm_integrations,
 
-        } catch (error) {
-            console.error(
-                "Organization access test error:",
-                error
-            );
+        canUseCallForwarding:
+          features.call_forwarding,
 
-            return res.status(500).json({
-                success: false,
-                error:
-                    "Unable to determine organization permissions."
-            });
-        }
-    }
-);
+        canUseAdvancedRouting:
+          features.advanced_routing
+      },
+
+      features
+    });
+
+  } catch (error) {
+    console.error(
+      "Organization access error:",
+      error
+    );
+
+    return res.status(500).json({
+      error: "Unable to load organization access."
+    });
+  }
+});
 
 // =========================================================
 // ORGANIZATION TEAM MEMBERS
