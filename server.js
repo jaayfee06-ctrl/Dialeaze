@@ -2950,6 +2950,640 @@ app.post("/api/messages/send", async (req, res) => {
 // =========================================================
 // MARK MESSAGES AS READ - SUPABASE
 // =========================================================
+// =========================================================
+// BUSINESS SHARED INBOX — SEND MESSAGE
+// =========================================================
+//
+// Sends a message from the currently authenticated team
+// member to a customer conversation visible in the
+// Business Shared Inbox.
+//
+// The sender is always the authenticated user's assigned
+// Dialeaze number.
+//
+// This does NOT modify /api/messages/send.
+// =========================================================
+
+app.post(
+    "/api/shared-inbox/send",
+    async (req, res) => {
+
+        try {
+
+            // -------------------------------------------------
+            // AUTHENTICATE + ORGANIZATION MEMBERSHIP
+            // -------------------------------------------------
+
+            const access =
+                await requireOrganizationMember(req);
+
+            if (!access.success) {
+
+                return res.status(
+                    access.status
+                ).json({
+                    success: false,
+                    error:
+                        access.error
+                });
+
+            }
+
+
+            // -------------------------------------------------
+            // BUSINESS PLAN CHECK
+            // -------------------------------------------------
+
+            const subscription =
+                await getUserSubscription(
+                    access.user.id
+                );
+
+
+            const isBusiness =
+                subscriptionIsBusiness(
+                    subscription
+                ) &&
+                subscriptionAllowsService(
+                    subscription
+                );
+
+
+            if (!isBusiness) {
+
+                return res.status(403).json({
+                    success: false,
+                    error:
+                        "Shared Inbox messaging is available on the Dialeaze Business plan."
+                });
+
+            }
+
+
+            // -------------------------------------------------
+            // ORGANIZATION STATUS
+            // -------------------------------------------------
+
+            if (
+                String(
+                    access.organization.status ||
+                    ""
+                ).toLowerCase() !== "active"
+            ) {
+
+                return res.status(403).json({
+                    success: false,
+                    error:
+                        "Your Dialeaze organization is not active."
+                });
+
+            }
+
+
+            // -------------------------------------------------
+            // REQUEST DATA
+            // -------------------------------------------------
+
+            const to =
+                String(
+                    req.body?.to ||
+                    ""
+                ).trim();
+
+
+            const text =
+                String(
+                    req.body?.text ||
+                    ""
+                ).trim();
+
+
+            if (!to) {
+
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Recipient phone number is required."
+                });
+
+            }
+
+
+            if (!text) {
+
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Message text is required."
+                });
+
+            }
+
+
+            if (text.length > 1600) {
+
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Message cannot exceed 1600 characters."
+                });
+
+            }
+
+
+            // -------------------------------------------------
+            // VERIFY CUSTOMER EXISTS IN THIS ORGANIZATION'S
+            // SHARED INBOX
+            // -------------------------------------------------
+
+            const memberResponse =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/organization_members` +
+                    `?organization_id=eq.${encodeURIComponent(
+                        access.organization.id
+                    )}` +
+                    `&status=eq.active` +
+                    `&select=user_id`,
+                    {
+                        method: "GET",
+
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+
+                            Accept:
+                                "application/json"
+                        }
+                    }
+                );
+
+
+            const memberData =
+                await memberResponse.json();
+
+
+            if (!memberResponse.ok) {
+
+                console.error(
+                    "Shared Inbox send member lookup error:",
+                    memberData
+                );
+
+                return res.status(500).json({
+                    success: false,
+                    error:
+                        "Unable to verify the shared conversation."
+                });
+
+            }
+
+
+            const memberUserIds =
+                Array.isArray(memberData)
+                    ? memberData
+                        .map(
+                            member =>
+                                member.user_id
+                        )
+                        .filter(Boolean)
+                    : [];
+
+
+            if (!memberUserIds.length) {
+
+                return res.status(404).json({
+                    success: false,
+                    error:
+                        "No active team members were found."
+                });
+
+            }
+
+
+            // -------------------------------------------------
+            // VERIFY THIS PHONE BELONGS TO A SHARED
+            // CONVERSATION
+            // -------------------------------------------------
+
+            const userIdFilter =
+                memberUserIds
+                    .map(
+                        id =>
+                            `"${String(id).replace(
+                                /"/g,
+                                '\\"'
+                            )}"`
+                    )
+                    .join(",");
+
+
+            const existingMessageResponse =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/messages` +
+                    `?user_id=in.(${encodeURIComponent(
+                        userIdFilter
+                    )})` +
+                    `&or=(` +
+                        `from_number.eq.${encodeURIComponent(to)}` +
+                        `,to_number.eq.${encodeURIComponent(to)}` +
+                    `)` +
+                    `&select=id` +
+                    `&limit=1`,
+                    {
+                        method: "GET",
+
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+
+                            Accept:
+                                "application/json"
+                        }
+                    }
+                );
+
+
+            const existingMessageData =
+                await existingMessageResponse.json();
+
+
+            if (
+                !existingMessageResponse.ok
+            ) {
+
+                console.error(
+                    "Shared Inbox send conversation verification error:",
+                    existingMessageData
+                );
+
+                return res.status(500).json({
+                    success: false,
+                    error:
+                        "Unable to verify the customer conversation."
+                });
+
+            }
+
+
+            if (
+                !Array.isArray(
+                    existingMessageData
+                ) ||
+                !existingMessageData.length
+            ) {
+
+                return res.status(404).json({
+                    success: false,
+                    error:
+                        "This customer conversation is not available in your Shared Inbox."
+                });
+
+            }
+
+
+            // -------------------------------------------------
+            // GET CURRENT USER'S ASSIGNED DIALEAZE NUMBER
+            // -------------------------------------------------
+
+            const phoneNumberResponse =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/phone_numbers` +
+                    `?user_id=eq.${encodeURIComponent(
+                        access.user.id
+                    )}` +
+                    `&status=eq.assigned` +
+                    `&select=phone_number` +
+                    `&limit=1`,
+                    {
+                        method: "GET",
+
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+
+                            Accept:
+                                "application/json"
+                        }
+                    }
+                );
+
+
+            const phoneNumberData =
+                await phoneNumberResponse.json();
+
+
+            if (
+                !phoneNumberResponse.ok ||
+                !Array.isArray(
+                    phoneNumberData
+                ) ||
+                !phoneNumberData.length
+            ) {
+
+                return res.status(404).json({
+                    success: false,
+                    error:
+                        "Your Dialeaze phone number could not be found."
+                });
+
+            }
+
+
+            const senderNumber =
+                phoneNumberData[0].phone_number;
+
+
+            if (!senderNumber) {
+
+                return res.status(404).json({
+                    success: false,
+                    error:
+                        "Your Dialeaze phone number is unavailable."
+                });
+
+            }
+
+
+            // -------------------------------------------------
+            // SEND THROUGH SIGNALWIRE
+            // -------------------------------------------------
+
+            const signalWireAuth =
+                Buffer.from(
+                    `${SIGNALWIRE_PROJECT_ID}:${SIGNALWIRE_API_TOKEN}`
+                ).toString("base64");
+
+
+            const signalWireResponse =
+                await fetch(
+                    `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/messaging/messages`,
+                    {
+                        method: "POST",
+
+                        headers: {
+                            Authorization:
+                                `Basic ${signalWireAuth}`,
+
+                            "Content-Type":
+                                "application/json",
+
+                            Accept:
+                                "application/json"
+                        },
+
+                        body:
+                            JSON.stringify({
+
+                                from:
+                                    senderNumber,
+
+                                to:
+                                    to,
+
+                                body:
+                                    text
+
+                            })
+                    }
+                );
+
+
+            const signalWireData =
+                await signalWireResponse.json();
+
+
+            if (!signalWireResponse.ok) {
+
+                console.error(
+                    "Shared Inbox SignalWire SMS error:",
+                    signalWireData
+                );
+
+                return res.status(
+                    signalWireResponse.status
+                ).json({
+
+                    success: false,
+
+                    error:
+                        signalWireData?.message ||
+                        signalWireData?.error ||
+                        signalWireData?.error_message ||
+                        "Unable to send SMS through SignalWire."
+
+                });
+
+            }
+
+
+            // -------------------------------------------------
+            // SAVE MESSAGE
+            // -------------------------------------------------
+
+            const messageRecord = {
+
+                user_id:
+                    access.user.id,
+
+                provider_message_id:
+                    signalWireData?.id ||
+                    signalWireData?.message_id ||
+                    null,
+
+                from_number:
+                    signalWireData?.from ||
+                    senderNumber,
+
+                to_number:
+                    signalWireData?.to ||
+                    to,
+
+                body:
+                    text,
+
+                direction:
+                    "outbound",
+
+                status:
+                    signalWireData?.status ||
+                    "queued",
+
+                is_read:
+                    true
+
+            };
+
+
+            const saveResponse =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/messages`,
+                    {
+                        method: "POST",
+
+                        headers: {
+
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+
+                            "Content-Type":
+                                "application/json",
+
+                            Prefer:
+                                "return=representation"
+
+                        },
+
+                        body:
+                            JSON.stringify(
+                                messageRecord
+                            )
+
+                    }
+                );
+
+
+            const savedMessage =
+                await saveResponse.json();
+
+
+            if (!saveResponse.ok) {
+
+                console.error(
+                    "Shared Inbox outbound SMS save error:",
+                    savedMessage
+                );
+
+                return res.status(500).json({
+
+                    success: false,
+
+                    error:
+                        "Message was sent, but could not be saved to your Shared Inbox."
+
+                });
+
+            }
+
+
+            // -------------------------------------------------
+            // SUCCESS
+            // -------------------------------------------------
+
+            console.log(
+                "Shared Inbox SMS sent:",
+                {
+                    userId:
+                        access.user.id,
+
+                    organizationId:
+                        access.organization.id,
+
+                    from:
+                        senderNumber,
+
+                    to:
+                        to
+                }
+            );
+
+
+            return res.json({
+
+                success: true,
+
+                message: {
+
+                    id:
+                        savedMessage?.[0]?.id ||
+                        null,
+
+                    userId:
+                        access.user.id,
+
+                    providerMessageId:
+                        messageRecord.provider_message_id,
+
+                    from:
+                        messageRecord.from_number,
+
+                    to:
+                        messageRecord.to_number,
+
+                    text:
+                        messageRecord.body,
+
+                    direction:
+                        "outbound",
+
+                    status:
+                        messageRecord.status,
+
+                    createdAt:
+                        savedMessage?.[0]?.created_at ||
+                        new Date().toISOString(),
+
+                    isRead:
+                        true,
+
+                    owner: {
+
+                        id:
+                            access.user.id,
+
+                        name:
+                            access.user.full_name ||
+                            access.user.email ||
+                            "Team member",
+
+                        email:
+                            access.user.email ||
+                            "",
+
+                        role:
+                            access.organization.role ||
+                            "member"
+
+                    }
+
+                }
+
+            });
+
+
+        } catch (error) {
+
+            console.error(
+                "Shared Inbox send error:",
+                error
+            );
+
+
+            return res.status(500).json({
+
+                success: false,
+
+                error:
+                    error?.message ||
+                    "Unable to send Shared Inbox message."
+
+            });
+
+        }
+
+    }
+);
 
 app.post("/api/messages/read", async (req, res) => {
     try {
