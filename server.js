@@ -600,7 +600,26 @@ const DIALEAZE_PLAN_FEATURES = {
 };
 
 function getPlanFeatures(subscription) {
-  const plan = String(subscription?.plan || "solo").toLowerCase();
+  const rawPlan = String(
+    subscription?.plan || "solo"
+  )
+    .trim()
+    .toLowerCase();
+
+  /*
+   * Dialeaze currently has two plans:
+   *
+   * solo     = $41/month
+   * business = $100/month
+   *
+   * "pro" is a legacy value from the old system.
+   * During the migration, Pro is treated as Business
+   * so existing Business customers do not lose access.
+   */
+  const plan =
+    rawPlan === "business" || rawPlan === "pro"
+      ? "business"
+      : "solo";
 
   return DIALEAZE_PLAN_FEATURES[plan] ||
     DIALEAZE_PLAN_FEATURES.solo;
@@ -648,6 +667,369 @@ function requirePlanFeature(feature) {
     }
   };
 }
+
+// =========================================================
+// DIALEAZE CALL FORWARDING
+// BUSINESS PLAN ONLY
+// =========================================================
+//
+// Stores forwarding preferences in Supabase.
+// This API does NOT change SignalWire call routing.
+// SignalWire routing will be connected separately after
+// the settings API has been verified.
+//
+// =========================================================
+
+
+// ---------------------------------------------------------
+// GET CALL FORWARDING SETTINGS
+// ---------------------------------------------------------
+
+app.get(
+    "/api/call-forwarding",
+    async (req, res) => {
+        try {
+            const auth =
+                await authenticateRequest(req);
+
+            if (!auth.success) {
+                return res.status(
+                    auth.status
+                ).json({
+                    success: false,
+                    error: auth.error
+                });
+            }
+
+            const subscription =
+                await getUserSubscription(
+                    auth.user.id
+                );
+
+            if (
+                !subscriptionAllowsService(
+                    subscription
+                )
+            ) {
+                return res.status(403).json({
+                    success: false,
+                    error:
+                        "Active subscription required."
+                });
+            }
+
+            if (
+                !planHasFeature(
+                    subscription,
+                    "call_forwarding"
+                )
+            ) {
+                return res.status(403).json({
+                    success: false,
+                    error:
+                        "Call Forwarding is available on the Business plan.",
+                    feature:
+                        "call_forwarding",
+                    required_plan:
+                        "business"
+                });
+            }
+
+            const response =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/call_forwarding_settings` +
+                    `?user_id=eq.${encodeURIComponent(auth.user.id)}` +
+                    `&select=id,user_id,enabled,mode,forward_to,timeout_seconds,created_at,updated_at` +
+                    `&limit=1`,
+                    {
+                        method: "GET",
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+                            Accept:
+                                "application/json"
+                        }
+                    }
+                );
+
+            const data =
+                await response.json();
+
+            if (!response.ok) {
+                console.error(
+                    "Call forwarding settings lookup failed:",
+                    data
+                );
+
+                return res.status(500).json({
+                    success: false,
+                    error:
+                        "Unable to load call forwarding settings."
+                });
+            }
+
+            const settings =
+                Array.isArray(data) &&
+                data.length > 0
+                    ? data[0]
+                    : {
+                        enabled: false,
+                        mode: "unanswered",
+                        forward_to: "",
+                        timeout_seconds: 30
+                    };
+
+            return res.json({
+                success: true,
+                settings
+            });
+
+        } catch (error) {
+            console.error(
+                "Get call forwarding settings error:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    "Unable to load call forwarding settings."
+            });
+        }
+    }
+);
+
+
+// ---------------------------------------------------------
+// SAVE CALL FORWARDING SETTINGS
+// ---------------------------------------------------------
+
+app.post(
+    "/api/call-forwarding",
+    async (req, res) => {
+        try {
+            const auth =
+                await authenticateRequest(req);
+
+            if (!auth.success) {
+                return res.status(
+                    auth.status
+                ).json({
+                    success: false,
+                    error: auth.error
+                });
+            }
+
+            const subscription =
+                await getUserSubscription(
+                    auth.user.id
+                );
+
+            if (
+                !subscriptionAllowsService(
+                    subscription
+                )
+            ) {
+                return res.status(403).json({
+                    success: false,
+                    error:
+                        "Active subscription required."
+                });
+            }
+
+            if (
+                !planHasFeature(
+                    subscription,
+                    "call_forwarding"
+                )
+            ) {
+                return res.status(403).json({
+                    success: false,
+                    error:
+                        "Call Forwarding is available on the Business plan.",
+                    feature:
+                        "call_forwarding",
+                    required_plan:
+                        "business"
+                });
+            }
+
+            const enabled =
+                req.body?.enabled === true;
+
+            const mode =
+                String(
+                    req.body?.mode ||
+                    "unanswered"
+                )
+                    .trim()
+                    .toLowerCase();
+
+            const forwardTo =
+                String(
+                    req.body?.forward_to ||
+                    ""
+                ).trim();
+
+            let timeoutSeconds =
+                Number(
+                    req.body?.timeout_seconds ??
+                    30
+                );
+
+            if (
+                !Number.isInteger(
+                    timeoutSeconds
+                ) ||
+                timeoutSeconds < 10 ||
+                timeoutSeconds > 60
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Ring time must be between 10 and 60 seconds."
+                });
+            }
+
+            if (
+                ![
+                    "always",
+                    "unanswered",
+                    "busy"
+                ].includes(mode)
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Invalid call forwarding mode."
+                });
+            }
+
+            /*
+             * When forwarding is enabled, a destination
+             * number is required.
+             */
+            if (
+                enabled &&
+                !forwardTo
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Please enter a phone number to forward calls to."
+                });
+            }
+
+            /*
+             * Basic E.164 validation.
+             *
+             * Examples:
+             * +12125551234
+             * +442071234567
+             */
+            if (
+                forwardTo &&
+                !/^\+[1-9]\d{7,14}$/.test(
+                    forwardTo
+                )
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Please enter a valid international phone number beginning with +."
+                });
+            }
+
+            const payload = {
+                user_id:
+                    auth.user.id,
+
+                enabled,
+
+                mode,
+
+                forward_to:
+                    forwardTo || null,
+
+                timeout_seconds:
+                    timeoutSeconds,
+
+                updated_at:
+                    new Date().toISOString()
+            };
+
+            const response =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/call_forwarding_settings` +
+                    `?on_conflict=user_id`,
+                    {
+                        method: "POST",
+
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+
+                            "Content-Type":
+                                "application/json",
+
+                            Prefer:
+                                "resolution=merge-duplicates,return=representation"
+                        },
+
+                        body:
+                            JSON.stringify(
+                                payload
+                            )
+                    }
+                );
+
+            const data =
+                await response.json();
+
+            if (!response.ok) {
+                console.error(
+                    "Call forwarding settings save failed:",
+                    data
+                );
+
+                return res.status(500).json({
+                    success: false,
+                    error:
+                        "Unable to save call forwarding settings."
+                });
+            }
+
+            const settings =
+                Array.isArray(data)
+                    ? data[0]
+                    : data;
+
+            return res.json({
+                success: true,
+                message:
+                    "Call forwarding settings saved.",
+                settings
+            });
+
+        } catch (error) {
+            console.error(
+                "Save call forwarding settings error:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    "Unable to save call forwarding settings."
+            });
+        }
+    }
+);
 // =========================================================
 // SIGNALWIRE SUBSCRIBER ACCESS TOKEN
 // =========================================================
@@ -863,10 +1245,11 @@ telnyxPhoneNumber:
     "",
                     assignedPhoneNumber:
                  assignedPhoneNumber,
-
-                subscriptionPlan:
-                    profile.subscription_plan ||
-                    "free",
+                
+                 subscriptionPlan:
+    getPlanFeatures({
+        plan: profile.subscription_plan
+    }).plan,
 
                 subscriptionStatus:
                     profile.subscription_status ||
@@ -4847,6 +5230,8 @@ app.get("/api/call-recordings", async (req, res) => {
         });
     }
 });
+
+
 app.post("/api/outbound-call/update", async (req, res) => {
     try {
         const auth = await authenticateRequest(req);
