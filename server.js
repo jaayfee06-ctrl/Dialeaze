@@ -3811,7 +3811,562 @@ isRead:
 
     }
 });
+// =========================================================
+// BUSINESS SHARED INBOX
+// =========================================================
+//
+// Returns messages from all active members of the current
+// Business organization.
+//
+// IMPORTANT:
+// - Business plan only
+// - Organization membership required
+// - Does NOT modify the existing /api/messages route
+// - Does NOT create SignalWire users/subscribers
+// - Read-only for the first Shared Inbox release
+// =========================================================
 
+app.get(
+    "/api/shared-inbox",
+    async (req, res) => {
+
+        try {
+
+            // -------------------------------------------------
+            // AUTHENTICATE USER
+            // -------------------------------------------------
+
+            const access =
+                await requireOrganizationMember(req);
+
+            if (!access.success) {
+
+                return res.status(
+                    access.status
+                ).json({
+                    success: false,
+                    error:
+                        access.error
+                });
+
+            }
+
+
+            const organizationId =
+                access.organization.id;
+
+
+            // -------------------------------------------------
+            // GET CURRENT SUBSCRIPTION
+            // -------------------------------------------------
+
+            const subscription =
+                await getUserSubscription(
+                    access.user.id
+                );
+
+
+            // -------------------------------------------------
+            // BUSINESS PLAN CHECK
+            // -------------------------------------------------
+
+            const isBusiness =
+                subscriptionIsBusiness(
+                    subscription
+                ) &&
+                subscriptionAllowsService(
+                    subscription
+                );
+
+
+            if (!isBusiness) {
+
+                return res.status(403).json({
+                    success: false,
+                    error:
+                        "Shared Inbox is available on the Dialeaze Business plan."
+                });
+
+            }
+
+
+            // -------------------------------------------------
+            // ORGANIZATION STATUS CHECK
+            // -------------------------------------------------
+
+            if (
+                String(
+                    access.organization.status ||
+                    ""
+                ).toLowerCase() !== "active"
+            ) {
+
+                return res.status(403).json({
+                    success: false,
+                    error:
+                        "Your Dialeaze organization is not active."
+                });
+
+            }
+
+
+            // -------------------------------------------------
+            // LOAD ACTIVE ORGANIZATION MEMBERS
+            // -------------------------------------------------
+
+            const membersResponse =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/organization_members` +
+                    `?organization_id=eq.${encodeURIComponent(
+                        organizationId
+                    )}` +
+                    `&status=eq.active` +
+                    `&select=id,organization_id,user_id,email,role,status,joined_at,created_at,updated_at` +
+                    `&order=created_at.asc`,
+                    {
+                        method: "GET",
+
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+
+                            Accept:
+                                "application/json"
+                        }
+                    }
+                );
+
+
+            const membersData =
+                await membersResponse.json();
+
+
+            if (!membersResponse.ok) {
+
+                console.error(
+                    "Shared Inbox members lookup error:",
+                    membersData
+                );
+
+                return res.status(
+                    membersResponse.status
+                ).json({
+                    success: false,
+                    error:
+                        membersData?.message ||
+                        "Unable to load organization members."
+                });
+
+            }
+
+
+            const members =
+                Array.isArray(
+                    membersData
+                )
+                    ? membersData
+                    : [];
+
+
+            const memberUserIds =
+                members
+                    .map(
+                        member =>
+                            member.user_id
+                    )
+                    .filter(Boolean);
+
+
+            // -------------------------------------------------
+            // NO MEMBERS
+            // -------------------------------------------------
+
+            if (!memberUserIds.length) {
+
+                return res.json({
+                    success: true,
+
+                    organization: {
+                        id:
+                            organizationId,
+
+                        name:
+                            access.organization.name,
+
+                        plan:
+                            access.organization.plan,
+
+                        status:
+                            access.organization.status
+                    },
+
+                    members: [],
+
+                    messages: []
+                });
+
+            }
+
+
+            // -------------------------------------------------
+            // LOAD MESSAGES FOR ALL ACTIVE TEAM MEMBERS
+            // -------------------------------------------------
+
+            const userIdFilter =
+                memberUserIds
+                    .map(
+                        id =>
+                            `"${String(id).replace(
+                                /"/g,
+                                '\\"'
+                            )}"`
+                    )
+                    .join(",");
+
+
+            const messagesResponse =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/messages` +
+                    `?user_id=in.(${encodeURIComponent(
+                        userIdFilter
+                    )})` +
+                    `&order=created_at.desc` +
+                    `&limit=500`,
+                    {
+                        method: "GET",
+
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+
+                            Accept:
+                                "application/json"
+                        }
+                    }
+                );
+
+
+            const messagesData =
+                await messagesResponse.json();
+
+
+            if (!messagesResponse.ok) {
+
+                console.error(
+                    "Shared Inbox messages lookup error:",
+                    messagesData
+                );
+
+                return res.status(
+                    messagesResponse.status
+                ).json({
+                    success: false,
+                    error:
+                        messagesData?.message ||
+                        "Unable to load shared messages."
+                });
+
+            }
+
+
+            const rawMessages =
+                Array.isArray(
+                    messagesData
+                )
+                    ? messagesData
+                    : [];
+
+
+            // -------------------------------------------------
+            // LOAD MEMBER PROFILES
+            // -------------------------------------------------
+
+            const profilesResponse =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/profiles` +
+                    `?id=in.(${encodeURIComponent(
+                        memberUserIds.join(",")
+                    )})` +
+                    `&select=id,full_name,phone_number`,
+                    {
+                        method: "GET",
+
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+
+                            Accept:
+                                "application/json"
+                        }
+                    }
+                );
+
+
+            const profilesData =
+                await profilesResponse.json();
+
+
+            if (!profilesResponse.ok) {
+
+                console.error(
+                    "Shared Inbox profiles lookup error:",
+                    profilesData
+                );
+
+            }
+
+
+            const profiles =
+                Array.isArray(
+                    profilesData
+                )
+                    ? profilesData
+                    : [];
+
+
+            const profileMap =
+                new Map(
+                    profiles.map(
+                        profile => [
+                            String(profile.id),
+                            profile
+                        ]
+                    )
+                );
+
+
+            // -------------------------------------------------
+            // CREATE MEMBER MAP
+            // -------------------------------------------------
+
+            const memberMap =
+                new Map(
+                    members.map(
+                        member => [
+
+                            String(
+                                member.user_id
+                            ),
+
+                            {
+                                id:
+                                    member.user_id,
+
+                                email:
+                                    member.email ||
+                                    "",
+
+                                role:
+                                    member.role ||
+                                    "member",
+
+                                status:
+                                    member.status ||
+                                    "active",
+
+                                name:
+                                    profileMap.get(
+                                        String(
+                                            member.user_id
+                                        )
+                                    )?.full_name ||
+                                    member.email ||
+                                    "Team member",
+
+                                phone:
+                                    profileMap.get(
+                                        String(
+                                            member.user_id
+                                        )
+                                    )?.phone_number ||
+                                    ""
+                            }
+
+                        ]
+                    )
+                );
+
+
+            // -------------------------------------------------
+            // FORMAT SHARED MESSAGES
+            // -------------------------------------------------
+
+            const formattedMessages =
+                rawMessages.map(
+                    message => {
+
+                        const owner =
+                            memberMap.get(
+                                String(
+                                    message.user_id
+                                )
+                            ) ||
+                            {
+                                id:
+                                    message.user_id,
+
+                                name:
+                                    "Team member",
+
+                                email:
+                                    "",
+
+                                role:
+                                    "member",
+
+                                status:
+                                    "active",
+
+                                phone:
+                                    ""
+                            };
+
+
+                        const contactNumber =
+                            message.direction ===
+                            "inbound"
+
+                                ? message.from_number
+
+                                : message.to_number;
+
+
+                        return {
+
+                            id:
+                                message.id,
+
+                            userId:
+                                message.user_id,
+
+                            providerMessageId:
+                                message.provider_message_id,
+
+                            from:
+                                message.from_number,
+
+                            to:
+                                message.to_number,
+
+                            text:
+                                message.body,
+
+                            direction:
+                                message.direction,
+
+                            status:
+                                message.status,
+
+                            createdAt:
+                                message.created_at,
+
+                            updatedAt:
+                                message.updated_at,
+
+                            isRead:
+                                message.is_read,
+
+                            contactNumber:
+
+                                contactNumber ||
+
+                                message.from_number ||
+
+                                message.to_number ||
+
+                                "",
+
+                            owner: {
+
+                                id:
+                                    owner.id,
+
+                                name:
+                                    owner.name,
+
+                                email:
+                                    owner.email,
+
+                                role:
+                                    owner.role,
+
+                                phone:
+                                    owner.phone
+
+                            }
+
+                        };
+
+                    }
+                );
+
+
+            // -------------------------------------------------
+            // FINAL RESPONSE
+            // -------------------------------------------------
+
+            return res.json({
+
+                success: true,
+
+                organization: {
+
+                    id:
+                        organizationId,
+
+                    name:
+                        access.organization.name,
+
+                    plan:
+                        access.organization.plan,
+
+                    status:
+                        access.organization.status
+
+                },
+
+                members:
+
+                    Array.from(
+                        memberMap.values()
+                    ),
+
+                messages:
+                    formattedMessages
+
+            });
+
+
+        } catch (error) {
+
+            console.error(
+                "Shared Inbox GET error:",
+                error
+            );
+
+
+            return res.status(500).json({
+
+                success: false,
+
+                error:
+                    "Unable to load Shared Inbox."
+
+            });
+
+        }
+
+    }
+);
 // =========================================================
 // CALL USAGE LIFECYCLE HELPERS
 // =========================================================
