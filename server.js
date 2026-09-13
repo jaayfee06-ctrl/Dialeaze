@@ -5924,91 +5924,495 @@ app.get(
     }
 );
 
-app.post("/api/signalwire/inbound-swml", (req, res) => {
-    console.log("ðŸ“ž SIGNALWIRE INBOUND CALL RECEIVED");
+// =========================================================
+// SIGNALWIRE INBOUND SWML
+// CALL FORWARDING + EXISTING DIALER/VOICEMAIL FLOW
+// =========================================================
 
-    console.log(
-        "Inbound SWML request:",
-        JSON.stringify(req.body, null, 2)
-    );
+app.post(
+    "/api/signalwire/inbound-swml",
+    async (req, res) => {
+        console.log("📞 SIGNALWIRE INBOUND CALL RECEIVED");
 
-    return res.json({
-        version: "1.0.0",
+        console.log(
+            "Inbound SWML request:",
+            JSON.stringify(req.body, null, 2)
+        );
 
-        sections: {
-            main: [
-                {
-                    connect: {
-                        to: "/private/junaid-sabir",
+        const voicemailActions = () => [
+            {
+                play: {
+                    url:
+                        "say: This is the Dialeaze voicemail. Please leave your message after the beep. Press pound when you are finished."
+                }
+            },
 
-                        timeout: 30,
+            {
+                record: {
+                    beep: true,
+                    terminators: "#",
+                    initial_timeout: 5,
+                    end_silence_timeout: 5,
+                    max_length: 120,
+                    format: "mp3",
 
-                        answer_on_bridge: false,
+                    status_url:
+                        "https://dialeaze.onrender.com/api/signalwire/voicemail-recording-callback"
+                }
+            },
 
-                        call_state_events: [
-                            "created",
-                            "ringing",
-                            "answered",
-                            "ended"
-                        ],
+            {
+                play: {
+                    url:
+                        "say: Thank you for your message. We will get back to you as soon as possible. Goodbye."
+                }
+            },
 
-                        call_state_url:
-                            "https://dialeaze.onrender.com/api/signalwire/inbound-call-state",
+            {
+                hangup: {}
+            }
+        ];
 
-                        status_url:
-                            "https://dialeaze.onrender.com/api/signalwire/inbound-connect-status",
 
-                        result: [
+        const forwardingConnect = (
+            forwardTo,
+            timeoutSeconds
+        ) => ({
+            connect: {
+                from:
+                    "%{call.from}",
+
+                to:
+                    forwardTo,
+
+                timeout:
+                    timeoutSeconds,
+
+                call_state_events: [
+                    "created",
+                    "ringing",
+                    "answered",
+                    "ended"
+                ],
+
+                call_state_url:
+                    "https://dialeaze.onrender.com/api/signalwire/inbound-call-state",
+
+                status_url:
+                    "https://dialeaze.onrender.com/api/signalwire/inbound-connect-status",
+
+                result: [
+                    {
+                        when:
+                            "connect_result == 'failed'",
+
+                        then:
+                            voicemailActions()
+                    },
+
+                    {
+                        else: [
                             {
-                                when: "connect_result == 'failed'",
+                                hangup: {}
+                            }
+                        ]
+                    }
+                ]
+            }
+        });
 
-                                then: [
-                                    {
-                                        play: {
-                                            url: "say: This is the Dialeaze voicemail. Please leave your message after the beep. Press pound when you are finished."
-                                        }
-                                    },
 
-                                    {
-    record: {
-        beep: true,
-        terminators: "#",
-        initial_timeout: 5,
-        end_silence_timeout: 5,
-        max_length: 120,
-        format: "mp3",
+        const normalDialeazeConnect = (
+            result
+        ) => ({
+            connect: {
+                to:
+                    "/private/junaid-sabir",
 
-        status_url:
-            "https://dialeaze.onrender.com/api/signalwire/voicemail-recording-callback"
-    }
-},
+                timeout:
+                    30,
 
-                                    {
-                                        play: {
-                                            url: "say: Thank you for your message. We will get back to you as soon as possible. Goodbye."
-                                        }
-                                    },
+                answer_on_bridge:
+                    false,
 
-                                    {
-                                        hangup: {}
-                                    }
-                                ]
+                call_state_events: [
+                    "created",
+                    "ringing",
+                    "answered",
+                    "ended"
+                ],
+
+                call_state_url:
+                    "https://dialeaze.onrender.com/api/signalwire/inbound-call-state",
+
+                status_url:
+                    "https://dialeaze.onrender.com/api/signalwire/inbound-connect-status",
+
+                result
+            }
+        });
+
+
+        try {
+
+            /*
+             * The number that received the inbound call.
+             */
+            const inboundNumber =
+                String(
+                    req.body?.call?.to || ""
+                ).trim();
+
+
+            /*
+             * The original client caller.
+             */
+            const callerNumber =
+                String(
+                    req.body?.call?.from || ""
+                ).trim();
+
+
+            let assignedUserId =
+                null;
+
+            let settings =
+                null;
+
+
+            /*
+             * Find the Dialeaze customer who owns
+             * the number that received this call.
+             */
+            if (
+                inboundNumber &&
+                SUPABASE_URL &&
+                SUPABASE_SECRET_KEY
+            ) {
+
+                const numberResponse =
+                    await fetch(
+                        `${SUPABASE_URL}/rest/v1/phone_numbers` +
+                        `?phone_number=eq.${encodeURIComponent(inboundNumber)}` +
+                        `&status=eq.assigned` +
+                        `&select=user_id` +
+                        `&limit=1`,
+                        {
+                            method: "GET",
+
+                            headers: {
+                                Authorization:
+                                    `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                                apikey:
+                                    SUPABASE_SECRET_KEY,
+
+                                Accept:
+                                    "application/json"
+                            }
+                        }
+                    );
+
+
+                const numberData =
+                    await numberResponse.json();
+
+
+                if (
+                    numberResponse.ok &&
+                    Array.isArray(numberData) &&
+                    numberData.length
+                ) {
+
+                    assignedUserId =
+                        numberData[0].user_id ||
+                        null;
+                }
+            }
+
+
+            /*
+             * Load the Call Forwarding settings
+             * belonging to this Dialeaze customer.
+             */
+            if (assignedUserId) {
+
+                const settingsResponse =
+                    await fetch(
+                        `${SUPABASE_URL}/rest/v1/call_forwarding_settings` +
+                        `?user_id=eq.${encodeURIComponent(assignedUserId)}` +
+                        `&select=enabled,mode,forward_to,timeout_seconds` +
+                        `&limit=1`,
+                        {
+                            method: "GET",
+
+                            headers: {
+                                Authorization:
+                                    `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                                apikey:
+                                    SUPABASE_SECRET_KEY,
+
+                                Accept:
+                                    "application/json"
+                            }
+                        }
+                    );
+
+
+                const settingsData =
+                    await settingsResponse.json();
+
+
+                if (
+                    settingsResponse.ok &&
+                    Array.isArray(settingsData) &&
+                    settingsData.length
+                ) {
+
+                    settings =
+                        settingsData[0];
+                }
+            }
+
+
+            const enabled =
+                settings?.enabled === true;
+
+
+            const mode =
+                String(
+                    settings?.mode ||
+                    "unanswered"
+                )
+                    .trim()
+                    .toLowerCase();
+
+
+            const forwardTo =
+                String(
+                    settings?.forward_to ||
+                    ""
+                ).trim();
+
+
+            const timeoutSeconds =
+                Number(
+                    settings?.timeout_seconds ||
+                    30
+                );
+
+
+            /*
+             * Only forward when:
+             *
+             * 1. Forwarding is enabled
+             * 2. Destination is a valid E.164 number
+             */
+            const canForward =
+                enabled &&
+                /^\+[1-9]\d{7,14}$/.test(
+                    forwardTo
+                );
+
+
+            console.log(
+                "📞 INBOUND FORWARDING:",
+                {
+                    inboundNumber,
+                    callerNumber,
+                    assignedUserId,
+                    enabled,
+                    mode,
+                    forwardTo:
+                        canForward
+                            ? forwardTo
+                            : null,
+                    timeoutSeconds
+                }
+            );
+
+
+            /*
+             * =====================================================
+             * ALWAYS
+             * =====================================================
+             *
+             * Client goes directly to the forwarding number.
+             */
+            if (
+                canForward &&
+                mode === "always"
+            ) {
+
+                return res.json({
+                    version:
+                        "1.0.0",
+
+                    sections: {
+                        main: [
+                            forwardingConnect(
+                                forwardTo,
+                                timeoutSeconds
+                            )
+                        ]
+                    }
+                });
+            }
+
+
+            /*
+             * =====================================================
+             * UNANSWERED
+             * =====================================================
+             *
+             * First ring the normal Dialeaze destination.
+             *
+             * If nobody answers, forward to the
+             * customer's external phone.
+             */
+            const result = [];
+
+
+            if (
+                canForward &&
+                mode === "unanswered"
+            ) {
+
+                result.push({
+
+                    when:
+                        "connect_result == 'failed' && (connect_failed_reason == 'no_answer' || connect_failed_reason == 'timeout' || connect_failed_reason == 'timed_out')",
+
+                    then: [
+
+                        forwardingConnect(
+                            forwardTo,
+                            timeoutSeconds
+                        )
+
+                    ]
+                });
+            }
+
+
+            /*
+             * =====================================================
+             * BUSY
+             * =====================================================
+             *
+             * First ring the normal Dialeaze destination.
+             *
+             * If SignalWire reports that destination as busy,
+             * forward the call.
+             */
+            if (
+                canForward &&
+                mode === "busy"
+            ) {
+
+                result.push({
+
+                    when:
+                        "connect_result == 'failed' && connect_failed_reason == 'busy'",
+
+                    then: [
+
+                        forwardingConnect(
+                            forwardTo,
+                            timeoutSeconds
+                        )
+
+                    ]
+                });
+            }
+
+
+            /*
+             * =====================================================
+             * EXISTING VOICEMAIL FLOW
+             * =====================================================
+             *
+             * If no forwarding rule matched, preserve
+             * the existing Dialeaze voicemail behavior.
+             */
+            result.push({
+
+                else:
+                    voicemailActions()
+
+            });
+
+
+            return res.json({
+
+                version:
+                    "1.0.0",
+
+                sections: {
+
+                    main: [
+
+                        normalDialeazeConnect(
+                            result
+                        )
+
+                    ]
+                }
+            });
+
+
+        } catch (error) {
+
+            console.error(
+                "❌ Inbound SWML forwarding error:",
+                error
+            );
+
+
+            /*
+             * SAFETY FALLBACK
+             *
+             * If the forwarding database lookup fails,
+             * normal Dialeaze calling still works.
+             */
+            return res.json({
+
+                version:
+                    "1.0.0",
+
+                sections: {
+
+                    main: [
+
+                        normalDialeazeConnect([
+
+                            {
+                                when:
+                                    "connect_result == 'failed'",
+
+                                then:
+                                    voicemailActions()
                             },
 
                             {
                                 else: [
+
                                     {
                                         hangup: {}
                                     }
+
                                 ]
                             }
-                        ]
-                    }
+
+                        ])
+
+                    ]
                 }
-            ]
+            });
         }
-    });
-});
+    }
+);
 
 app.post("/api/signalwire/inbound-connect-status", (req, res) => {
     console.log("ðŸ“¡ SIGNALWIRE INBOUND CONNECT STATUS");
