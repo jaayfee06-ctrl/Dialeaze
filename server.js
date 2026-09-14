@@ -2564,7 +2564,354 @@ app.post("/api/billing/redeem-code", async (req, res) => {
         });
     }
 });
+// =========================================================
+// BUSINESS TEAM — INVITE MEMBER
+// =========================================================
+//
+// Business owners/admins can invite a new team member.
+//
+// The invitation:
+// 1. Verifies Business + Owner/Admin permissions.
+// 2. Creates the Supabase Auth invitation.
+// 3. Sends the Supabase invitation email.
+// 4. Creates the organization membership.
+//
+// No SignalWire Subscriber or phone number is created here.
+// Those remain tied to paid seat/number provisioning.
+// =========================================================
 
+app.post(
+    "/api/organization/invite",
+    async (req, res) => {
+        try {
+            const access =
+                await requireOrganizationAdmin(req);
+
+            if (!access.success) {
+                return res.status(
+                    access.status
+                ).json({
+                    success: false,
+                    error: access.error
+                });
+            }
+
+            const subscription =
+                await getUserSubscription(
+                    access.user.id
+                );
+
+            if (
+                !subscriptionIsBusiness(subscription)
+                ||
+                !subscriptionAllowsService(
+                    subscription
+                )
+            ) {
+                return res.status(403).json({
+                    success: false,
+                    error:
+                        "Team management is available on the Dialeaze Business plan."
+                });
+            }
+
+            const email = String(
+                req.body?.email || ""
+            )
+                .trim()
+                .toLowerCase();
+
+            const fullName = String(
+                req.body?.fullName || ""
+            ).trim();
+
+            const role = String(
+                req.body?.role || "member"
+            )
+                .trim()
+                .toLowerCase();
+
+            if (!email) {
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Team member email is required."
+                });
+            }
+
+            if (
+                !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+                    email
+                )
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Please enter a valid email address."
+                });
+            }
+
+            if (
+                role !== "member" &&
+                role !== "admin"
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Team member role must be Member or Admin."
+                });
+            }
+
+            // Only the organization owner can invite an Admin.
+            if (
+                role === "admin" &&
+                String(
+                    access.organization.role
+                ).toLowerCase() !== "owner"
+            ) {
+                return res.status(403).json({
+                    success: false,
+                    error:
+                        "Only the organization owner can invite an Admin."
+                });
+            }
+
+            // Never allow the owner/admin to invite themselves.
+            if (
+                String(
+                    access.user.email || ""
+                )
+                    .trim()
+                    .toLowerCase() === email
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "That email address already belongs to you."
+                });
+            }
+
+            // Check whether this email is already
+            // connected to this organization.
+            const existingResponse =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/organization_members` +
+                    `?organization_id=eq.${encodeURIComponent(
+                        access.organization.id
+                    )}` +
+                    `&email=ilike.${encodeURIComponent(
+                        email
+                    )}` +
+                    `&select=id,email,status` +
+                    `&limit=1`,
+                    {
+                        method: "GET",
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+                            Accept:
+                                "application/json"
+                        }
+                    }
+                );
+
+            const existingMembers =
+                await existingResponse.json();
+
+            if (!existingResponse.ok) {
+                throw new Error(
+                    existingMembers?.message ||
+                    "Unable to check existing team members."
+                );
+            }
+
+            if (
+                Array.isArray(existingMembers) &&
+                existingMembers.length > 0
+            ) {
+                return res.status(409).json({
+                    success: false,
+                    error:
+                        "This email address is already connected to your team."
+                });
+            }
+
+            if (!SUPABASE_SECRET_KEY) {
+                return res.status(500).json({
+                    success: false,
+                    error:
+                        "Supabase server configuration is missing."
+                });
+            }
+
+            // Ask Supabase Auth to create the invitation
+            // and send the invitation email.
+            const inviteResponse =
+                await fetch(
+                    `${SUPABASE_URL}/auth/v1/admin/invite`,
+                    {
+                        method: "POST",
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+                            "Content-Type":
+                                "application/json"
+                        },
+                        body: JSON.stringify({
+                            email,
+                            data: {
+                                full_name:
+                                    fullName,
+
+                                dialeaze_organization_id:
+                                    access.organization.id,
+
+                                dialeaze_invited_role:
+                                    role
+                            },
+
+                            redirect_to:
+                                "https://dialeaze.com/login/"
+                        })
+                    }
+                );
+
+            const inviteData =
+                await inviteResponse.json();
+
+            if (!inviteResponse.ok) {
+                console.error(
+                    "Supabase team invitation error:",
+                    inviteData
+                );
+
+                const duplicate =
+                    String(
+                        inviteData?.msg ||
+                        inviteData?.message ||
+                        inviteData?.error_description ||
+                        ""
+                    ).toLowerCase();
+
+                if (
+                    duplicate.includes("already") ||
+                    duplicate.includes("exists") ||
+                    duplicate.includes("registered")
+                ) {
+                    return res.status(409).json({
+                        success: false,
+                        error:
+                            "This email address is already registered. Use a different email address."
+                    });
+                }
+
+                return res.status(
+                    inviteResponse.status >= 400 &&
+                    inviteResponse.status < 600
+                        ? inviteResponse.status
+                        : 502
+                ).json({
+                    success: false,
+                    error:
+                        inviteData?.msg ||
+                        inviteData?.message ||
+                        inviteData?.error_description ||
+                        "Unable to send the team invitation."
+                });
+            }
+
+            const invitedUserId =
+                inviteData?.id ||
+                inviteData?.user?.id ||
+                null;
+
+            if (!invitedUserId) {
+                throw new Error(
+                    "Supabase created the invitation but did not return a user ID."
+                );
+            }
+
+            // Connect the invited Auth user
+            // to this Dialeaze organization.
+            const memberResponse =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/organization_members`,
+                    {
+                        method: "POST",
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+                            "Content-Type":
+                                "application/json",
+                            Prefer:
+                                "return=representation"
+                        },
+                        body: JSON.stringify({
+                            organization_id:
+                                access.organization.id,
+
+                            user_id:
+                                invitedUserId,
+
+                            email,
+
+                            role,
+
+                            status:
+                                "active"
+                        })
+                    }
+                );
+
+            const memberData =
+                await memberResponse.json();
+
+            if (!memberResponse.ok) {
+                console.error(
+                    "Organization member creation failed:",
+                    memberData
+                );
+
+                return res.status(500).json({
+                    success: false,
+                    error:
+                        "The invitation was created, but the team membership could not be completed. Please do not send another invitation yet."
+                });
+            }
+
+            return res.status(201).json({
+                success: true,
+
+                message:
+                    "Team invitation sent successfully.",
+
+                member:
+                    Array.isArray(memberData)
+                        ? memberData[0]
+                        : memberData
+            });
+
+        } catch (error) {
+            console.error(
+                "Organization invite error:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    error.message ||
+                    "Unable to invite this team member."
+            });
+        }
+    }
+);
 app.post("/api/call-history", async (req, res) => {
     try {
         const auth = await authenticateRequest(req);
