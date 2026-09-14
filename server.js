@@ -1313,25 +1313,31 @@ console.log(
         // SignalWire MUST return the SAME Subscriber ID.
         // ---------------------------------------------------------
 
-        if (
-            tokenData?.subscriber_id !==
-            expectedSubscriberId
-        ) {
-            console.error(
-                "SIGNALWIRE SAFETY STOP: Wrong Subscriber returned:",
-                {
-                    expectedSubscriberId,
-                    returnedSubscriberId:
-                        tokenData?.subscriber_id
-                }
-            );
+       const expectedTokenSubscriberId =
+    existingSubscriber?.subscriber?.id;
 
-            return res.status(409).json({
-                success: false,
-                error:
-                    "SignalWire returned a different Subscriber identity. The token was rejected."
-            });
+if (
+    !expectedTokenSubscriberId ||
+    tokenData?.subscriber_id !==
+        expectedTokenSubscriberId
+) {
+    console.error(
+        "SIGNALWIRE SAFETY STOP: Wrong Subscriber returned:",
+        {
+            expectedResourceId:
+                expectedSubscriberId,
+            expectedTokenSubscriberId,
+            returnedSubscriberId:
+                tokenData?.subscriber_id
         }
+    );
+
+    return res.status(409).json({
+    success: false,
+    error:
+        "SignalWire returned a different Subscriber identity. The token was rejected."
+});
+}
 
         console.log(
             "SignalWire SAT issued for verified Subscriber:",
