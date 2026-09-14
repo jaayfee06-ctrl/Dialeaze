@@ -2759,7 +2759,9 @@ app.post(
                             apikey:
                                 SUPABASE_SECRET_KEY,
                             "Content-Type":
-                                "application/json"
+                                "application/json",
+                                Accept:
+        "application/json"
                         },
                         body: JSON.stringify({
                             email,
@@ -2780,8 +2782,26 @@ app.post(
                     }
                 );
 
-            const inviteData =
-                await inviteResponse.json();
+           const inviteResponseText = await inviteResponse.text();
+
+let inviteResult;
+
+try {
+    inviteResult = JSON.parse(inviteResponseText);
+} catch (parseError) {
+    console.error(
+        "Supabase invitation returned non-standard JSON:",
+        inviteResponseText
+    );
+
+    return res.status(502).json({
+        success: false,
+        error:
+            "Supabase returned an unexpected invitation response.",
+        details:
+            inviteResponseText
+    });
+}
 
             if (!inviteResponse.ok) {
                 console.error(
