@@ -1468,6 +1468,7 @@ if (
                     "",
 
                 phoneNumber:
+                profile.phone_number ||
     assignedPhoneNumber ||
     "",
 
