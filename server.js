@@ -2750,7 +2750,7 @@ app.post(
             // and send the invitation email.
             const inviteResponse =
                 await fetch(
-                    `${SUPABASE_URL}/auth/v1/admin/invite`,
+                    `${SUPABASE_URL}/auth/v1/invite`,
                     {
                         method: "POST",
                         headers: {
