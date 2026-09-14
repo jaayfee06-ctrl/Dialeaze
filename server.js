@@ -1074,8 +1074,9 @@ if (
     });
 }
 
-// Use a stable reference for this Dialeaze customer.
-const reference = `dialeaze_${user.id}`;
+// Use the customer's email as the SignalWire Subscriber reference.
+// This matches the Subscriber created during provisioning.
+const reference = user.email;
 
         const basicAuth = Buffer.from(
             `${SIGNALWIRE_PROJECT_ID}:${SIGNALWIRE_API_TOKEN}`
