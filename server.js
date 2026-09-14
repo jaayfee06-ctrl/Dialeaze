@@ -1665,7 +1665,225 @@ app.get(
         }
     }
 );
+// =========================================================
+// DIALEAZE BUSINESS — ORGANIZATION SEATS
+// =========================================================
+//
+// Returns the organization's purchased seat entitlement.
+//
+// BUSINESS PLAN:
+//     Owner gets 1 included seat.
+//
+// ADDITIONAL SEATS:
+//     Stored in organization_seats.
+//     Only active additional seats count.
+//
+// IMPORTANT:
+//     This endpoint does NOT purchase anything.
+//     This endpoint does NOT provision SignalWire.
+//     This endpoint does NOT assign phone numbers.
+// =========================================================
 
+app.get(
+    "/api/organization/seats",
+    async (req, res) => {
+        try {
+            const access =
+                await requireOrganizationMember(req);
+
+            if (!access.success) {
+                return res.status(
+                    access.status
+                ).json({
+                    success: false,
+                    error: access.error
+                });
+            }
+
+            const subscription =
+                await getUserSubscription(
+                    access.user.id
+                );
+
+            if (
+                !subscriptionIsBusiness(
+                    subscription
+                ) ||
+                !subscriptionAllowsService(
+                    subscription
+                )
+            ) {
+                return res.status(403).json({
+                    success: false,
+                    error:
+                        "Team seats are available on the Dialeaze Business plan."
+                });
+            }
+
+            const organizationId =
+                access.organization.id;
+
+            // =====================================================
+            // LOAD PURCHASED ADDITIONAL SEATS
+            // =====================================================
+
+            const seatsResponse =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/organization_seats` +
+                    `?organization_id=eq.${encodeURIComponent(
+                        organizationId
+                    )}` +
+                    `&status=eq.active` +
+                    `&select=id,organization_id,user_id,seat_type,status,price_cents,payment_reference,purchased_at,created_at` +
+                    `&order=created_at.asc`,
+                    {
+                        method: "GET",
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+                            Accept:
+                                "application/json"
+                        }
+                    }
+                );
+
+            const seatsData =
+                await seatsResponse.json();
+
+            if (!seatsResponse.ok) {
+                console.error(
+                    "Organization seats lookup error:",
+                    seatsData
+                );
+
+                return res.status(
+                    seatsResponse.status
+                ).json({
+                    success: false,
+                    error:
+                        seatsData?.message ||
+                        "Unable to load organization seats."
+                });
+            }
+
+            const additionalSeats =
+                Array.isArray(seatsData)
+                    ? seatsData.length
+                    : 0;
+
+            // =====================================================
+            // LOAD CURRENT ACTIVE TEAM MEMBERS
+            // =====================================================
+
+            const membersResponse =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/organization_members` +
+                    `?organization_id=eq.${encodeURIComponent(
+                        organizationId
+                    )}` +
+                    `&status=eq.active` +
+                    `&select=id,user_id,role,status`,
+                    {
+                        method: "GET",
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+                            Accept:
+                                "application/json"
+                        }
+                    }
+                );
+
+            const membersData =
+                await membersResponse.json();
+
+            if (!membersResponse.ok) {
+                console.error(
+                    "Organization member seat usage error:",
+                    membersData
+                );
+
+                return res.status(
+                    membersResponse.status
+                ).json({
+                    success: false,
+                    error:
+                        membersData?.message ||
+                        "Unable to determine seat usage."
+                });
+            }
+
+            const usedSeats =
+                Array.isArray(membersData)
+                    ? membersData.length
+                    : 0;
+
+            // =====================================================
+            // BUSINESS OWNER GETS ONE INCLUDED SEAT
+            // =====================================================
+
+            const ownerIncludedSeats = 1;
+
+            const totalSeats =
+                ownerIncludedSeats +
+                additionalSeats;
+
+            const availableSeats =
+                Math.max(
+                    totalSeats - usedSeats,
+                    0
+                );
+
+            return res.json({
+                success: true,
+
+                organization: {
+                    id:
+                        organizationId,
+
+                    name:
+                        access.organization.name,
+
+                    plan:
+                        "business"
+                },
+
+                seats: {
+                    ownerIncluded:
+                        ownerIncludedSeats,
+
+                    additionalPurchased:
+                        additionalSeats,
+
+                    total:
+                        totalSeats,
+
+                    used:
+                        usedSeats,
+
+                    available:
+                        availableSeats
+                }
+            });
+
+        } catch (error) {
+            console.error(
+                "Organization seats GET error:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    "Unable to load organization seats."
+            });
+        }
+    }
+);
 app.get("/api/call-history", async (req, res) => {
     try {
         const auth = await authenticateRequest(req);
