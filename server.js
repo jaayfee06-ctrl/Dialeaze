@@ -1076,7 +1076,62 @@ if (
 
 // Use the customer's email as the SignalWire Subscriber reference.
 // This matches the Subscriber created during provisioning.
-const reference = user.email;
+// Resolve the already-provisioned SignalWire Subscriber.
+// We use the Subscriber ID stored in Supabase so we never
+// accidentally create a second Subscriber just because the
+// user's email/reference is different.
+const subscriberResponse = await fetch(
+    `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/fabric/resources/subscribers/${encodeURIComponent(
+        profile.signalwire_subscriber_id
+    )}`,
+    {
+        method: "GET",
+        headers: {
+            Authorization: `Basic ${Buffer.from(
+                `${SIGNALWIRE_PROJECT_ID}:${SIGNALWIRE_API_TOKEN}`
+            ).toString("base64")}`
+        }
+    }
+);
+
+const subscriberData = await subscriberResponse.json();
+
+if (!subscriberResponse.ok) {
+    console.error(
+        "SignalWire Subscriber lookup failed:",
+        subscriberResponse.status,
+        subscriberData
+    );
+
+    return res.status(502).json({
+        success: false,
+        error: "Unable to find your provisioned SignalWire Subscriber."
+    });
+}
+
+const reference =
+    subscriberData?.subscriber?.email ||
+    subscriberData?.email;
+
+if (!reference) {
+    console.error(
+        "SignalWire Subscriber has no reference/email:",
+        subscriberData
+    );
+
+    return res.status(502).json({
+        success: false,
+        error: "Your SignalWire Subscriber reference could not be determined."
+    });
+}
+
+console.log(
+    "SignalWire existing Subscriber resolved:",
+    {
+        subscriberId: profile.signalwire_subscriber_id,
+        reference
+    }
+);
 
         const basicAuth = Buffer.from(
             `${SIGNALWIRE_PROJECT_ID}:${SIGNALWIRE_API_TOKEN}`
