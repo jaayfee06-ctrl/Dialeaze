@@ -6501,4 +6501,21 @@ async function initializeApp() {
 // START DIALEAZE APPLICATION
 // =========================================================
 
-initializeApp();
+// =========================================================
+// DASHBOARD → DIALER READY SIGNAL
+// =========================================================
+
+if (window.opener) {
+    window.opener.postMessage(
+        {
+            type: "DIALEAZE_DIALER_READY"
+        },
+        "https://dialeaze.com"
+    );
+
+    console.log(
+        "Dialeaze dialer ready message sent to dashboard."
+    );
+} else {
+    initializeApp();
+}
