@@ -2777,7 +2777,7 @@ app.post(
                             },
 
                             redirect_to:
-                                "https://dialeaze.com/login/"
+    "https://dialeaze.com/invitation/"
                         })
                     }
                 );
