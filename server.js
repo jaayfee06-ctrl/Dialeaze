@@ -1427,6 +1427,13 @@ app.get("/api/organization/access", async (req, res) => {
   try {
     const auth = await authenticateRequest(req);
 
+    if (!auth.success) {
+      return res.status(auth.status).json({
+        success: false,
+        error: auth.error
+      });
+    }
+
     const organization = await getUserOrganization(auth.user.id);
     const subscription = await getUserSubscription(auth.user.id);
 
