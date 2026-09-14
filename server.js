@@ -5001,6 +5001,191 @@ app.get(
 
     }
 );
+
+// =========================================================
+// SHARED INBOX — MARK CONVERSATION AS READ
+// =========================================================
+
+app.post("/api/shared-inbox/read", async (req, res) => {
+    try {
+
+        const auth =
+            await requireOrganizationMember(req);
+
+        if (!auth.success) {
+            return res.status(
+                auth.status || 401
+            ).json({
+                success: false,
+                error:
+                    auth.error ||
+                    "Authentication required."
+            });
+        }
+
+        const phone =
+            String(
+                req.body?.phone ||
+                ""
+            ).trim();
+
+        if (!phone) {
+            return res.status(400).json({
+                success: false,
+                error:
+                    "Customer phone number is required."
+            });
+        }
+
+        const organization =
+            auth.organization;
+
+        if (!organization?.id) {
+            return res.status(403).json({
+                success: false,
+                error:
+                    "Organization could not be determined."
+            });
+        }
+
+        // -------------------------------------------------
+        // Get all active members of this organization
+        // -------------------------------------------------
+
+        const membersResponse =
+            await fetch(
+                `${SUPABASE_URL}/rest/v1/organization_members` +
+                `?organization_id=eq.${encodeURIComponent(organization.id)}` +
+                `&status=eq.active` +
+                `&select=user_id`,
+                {
+                    method: "GET",
+                    headers: {
+                        Authorization:
+                            `Bearer ${SUPABASE_SECRET_KEY}`,
+                        apikey:
+                            SUPABASE_SECRET_KEY,
+                        Accept:
+                            "application/json"
+                    }
+                }
+            );
+
+        const members =
+            await membersResponse.json();
+
+        if (
+            !membersResponse.ok ||
+            !Array.isArray(members)
+        ) {
+            console.error(
+                "Shared Inbox read members error:",
+                members
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    "Unable to determine organization members."
+            });
+        }
+
+        const memberIds =
+            members
+                .map(
+                    member =>
+                        member.user_id
+                )
+                .filter(Boolean);
+
+        if (!memberIds.length) {
+            return res.json({
+                success: true,
+                updated: 0
+            });
+        }
+
+        // -------------------------------------------------
+        // Mark inbound messages from this customer as read
+        // across the entire organization.
+        // -------------------------------------------------
+
+        const userFilter =
+            memberIds.join(",");
+
+        const updateUrl =
+            `${SUPABASE_URL}/rest/v1/messages` +
+            `?user_id=in.(${encodeURIComponent(userFilter)})` +
+            `&direction=eq.inbound` +
+            `&from_number=eq.${encodeURIComponent(phone)}` +
+            `&is_read=eq.false`;
+
+        const updateResponse =
+            await fetch(
+                updateUrl,
+                {
+                    method: "PATCH",
+
+                    headers: {
+                        Authorization:
+                            `Bearer ${SUPABASE_SECRET_KEY}`,
+                        apikey:
+                            SUPABASE_SECRET_KEY,
+                        "Content-Type":
+                            "application/json",
+                        Prefer:
+                            "return=representation"
+                    },
+
+                    body:
+                        JSON.stringify({
+                            is_read: true
+                        })
+                }
+            );
+
+        const updatedMessages =
+            await updateResponse.json();
+
+        if (!updateResponse.ok) {
+
+            console.error(
+                "Shared Inbox mark-read error:",
+                updatedMessages
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    "Unable to mark conversation as read."
+            });
+        }
+
+        return res.json({
+            success: true,
+            updated:
+                Array.isArray(
+                    updatedMessages
+                )
+                    ? updatedMessages.length
+                    : 0
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Shared Inbox mark-read exception:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            error:
+                error?.message ||
+                "Unable to mark conversation as read."
+        });
+    }
+});
 // =========================================================
 // CALL USAGE LIFECYCLE HELPERS
 // =========================================================
