@@ -1178,7 +1178,13 @@ console.log(
     {
         status: listResponse.status,
         subscriberCount: subscribers.length,
-        expectedSubscriberId
+        expectedSubscriberId,
+        subscribers: subscribers.map((subscriber) => ({
+            id: subscriber?.id,
+            email: subscriber?.email,
+            nestedId: subscriber?.subscriber?.id,
+            nestedEmail: subscriber?.subscriber?.email
+        }))
     }
 );
             existingSubscriber =
