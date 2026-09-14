@@ -2784,11 +2784,11 @@ app.post(
 
            const inviteResponseText = await inviteResponse.text();
 
-let inviteResult;
+let inviteData;
 
 try {
-    inviteResult = JSON.parse(inviteResponseText);
-} catch (parseError) {
+    inviteData =
+        JSON.parse(inviteResponseText);} catch (parseError) {
     console.error(
         "Supabase invitation returned non-standard JSON:",
         inviteResponseText
