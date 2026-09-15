@@ -2978,6 +2978,75 @@ if (providerCallId) {
         pstnChildCallId
     }
 );
+
+// =====================================================
+// SHOW CLEAR PSTN CALL RESULT TO THE USER
+// =====================================================
+
+if (state === "ringing") {
+
+    status.textContent =
+        "📞 Ringing...";
+
+}
+
+if (state === "answered") {
+
+    status.textContent =
+        "🟢 Connected";
+
+}
+
+if (state === "ended") {
+
+    providerEndReason = reason;
+
+    if (reason === "no_answer") {
+
+        status.textContent =
+            "📵 No answer";
+
+    } else if (reason === "declined") {
+
+        status.textContent =
+            "❌ Call declined";
+
+    } else if (reason === "busy") {
+
+        status.textContent =
+            "📞 Line busy";
+
+    } else if (reason === "hangup") {
+
+        status.textContent =
+            "📴 Call ended";
+
+    } else if (reason === "cancel") {
+
+        status.textContent =
+            "❌ Call cancelled";
+
+    } else if (reason === "error") {
+
+        status.textContent =
+            "⚠️ Call failed";
+
+    } else {
+
+        status.textContent =
+            "📴 Call ended";
+
+    }
+
+    console.log(
+        "📋 FINAL CALL RESULT:",
+        {
+            state,
+            reason,
+            pstnChildCallId
+        }
+    );
+}
 // -------------------------------------------------
 // START RECORDING AFTER PSTN LEG IS ACTUALLY ANSWERED
 // -------------------------------------------------
