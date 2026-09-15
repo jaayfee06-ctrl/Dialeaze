@@ -2839,10 +2839,11 @@ if (digits.length === 10) {
                                     "application/json"
                             },
 
-                            body: JSON.stringify({
+                           body: JSON.stringify({
     destinationNumber:
         number,
     callerNumber:
+        customerAccount.assignedPhoneNumber ||
         customerAccount.phoneNumber ||
         ""
 })
