@@ -7684,91 +7684,385 @@ app.post(
 // SIGNALWIRE OUTBOUND SWML
 // =========================================================
 
-app.post("/api/signalwire/outbound-swml", (req, res) => {
-    console.log("ðŸ“ž SIGNALWIRE OUTBOUND SWML RECEIVED");
-    console.log(
-        "SWML outbound request:",
-        JSON.stringify(req.body, null, 2)
-    );
+// =========================================================
+// SIGNALWIRE OUTBOUND SWML
+// =========================================================
 
-    const userVariables =
-    req.body?.vars?.userVariables ||
-    req.body?.vars?.user_variables ||
-    req.body?.user_variables ||
-    req.body?.userVariables ||
-    req.body?.params?.user_variables ||
-    req.body?.params?.userVariables ||
-    {};
+app.post("/api/signalwire/outbound-swml", async (req, res) => {
 
-    const destination =
-        userVariables.destination ||
-        userVariables.destinationNumber ||
-        null;
+    try {
 
-    const callerNumber =
-    SIGNALWIRE_PHONE_NUMBER ||
-    userVariables.callerNumber ||
-    null;
-
-    const usageId =
-    userVariables.usageId ||
-    userVariables.usage_id ||
-    null;
-
-    if (!destination) {
-        console.error(
-            "âŒ OUTBOUND SWML: No destination received."
+        console.log(
+            "📞 SIGNALWIRE OUTBOUND SWML RECEIVED"
         );
 
-        return res.status(400).json({
-            success: false,
-            error: "No outbound destination was provided."
-        });
-    }
+        console.log(
+            "SWML outbound request:",
+            JSON.stringify(req.body, null, 2)
+        );
 
-    console.log(
-        "ðŸ“ž OUTBOUND SWML DESTINATION:",
-        destination
-    );
 
-    console.log(
-        "ðŸ“ž OUTBOUND SWML CALLER ID:",
-        callerNumber
-    );
+        const userVariables =
+            req.body?.vars?.userVariables ||
+            req.body?.vars?.user_variables ||
+            req.body?.user_variables ||
+            req.body?.userVariables ||
+            req.body?.params?.user_variables ||
+            req.body?.params?.userVariables ||
+            {};
 
-    return res.json({
-    version: "1.0.0",
-    sections: {
-        main: [
+
+        const destination =
+            userVariables.destination ||
+            userVariables.destinationNumber ||
+            null;
+
+
+        const usageId =
+            userVariables.usageId ||
+            userVariables.usage_id ||
+            null;
+
+
+        // ---------------------------------------------------------
+        // BASIC VALIDATION
+        // ---------------------------------------------------------
+
+        if (!destination) {
+
+            console.error(
+                "❌ OUTBOUND SWML: No destination received."
+            );
+
+            return res.status(400).json({
+                success: false,
+                error:
+                    "No outbound destination was provided."
+            });
+
+        }
+
+
+        if (!usageId) {
+
+            console.error(
+                "❌ OUTBOUND SWML: No usage ID received."
+            );
+
+            return res.status(400).json({
+                success: false,
+                error:
+                    "No authorized call usage ID was provided."
+            });
+
+        }
+
+
+        // ---------------------------------------------------------
+        // FIND THE CUSTOMER WHO OWNS THIS AUTHORIZED CALL
+        //
+        // IMPORTANT:
+        // We do NOT use SIGNALWIRE_PHONE_NUMBER here.
+        // We do NOT trust a global/default caller ID.
+        // ---------------------------------------------------------
+
+        const usageResponse = await fetch(
+            `${SUPABASE_URL}/rest/v1/customer_call_usage` +
+            `?id=eq.${encodeURIComponent(usageId)}` +
+            `&select=user_id` +
+            `&limit=1`,
             {
-                connect: {
-    from: callerNumber,
-    to: destination,
-    timeout: 30,
-    confirm:
-    `https://dialeaze.onrender.com/api/signalwire/recording-swml?usageId=${encodeURIComponent(
-        usageId || ""
-    )}`,
-    call_state_events: [
-        "created",
-        "ringing",
-        "answered",
-        "ended"
-    ],
-    call_state_url:
-        "https://dialeaze.onrender.com/api/signalwire/outbound-call-state",
-    status_url:
-        "https://dialeaze.onrender.com/api/signalwire/outbound-connect-status"
-}
-            },
-            {
-                hangup: {}
+                method: "GET",
+
+                headers: {
+                    Authorization:
+                        `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                    apikey:
+                        SUPABASE_SECRET_KEY,
+
+                    Accept:
+                        "application/json"
+                }
             }
-        ]
-    }
-});
-});
+        );
 
+
+        const usageData =
+            await usageResponse.json();
+
+
+        if (
+            !usageResponse.ok ||
+            !Array.isArray(usageData) ||
+            !usageData.length ||
+            !usageData[0]?.user_id
+        ) {
+
+            console.error(
+                "❌ OUTBOUND SWML: Authorized usage record not found:",
+                {
+                    usageId,
+                    usageData
+                }
+            );
+
+            return res.status(403).json({
+                success: false,
+                error:
+                    "The authorized customer call could not be verified."
+            });
+
+        }
+
+
+        const customerUserId =
+            usageData[0].user_id;
+
+
+        // ---------------------------------------------------------
+        // LOAD THAT CUSTOMER'S Dialeaze PROFILE
+        // ---------------------------------------------------------
+
+        const profileResponse = await fetch(
+            `${SUPABASE_URL}/rest/v1/profiles` +
+            `?id=eq.${encodeURIComponent(customerUserId)}` +
+            `&select=id,phone_number` +
+            `&limit=1`,
+            {
+                method: "GET",
+
+                headers: {
+                    Authorization:
+                        `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                    apikey:
+                        SUPABASE_SECRET_KEY,
+
+                    Accept:
+                        "application/json"
+                }
+            }
+        );
+
+
+        const profileData =
+            await profileResponse.json();
+
+
+        let callerNumber = "";
+
+
+        if (
+            profileResponse.ok &&
+            Array.isArray(profileData) &&
+            profileData.length
+        ) {
+
+            callerNumber =
+                profileData[0]?.phone_number ||
+                "";
+
+        }
+
+
+        // ---------------------------------------------------------
+        // FALLBACK:
+        // If the profile does not contain the number,
+        // look for the customer's assigned Dialeaze number.
+        // ---------------------------------------------------------
+
+        if (!callerNumber) {
+
+            const assignedPhoneResponse =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/phone_numbers` +
+                    `?user_id=eq.${encodeURIComponent(customerUserId)}` +
+                    `&status=eq.assigned` +
+                    `&select=phone_number` +
+                    `&limit=1`,
+                    {
+                        method: "GET",
+
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+
+                            Accept:
+                                "application/json"
+                        }
+                    }
+                );
+
+
+            const assignedPhoneData =
+                await assignedPhoneResponse.json();
+
+
+            if (
+                assignedPhoneResponse.ok &&
+                Array.isArray(assignedPhoneData) &&
+                assignedPhoneData.length
+            ) {
+
+                callerNumber =
+                    assignedPhoneData[0]?.phone_number ||
+                    "";
+
+            }
+
+        }
+
+
+        // ---------------------------------------------------------
+        // NEVER FALL BACK TO THE GLOBAL SIGNALWIRE NUMBER
+        // ---------------------------------------------------------
+
+        if (!callerNumber) {
+
+            console.error(
+                "❌ OUTBOUND SWML: Customer has no assigned caller ID:",
+                {
+                    customerUserId,
+                    usageId
+                }
+            );
+
+            return res.status(403).json({
+                success: false,
+                error:
+                    "This customer does not have an assigned Dialeaze phone number."
+            });
+
+        }
+
+
+        // ---------------------------------------------------------
+        // E.164 VALIDATION
+        // ---------------------------------------------------------
+
+        const e164Pattern =
+            /^\+[1-9]\d{7,14}$/;
+
+
+        if (!e164Pattern.test(callerNumber)) {
+
+            console.error(
+                "❌ OUTBOUND SWML: Invalid customer caller ID:",
+                {
+                    customerUserId,
+                    callerNumber
+                }
+            );
+
+            return res.status(403).json({
+                success: false,
+                error:
+                    "The customer's assigned phone number is invalid."
+            });
+
+        }
+
+
+        console.log(
+            "✅ OUTBOUND SWML CUSTOMER VERIFIED:",
+            {
+                customerUserId,
+                usageId
+            }
+        );
+
+
+        console.log(
+            "📞 OUTBOUND SWML DESTINATION:",
+            destination
+        );
+
+
+        console.log(
+            "📞 OUTBOUND SWML CALLER ID:",
+            callerNumber
+        );
+
+
+        // ---------------------------------------------------------
+        // CREATE SIGNALWIRE OUTBOUND CALL
+        // ---------------------------------------------------------
+
+        return res.json({
+
+            version: "1.0.0",
+
+            sections: {
+
+                main: [
+
+                    {
+
+                        connect: {
+
+                            from:
+                                callerNumber,
+
+                            to:
+                                destination,
+
+                            timeout:
+                                30,
+
+                            confirm:
+                                `https://dialeaze.onrender.com/api/signalwire/recording-swml?usageId=${encodeURIComponent(
+                                    usageId
+                                )}`,
+
+                            call_state_events: [
+                                "created",
+                                "ringing",
+                                "answered",
+                                "ended"
+                            ],
+
+                            call_state_url:
+                                "https://dialeaze.onrender.com/api/signalwire/outbound-call-state",
+
+                            status_url:
+                                "https://dialeaze.onrender.com/api/signalwire/outbound-connect-status"
+
+                        }
+
+                    },
+
+                    {
+                        hangup: {}
+                    }
+
+                ]
+
+            }
+
+        });
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "❌ SignalWire outbound SWML error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            error:
+                "Unable to create the outbound call."
+        });
+
+    }
+
+});
 
 /// =========================================================
 // SIGNALWIRE OUTBOUND CALL STATE
