@@ -1080,9 +1080,12 @@ app.post("/api/signalwire-token", async (req, res) => {
         }
 
         const expectedSubscriberId =
-            profile.signalwire_subscriber_id;
+    profile.signalwire_subscriber_id;
 
-        const reference = user.email;
+// The SignalWire Subscriber reference must come from
+// the already-existing verified Resource.
+// Do not assume it is the customer's Dialeaze login email.
+let reference = null;
 
         const basicAuth = Buffer.from(
             `${SIGNALWIRE_PROJECT_ID}:${SIGNALWIRE_API_TOKEN}`
@@ -1238,7 +1241,41 @@ console.log(
                     "Your existing SignalWire Subscriber could not be verified. No token was requested and no new Subscriber was created."
             });
         }
+// ---------------------------------------------------------
+// USE THE ACTUAL SIGNALWIRE SUBSCRIBER REFERENCE
+// FROM THE VERIFIED EXISTING RESOURCE.
+// Never assume it equals the Dialeaze login email.
+// ---------------------------------------------------------
 
+reference =
+    existingSubscriber?.subscriber?.email ||
+    existingSubscriber?.email ||
+    null;
+
+if (!reference) {
+
+    console.error(
+        "SIGNALWIRE SAFETY STOP: Existing Subscriber has no reference:",
+        {
+            expectedSubscriberId
+        }
+    );
+
+    return res.status(409).json({
+        success: false,
+        error:
+            "The existing SignalWire Subscriber has no valid reference. No token was requested."
+    });
+}
+
+console.log(
+    "SignalWire reference resolved from verified Resource:",
+    {
+        resourceId:
+            expectedSubscriberId,
+        reference
+    }
+);
         console.log(
             "SignalWire existing Subscriber verified BEFORE token request:",
             {
