@@ -2413,7 +2413,16 @@ if (muteButton) {
             return;
         }
 
-        console.log("🔐 SignalWire self capabilities:", self.capabilities);
+        console.log(
+    "🔐 MUTE CAPABILITIES:",
+    self.capabilities?.audio_mute,
+    self.capabilities?.audio_unmute
+);
+
+console.log(
+    "🔐 CALL CAPABILITIES:",
+    currentCall.capabilities
+);
         console.log("🔐 SignalWire self object:", self);
 
         try {
