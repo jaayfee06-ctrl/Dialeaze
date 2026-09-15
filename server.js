@@ -1196,16 +1196,7 @@ console.log(
                     const subscriberId =
                         subscriber?.id;
 
-                    const subscriberEmail =
-                        subscriber?.subscriber?.email ||
-                        subscriber?.email;
-
-                    return (
-                        subscriberId === expectedSubscriberId &&
-                        subscriberEmail &&
-                        subscriberEmail.toLowerCase() ===
-                            reference.toLowerCase()
-                    );
+                    return subscriberId === expectedSubscriberId;
                 });
 
             if (existingSubscriber) {
