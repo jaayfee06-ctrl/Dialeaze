@@ -2087,12 +2087,12 @@ attachHoldControl(
         }
 
         // Update caller name if your UI has this element
-        const incomingCallerName =
-            document.getElementById("incomingCallerName");
+        const incomingCallerText =
+    document.getElementById("incomingCallerText");
 
-        if (incomingCallerName) {
-            incomingCallerName.textContent = callerName;
-        }
+if (incomingCallerText) {
+    incomingCallerText.textContent = callerName;
+}
 
         status.textContent = "Incoming call";
 
