@@ -2413,6 +2413,9 @@ if (muteButton) {
             return;
         }
 
+        console.log("🔐 SignalWire self capabilities:", self.capabilities);
+        console.log("🔐 SignalWire self object:", self);
+
         try {
             await self.toggleMute();
         } catch (error) {
