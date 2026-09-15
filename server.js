@@ -1291,7 +1291,8 @@ console.log(
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    reference
+                    reference,
+                    scope: "sat:refresh"
                 })
             }
         );
