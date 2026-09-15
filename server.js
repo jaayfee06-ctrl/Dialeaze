@@ -8010,6 +8010,9 @@ app.post("/api/signalwire/outbound-swml", async (req, res) => {
                             to:
                                 destination,
 
+                                answer_on_bridge:
+    true,
+
                             timeout:
                                 30,
 
@@ -8360,7 +8363,8 @@ app.get(
                     `${SUPABASE_URL}/rest/v1/signalwire_call_states` +
                     `?parent_call_id=eq.${encodeURIComponent(callId)}` +
                     `&select=parent_call_id,child_call_id,state,reason,updated_at` +
-                    `&order=updated_at.desc&limit=1`,
+`&child_call_id=not.is.null` +
+`&order=updated_at.desc&limit=1`,
                     {
                         method: "GET",
                         headers: {
