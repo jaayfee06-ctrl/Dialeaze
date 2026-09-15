@@ -1275,8 +1275,8 @@ async function loadCustomerAccount() {
         if (businessNumber) {
 
             const displayNumber =
-    customerAccount.phoneNumber ||
-    "";
+    customerAccount.assignedPhoneNumber ||
+"";
 
             businessNumber.textContent =
                 displayNumber
@@ -1297,8 +1297,8 @@ async function loadCustomerAccount() {
         ) {
 
             const displayNumber =
-    customerAccount.phoneNumber ||
-    "";
+    customerAccount.assignedPhoneNumber ||
+"";
 
 
             messagesBusinessNumber.textContent =
@@ -2843,8 +2843,8 @@ if (digits.length === 10) {
     destinationNumber:
         number,
     callerNumber:
-        customerAccount.phoneNumber ||
-        ""
+    customerAccount.assignedPhoneNumber ||
+    ""
 })
                         }
                     );
@@ -2901,7 +2901,7 @@ if (digits.length === 10) {
             userVariables: {
                 destination: number,
                 callerNumber:
-                    customerAccount.phoneNumber || "",
+    customerAccount.assignedPhoneNumber || "",
                 usageId:
                     currentOutboundUsageId || null
             }
@@ -5248,7 +5248,7 @@ async function sendMessage() {
                 "outbound",
 
             from:
-                customerAccount.phoneNumber,
+    customerAccount.assignedPhoneNumber,
 
             to:
                 recipient,
