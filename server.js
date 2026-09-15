@@ -1292,6 +1292,7 @@ console.log(
                 },
                 body: JSON.stringify({
                     reference,
+                    fingerprint: req.body?.fingerprint,
                     scope: "sat:refresh"
                 })
             }
