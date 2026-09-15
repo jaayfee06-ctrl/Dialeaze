@@ -2400,41 +2400,25 @@ function attachMuteControl(call) {
 
 
 if (muteButton) {
-
-    muteButton.addEventListener(
-        "click",
-        async () => {
-
-            if (
-                !currentMuteSelf ||
-                typeof currentMuteSelf.toggleMute !==
-                    "function"
-            ) {
-
-                console.warn(
-                    "⚠️ Mute control is not ready."
-                );
-
-                return;
-            }
-
-
-            try {
-
-                await currentMuteSelf.toggleMute();
-
-            } catch (error) {
-
-                console.error(
-                    "❌ Could not toggle microphone mute:",
-                    error
-                );
-
-            }
-
+    muteButton.onclick = async () => {
+        if (!currentCall) {
+            console.warn("Mute: no active call.");
+            return;
         }
-    );
 
+        const self = currentCall.self;
+
+        if (!self) {
+            console.warn("Mute: self participant not available.");
+            return;
+        }
+
+        try {
+            await self.toggleMute();
+        } catch (error) {
+            console.error("Mute/unmute failed:", error);
+        }
+    };
 }
 
 // =========================================================
