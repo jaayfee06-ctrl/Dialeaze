@@ -8297,17 +8297,33 @@ app.post("/api/signalwire/outbound-swml", async (req, res) => {
                 destination,
 
             answer_on_bridge:
-                true,
+                false,
 
             timeout:
                 30,
 
             confirm:
-                `https://dialeaze.onrender.com/api/signalwire/recording-swml?usageId=${encodeURIComponent(
-                    usageId
-                )}`,
+    `https://dialeaze.onrender.com/api/signalwire/recording-swml?usageId=${encodeURIComponent(
+        usageId
+    )}`,
 
-            call_state_events: [
+result: {
+    case: {
+        failed: [
+            {
+                play: {
+                    url:
+                        "say: The number you called is unavailable or could not be reached. Please try again later."
+                }
+            },
+            {
+                hangup: {}
+            }
+        ]
+    }
+},
+
+call_state_events: [
                 "created",
                 "ringing",
                 "answered",
