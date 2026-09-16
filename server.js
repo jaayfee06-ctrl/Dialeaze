@@ -6845,14 +6845,15 @@ app.post(
                             controlId,
 
                         play: [
-                            {
-                                type:
-                                    "audio",
-
-                                url:
-                                    "https://cdn.signalwire.com/freeswitch-music/8000/partita-no-3-in-e-major-bwv-1006-prelude.mp3"
-                            }
-                        ],
+    {
+        type:
+            "audio",
+        params: {
+            url:
+                "https://cdn.signalwire.com/freeswitch-music/8000/partita-no-3-in-e-major-bwv-1006-prelude.mp3"
+        }
+    }
+],
 
                         direction:
     "speak",
