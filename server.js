@@ -6846,23 +6846,18 @@ app.post(
                             controlId,
 
                         play: [
-                            {
-                                type:
-                                    "audio",
+    {
+        type: "audio",
 
-                                url:
-                                    "https://cdn.signalwire.com/swml/audio.mp3"
-                            }
-                        ],
+        params: {
+            url:
+                "https://cdn.signalwire.com/swml/audio.mp3"
+        }
+    }
+],
 
-                        direction:
-                            "speak",
-
-                        loop:
-                            0,
-
-                        status_url:
-                            "https://dialeaze.onrender.com/api/signalwire/hold-music-status"
+status_url:
+    "https://dialeaze.onrender.com/api/signalwire/hold-music-status"
 
                     }
 
