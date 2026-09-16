@@ -566,6 +566,7 @@ let currentMuteState = false;
 let muteSelfSubscription = null;
 let muteStateSubscription = null;
 
+let muteOperationInProgress = false;
 let currentHoldCall = null;
 
 let holdStateSubscription = null;
@@ -2266,7 +2267,9 @@ function renderMuteButton(muted) {
         return;
     }
 
-    muteButton.disabled = !currentMuteSelf;
+    muteButton.disabled =
+        !currentMuteSelf ||
+        muteOperationInProgress;
 
     muteButton.classList.toggle(
         "is-muted",
@@ -2451,21 +2454,30 @@ function attachMuteControl(call) {
                     "function"
             ) {
 
-                muteStateSubscription =
-                    self.audioMuted$.subscribe(
-                        (muted) => {
+             muteStateSubscription =
+    self.audioMuted$.subscribe(
+        (muted) => {
 
-                            console.log(
-                                "🎙 SignalWire mute state:",
-                                muted
-                            );
+            console.log(
+                "🎙 SignalWire reported mute state:",
+                muted
+            );
 
-                            renderMuteButton(
-                                Boolean(muted)
-                            );
+            // SignalWire's server-side state must NOT
+            // overwrite our local UI state during a
+            // server-permission fallback.
 
-                        }
-                    );
+            if (!muteOperationInProgress) {
+
+                console.log(
+                    "🎙 SignalWire state received; local Dialeaze state remains:",
+                    currentMuteState
+                );
+
+            }
+
+        }
+    );
 
             } else {
 
@@ -2508,12 +2520,19 @@ if (muteButton) {
         }
 
 
+        if (muteOperationInProgress) {
+
+            console.warn(
+                "Mute: operation already in progress."
+            );
+
+            return;
+        }
+
+
         const self = currentMuteSelf;
 
-        // Use SignalWire's actual current state.
-        const currentlyMuted =
-            currentMuteState ||
-            Boolean(self.audioMuted);
+        const wasMuted = currentMuteState;
 
 
         console.log(
@@ -2521,32 +2540,43 @@ if (muteButton) {
         );
 
         console.log(
-            "🎙 Current mute state:",
-            currentlyMuted
-        );
-
-        console.log(
-            "🎙 SignalWire self participant:",
-            self
+            "🎙 Local mute state before operation:",
+            wasMuted
         );
 
 
-        // Prevent double-click races
+        muteOperationInProgress = true;
+
         muteButton.disabled = true;
 
 
         try {
 
-            if (currentlyMuted) {
+            if (wasMuted) {
 
                 console.log(
                     "🎙 Sending UNMUTE command..."
                 );
 
+
                 await self.unmute();
 
+
+                // ---------------------------------------------
+                // IMPORTANT:
+                // SignalWire may return a server-side error
+                // but still perform its local audio operation.
+                //
+                // Our UI state therefore follows the requested
+                // local operation instead of waiting for
+                // audioMuted$ to change.
+                // ---------------------------------------------
+
+                currentMuteState = false;
+
+
                 console.log(
-                    "✅ SignalWire UNMUTE completed."
+                    "✅ UNMUTE operation completed."
                 );
 
             } else {
@@ -2555,33 +2585,71 @@ if (muteButton) {
                     "🎙 Sending MUTE command..."
                 );
 
+
                 await self.mute();
 
+
+                currentMuteState = true;
+
+
                 console.log(
-                    "✅ SignalWire MUTE completed."
+                    "✅ MUTE operation completed."
                 );
 
             }
 
+
+            renderMuteButton(
+                currentMuteState
+            );
+
+
         } catch (error) {
 
-            console.error(
-                "❌ Mute/unmute failed:",
+            console.warn(
+                "⚠️ SignalWire mute/unmute returned an error:",
                 error
+            );
+
+
+            // -------------------------------------------------
+            // IMPORTANT:
+            //
+            // The SignalWire SDK can fall back to local
+            // audio-input muting even when call.mute returns
+            // 403. Therefore, do NOT automatically revert
+            // our local state here.
+            // -------------------------------------------------
+
+            if (wasMuted) {
+
+                currentMuteState = false;
+
+            } else {
+
+                currentMuteState = true;
+
+            }
+
+
+            renderMuteButton(
+                currentMuteState
             );
 
         } finally {
 
-            // SignalWire's audioMuted$ remains the
-            // authoritative source for the button state.
+            muteOperationInProgress = false;
 
-            if (currentMuteSelf === self) {
 
-                renderMuteButton(
-                    Boolean(self.audioMuted)
-                );
+            renderMuteButton(
+                currentMuteState
+            );
 
-            }
+
+            console.log(
+                "🎙 Final Dialeaze mute state:",
+                currentMuteState
+            );
 
         }
 
