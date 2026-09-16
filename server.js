@@ -8290,61 +8290,51 @@ app.post("/api/signalwire/outbound-swml", async (req, res) => {
 
         main: [
 
-            {
-                execute: {
-                    application: "export",
-                    data:
-                        "hold_music=local_stream://moh"
-                }
-            },
+    {
 
-            {
-                execute: {
-                    application: "export",
-                    data:
-                        "hold_music"
-                }
-            },
+        connect: {
 
-            {
-                connect: {
-                    from:
-                        callerNumber,
+            from:
+                callerNumber,
 
-                    to:
-                        destination,
+            to:
+                destination,
 
-                    answer_on_bridge:
-                        true,
+            answer_on_bridge:
+                true,
 
-                    timeout:
-                        30,
+            timeout:
+                30,
 
-                    confirm:
-                        `https://dialeaze.onrender.com/api/signalwire/recording-swml?usageId=${encodeURIComponent(
-                            usageId
-                        )}`,
+            confirm:
+                `https://dialeaze.onrender.com/api/signalwire/recording-swml?usageId=${encodeURIComponent(
+                    usageId
+                )}`,
 
-                    call_state_events: [
-                        "created",
-                        "ringing",
-                        "answered",
-                        "ended"
-                    ],
+            call_state_events: [
+                "created",
+                "ringing",
+                "answered",
+                "ended"
+            ],
 
-                    call_state_url:
-                        "https://dialeaze.onrender.com/api/signalwire/outbound-call-state",
+            call_state_url:
+                "https://dialeaze.onrender.com/api/signalwire/outbound-call-state",
 
-                    status_url:
-                        "https://dialeaze.onrender.com/api/signalwire/outbound-connect-status"
-                }
-            },
+            status_url:
+                "https://dialeaze.onrender.com/api/signalwire/outbound-connect-status"
 
-            {
-                hangup: {}
-            }
+        }
 
-        ]
+    },
+
+    {
+
+        hangup: {}
+
+    }
+
+]
 
     }
 
