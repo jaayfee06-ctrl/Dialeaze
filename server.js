@@ -6855,7 +6855,7 @@ app.post(
                         ],
 
                         direction:
-                            "listen",
+    "speak",
 
                         loop:
                             0

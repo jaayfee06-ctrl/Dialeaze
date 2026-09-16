@@ -2805,14 +2805,12 @@ if (holdButton) {
 
                 if (!wasOnHold) {
 
-                    await currentHoldCall.toggleHold();
+    console.log(
+        "⏸ Starting hold music before placing call on hold..."
+    );
 
-                    console.log(
-                        "⏸ Call placed on hold. Starting hold music..."
-                    );
-
-                    const callId =
-    currentPstnChildCallId;
+                   const callId =
+    currentHoldCall.id;
 
                     if (callId) {
 
@@ -2855,8 +2853,13 @@ if (holdButton) {
 
                     }
 
-                }
+                
+                    await currentHoldCall.toggleHold();
 
+                    console.log(
+                        "⏸ Call placed on hold."
+                    );
+                }
                 // -----------------------------------------------------
                 // UNHOLD
                 // -----------------------------------------------------
@@ -2864,7 +2867,7 @@ if (holdButton) {
                 else {
 
                     const callId =
-    currentPstnChildCallId;
+    currentHoldCall.id;
 
                     if (callId) {
 
