@@ -2296,6 +2296,7 @@ function resetMuteControl() {
 
     currentMuteSelf = null;
     currentMuteState = false;
+     muteOperationInProgress = false;
 
 
     // -----------------------------------------------------
@@ -2415,6 +2416,7 @@ function attachMuteControl(call) {
 
 
             currentMuteSelf = self;
+            renderMuteButton(currentMuteState);
 
 
             console.log(
