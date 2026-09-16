@@ -6845,21 +6845,23 @@ app.post(
                             controlId,
 
                         play: [
-    {
-        type:
-            "audio",
-        params: {
-            url:
-                "https://cdn.signalwire.com/freeswitch-music/8000/partita-no-3-in-e-major-bwv-1006-prelude.mp3"
-        }
-    }
-],
+                            {
+                                type:
+                                    "audio",
+
+                                url:
+                                    "https://cdn.signalwire.com/swml/audio.mp3"
+                            }
+                        ],
 
                         direction:
-    "speak",
+                            "speak",
 
                         loop:
-                            0
+                            0,
+
+                        status_url:
+                            "https://dialeaze.onrender.com/api/signalwire/hold-music-status"
 
                     }
 
@@ -6892,7 +6894,8 @@ app.post(
                     : "🛑 Stopping hold music:",
                 {
                     callId,
-                    controlId
+                    controlId,
+                    requestBody
                 }
             );
 
@@ -6978,8 +6981,8 @@ app.post(
 
             console.log(
                 action === "start"
-                    ? "🎵 Hold music STARTED successfully."
-                    : "🛑 Hold music STOPPED successfully.",
+                    ? "🎵 Hold music command ACCEPTED by SignalWire."
+                    : "🛑 Hold music STOP command ACCEPTED by SignalWire.",
                 responseData
             );
 
@@ -7021,7 +7024,22 @@ app.post(
 
     }
 );
+app.post(
+    "/api/signalwire/hold-music-status",
+    async (req, res) => {
 
+        console.log(
+            "🎵🎵🎵 HOLD MUSIC STATUS CALLBACK:",
+            JSON.stringify(
+                req.body,
+                null,
+                2
+            )
+        );
+
+        return res.sendStatus(200);
+    }
+);
 // =========================================================
 // SIGNALWIRE RECORDING CALLBACK
 // =========================================================
