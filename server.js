@@ -6752,6 +6752,276 @@ app.post("/api/outbound-call/record", async (req, res) => {
 });
 
 // =========================================================
+// SIGNALWIRE HOLD MUSIC CONTROL
+// =========================================================
+
+app.post(
+    "/api/signalwire/hold-music",
+    async (req, res) => {
+
+        try {
+
+            const user =
+                await authenticateRequest(req);
+
+            if (!user) {
+
+                return res.status(401).json({
+                    success: false,
+                    error:
+                        "Unauthorized."
+                });
+
+            }
+
+            const {
+                callId,
+                action
+            } =
+                req.body || {};
+
+            if (!callId) {
+
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Missing SignalWire PSTN call ID."
+                });
+
+            }
+
+            if (
+                action !== "start" &&
+                action !== "stop"
+            ) {
+
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Invalid hold music action."
+                });
+
+            }
+
+            if (
+                !SIGNALWIRE_SPACE_NAME ||
+                !SIGNALWIRE_PROJECT_ID ||
+                !SIGNALWIRE_API_TOKEN
+            ) {
+
+                return res.status(500).json({
+                    success: false,
+                    error:
+                        "SignalWire configuration is incomplete."
+                });
+
+            }
+
+            const basicAuth =
+                Buffer
+                    .from(
+                        `${SIGNALWIRE_PROJECT_ID}:${SIGNALWIRE_API_TOKEN}`
+                    )
+                    .toString("base64");
+
+            const controlId =
+                `dialeaze-hold-music-${callId}`;
+
+            let requestBody;
+
+            if (action === "start") {
+
+                requestBody = {
+
+                    command:
+                        "calling.play",
+
+                    id:
+                        callId,
+
+                    params: {
+
+                        control_id:
+                            controlId,
+
+                        play: [
+                            {
+                                type:
+                                    "audio",
+
+                                url:
+                                    "https://cdn.signalwire.com/freeswitch-music/8000/partita-no-3-in-e-major-bwv-1006-prelude.mp3"
+                            }
+                        ],
+
+                        direction:
+                            "listen",
+
+                        loop:
+                            0
+
+                    }
+
+                };
+
+            } else {
+
+                requestBody = {
+
+                    command:
+                        "calling.play.stop",
+
+                    id:
+                        callId,
+
+                    params: {
+
+                        control_id:
+                            controlId
+
+                    }
+
+                };
+
+            }
+
+            console.log(
+                action === "start"
+                    ? "🎵 Starting hold music:"
+                    : "🛑 Stopping hold music:",
+                {
+                    callId,
+                    controlId
+                }
+            );
+
+            const response =
+                await fetch(
+                    `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/calling/calls`,
+                    {
+
+                        method:
+                            "POST",
+
+                        headers: {
+
+                            Authorization:
+                                `Basic ${basicAuth}`,
+
+                            "Content-Type":
+                                "application/json",
+
+                            Accept:
+                                "application/json"
+
+                        },
+
+                        body:
+                            JSON.stringify(
+                                requestBody
+                            )
+
+                    }
+                );
+
+            const responseText =
+                await response.text();
+
+            let responseData;
+
+            try {
+
+                responseData =
+                    responseText
+                        ? JSON.parse(
+                            responseText
+                        )
+                        : null;
+
+            } catch {
+
+                responseData =
+                    responseText;
+
+            }
+
+            if (!response.ok) {
+
+                console.error(
+                    "❌ SignalWire hold music error:",
+                    response.status,
+                    responseData
+                );
+
+                return res
+                    .status(
+                        response.status
+                    )
+                    .json({
+
+                        success:
+                            false,
+
+                        error:
+                            "SignalWire could not control hold music.",
+
+                        signalwireStatus:
+                            response.status,
+
+                        details:
+                            responseData
+
+                    });
+
+            }
+
+            console.log(
+                action === "start"
+                    ? "🎵 Hold music STARTED successfully."
+                    : "🛑 Hold music STOPPED successfully.",
+                responseData
+            );
+
+            return res.json({
+
+                success:
+                    true,
+
+                action,
+
+                callId,
+
+                controlId,
+
+                signalwire:
+                    responseData
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                "❌ Hold music control error:",
+                error
+            );
+
+            return res.status(500).json({
+
+                success:
+                    false,
+
+                error:
+                    error.message ||
+                    "Unable to control hold music."
+
+            });
+
+        }
+
+    }
+);
+
+// =========================================================
 // SIGNALWIRE RECORDING CALLBACK
 // =========================================================
 

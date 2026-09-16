@@ -573,6 +573,8 @@ let holdStateSubscription = null;
 let providerStatePollingInterval = null;
 let providerEndReason = null;
 
+// SignalWire PSTN child call used for server-side hold music.
+let currentPstnChildCallId = null;
 let currentCallHistory = null;
 
 let callStartTime = null;
@@ -2791,7 +2793,127 @@ if (holdButton) {
 
             try {
 
-                await currentHoldCall.toggleHold();
+                // Read the current hold state before toggling.
+                const wasOnHold =
+                    holdButton.classList.contains(
+                        "is-on-hold"
+                    );
+
+                // -----------------------------------------------------
+                // HOLD
+                // -----------------------------------------------------
+
+                if (!wasOnHold) {
+
+                    await currentHoldCall.toggleHold();
+
+                    console.log(
+                        "⏸ Call placed on hold. Starting hold music..."
+                    );
+
+                    const callId =
+    currentPstnChildCallId;
+
+                    if (callId) {
+
+                        const musicResponse =
+                            await fetch(
+                                "/api/signalwire/hold-music",
+                                {
+                                    method: "POST",
+
+                                    headers: {
+                                        "Content-Type":
+                                            "application/json"
+                                    },
+
+                                    body:
+                                        JSON.stringify({
+                                            callId,
+                                            action: "start"
+                                        })
+                                }
+                            );
+
+                        const musicResult =
+                            await musicResponse.json();
+
+                        if (!musicResult.success) {
+
+                            console.warn(
+                                "⚠️ Hold music could not be started:",
+                                musicResult
+                            );
+
+                        } else {
+
+                            console.log(
+                                "🎵 Hold music started."
+                            );
+
+                        }
+
+                    }
+
+                }
+
+                // -----------------------------------------------------
+                // UNHOLD
+                // -----------------------------------------------------
+
+                else {
+
+                    const callId =
+    currentPstnChildCallId;
+
+                    if (callId) {
+
+                        const musicResponse =
+                            await fetch(
+                                "/api/signalwire/hold-music",
+                                {
+                                    method: "POST",
+
+                                    headers: {
+                                        "Content-Type":
+                                            "application/json"
+                                    },
+
+                                    body:
+                                        JSON.stringify({
+                                            callId,
+                                            action: "stop"
+                                        })
+                                }
+                            );
+
+                        const musicResult =
+                            await musicResponse.json();
+
+                        if (!musicResult.success) {
+
+                            console.warn(
+                                "⚠️ Hold music could not be stopped:",
+                                musicResult
+                            );
+
+                        } else {
+
+                            console.log(
+                                "🛑 Hold music stopped."
+                            );
+
+                        }
+
+                    }
+
+                    await currentHoldCall.toggleHold();
+
+                    console.log(
+                        "▶️ Call resumed."
+                    );
+
+                }
 
             } catch (error) {
 
@@ -3181,7 +3303,12 @@ if (providerCallId) {
     data.childCallId ||
     data.child_call_id ||
     null;
+if (pstnChildCallId) {
 
+    currentPstnChildCallId =
+        pstnChildCallId;
+
+}
                 const state =
                     String(
                         data.state || ""
@@ -3907,7 +4034,8 @@ if (!outboundHistorySaved) {
 
 currentOutboundUsageId =
     null;
-
+currentPstnChildCallId =
+    null;
 window.dialeazeOutboundLocked =
     false;
 
@@ -3988,6 +4116,8 @@ if (providerStatePollingInterval) {
         null;
 }
 currentCall =
+    null;
+    currentPstnChildCallId =
     null;
 
 window.dialeazeOutboundLocked = false;
