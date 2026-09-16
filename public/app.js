@@ -2810,7 +2810,7 @@ if (holdButton) {
     );
 
                    const callId =
-    currentHoldCall.id;
+    currentPstnChildCallId;
 
                     if (callId) {
 
@@ -2867,7 +2867,7 @@ if (holdButton) {
                 else {
 
                     const callId =
-    currentHoldCall.id;
+    currentPstnChildCallId;
 
                     if (callId) {
 
