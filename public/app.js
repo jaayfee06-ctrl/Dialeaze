@@ -2804,16 +2804,89 @@ if (holdButton) {
 
                 if (!wasOnHold) {
 
-                    console.log(
-                        "⏸ Placing call on hold..."
-                    );
+    console.log(
+        "⏸ Starting hold music before placing call on hold..."
+    );
 
-                    await currentHoldCall.toggleHold();
+    const callId =
+        currentPstnChildCallId;
 
-                    console.log(
-                        "⏸ Call placed on hold."
-                    );
-                }
+    if (callId) {
+
+        try {
+
+            const musicResponse =
+                await authFetch(
+                    "/api/signalwire/hold-music",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body:
+                            JSON.stringify({
+                                callId:
+                                    callId,
+
+                                action:
+                                    "start"
+                            })
+                    }
+                );
+
+            const musicResult =
+                await musicResponse.json();
+
+            console.log(
+                "🎵 Hold music response:",
+                musicResponse.status,
+                musicResult
+            );
+
+            if (
+                !musicResponse.ok ||
+                !musicResult.success
+            ) {
+
+                console.warn(
+                    "⚠️ Hold music could not be started:",
+                    musicResult
+                );
+
+            } else {
+
+                console.log(
+                    "🎵 Hold music command accepted."
+                );
+
+            }
+
+        } catch (musicError) {
+
+            console.error(
+                "❌ Hold music request failed:",
+                musicError
+            );
+
+        }
+
+    } else {
+
+        console.warn(
+            "⚠️ No PSTN child call ID available for hold music."
+        );
+
+    }
+
+    await currentHoldCall.toggleHold();
+
+    console.log(
+        "⏸ Call placed on hold."
+    );
+}
 
                 // -----------------------------------------------------
                 // UNHOLD
@@ -2821,16 +2894,83 @@ if (holdButton) {
 
                 else {
 
-                    console.log(
-                        "▶️ Resuming call..."
-                    );
+    console.log(
+        "▶️ Stopping hold music and resuming call..."
+    );
 
-                    await currentHoldCall.toggleHold();
+    const callId =
+        currentPstnChildCallId;
 
-                    console.log(
-                        "▶️ Call resumed."
-                    );
-                }
+    if (callId) {
+
+        try {
+
+            const musicResponse =
+                await authFetch(
+                    "/api/signalwire/hold-music",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body:
+                            JSON.stringify({
+                                callId:
+                                    callId,
+
+                                action:
+                                    "stop"
+                            })
+                    }
+                );
+
+            const musicResult =
+                await musicResponse.json();
+
+            console.log(
+                "🛑 Hold music stop response:",
+                musicResponse.status,
+                musicResult
+            );
+
+            if (
+                !musicResponse.ok ||
+                !musicResult.success
+            ) {
+
+                console.warn(
+                    "⚠️ Hold music could not be stopped:",
+                    musicResult
+                );
+
+            } else {
+
+                console.log(
+                    "🛑 Hold music stopped."
+                );
+
+            }
+
+        } catch (musicError) {
+
+            console.error(
+                "❌ Hold music stop request failed:",
+                musicError
+            );
+
+        }
+
+    }
+
+    await currentHoldCall.toggleHold();
+
+    console.log(
+        "▶️ Call resumed."
+    );
+}
 
             } catch (error) {
 
