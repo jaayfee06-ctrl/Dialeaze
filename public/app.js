@@ -2793,7 +2793,6 @@ if (holdButton) {
 
             try {
 
-                // Read the current hold state before toggling.
                 const wasOnHold =
                     holdButton.classList.contains(
                         "is-on-hold"
@@ -2805,117 +2804,32 @@ if (holdButton) {
 
                 if (!wasOnHold) {
 
-    console.log(
-        "⏸ Starting hold music before placing call on hold..."
-    );
+                    console.log(
+                        "⏸ Placing call on hold..."
+                    );
 
-                   const callId =
-    currentPstnChildCallId;
-
-                    if (callId) {
-
-                        const musicResponse =
-                            await fetch(
-                                "/api/signalwire/hold-music",
-                                {
-                                    method: "POST",
-
-                                    headers: {
-                                        "Content-Type":
-                                            "application/json"
-                                    },
-
-                                    body:
-                                        JSON.stringify({
-                                            callId,
-                                            action: "start"
-                                        })
-                                }
-                            );
-
-                        const musicResult =
-                            await musicResponse.json();
-
-                        if (!musicResult.success) {
-
-                            console.warn(
-                                "⚠️ Hold music could not be started:",
-                                musicResult
-                            );
-
-                        } else {
-
-                            console.log(
-                                "🎵 Hold music started."
-                            );
-
-                        }
-
-                    }
-
-                
                     await currentHoldCall.toggleHold();
 
                     console.log(
                         "⏸ Call placed on hold."
                     );
                 }
+
                 // -----------------------------------------------------
                 // UNHOLD
                 // -----------------------------------------------------
 
                 else {
 
-                    const callId =
-    currentPstnChildCallId;
-
-                    if (callId) {
-
-                        const musicResponse =
-                            await fetch(
-                                "/api/signalwire/hold-music",
-                                {
-                                    method: "POST",
-
-                                    headers: {
-                                        "Content-Type":
-                                            "application/json"
-                                    },
-
-                                    body:
-                                        JSON.stringify({
-                                            callId,
-                                            action: "stop"
-                                        })
-                                }
-                            );
-
-                        const musicResult =
-                            await musicResponse.json();
-
-                        if (!musicResult.success) {
-
-                            console.warn(
-                                "⚠️ Hold music could not be stopped:",
-                                musicResult
-                            );
-
-                        } else {
-
-                            console.log(
-                                "🛑 Hold music stopped."
-                            );
-
-                        }
-
-                    }
+                    console.log(
+                        "▶️ Resuming call..."
+                    );
 
                     await currentHoldCall.toggleHold();
 
                     console.log(
                         "▶️ Call resumed."
                     );
-
                 }
 
             } catch (error) {
