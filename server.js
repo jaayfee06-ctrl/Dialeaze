@@ -8651,8 +8651,7 @@ app.get(
                     `${SUPABASE_URL}/rest/v1/signalwire_call_states` +
                     `?parent_call_id=eq.${encodeURIComponent(callId)}` +
                     `&select=parent_call_id,child_call_id,state,reason,updated_at` +
-`&child_call_id=not.is.null` +
-`&order=updated_at.desc&limit=1`,
+                    `&order=updated_at.desc&limit=20`,
                     {
                         method: "GET",
                         headers: {
@@ -8696,16 +8695,51 @@ app.get(
                 "0"
             );
 
-            const providerState =
-                data?.[0];
+            const states =
+                Array.isArray(data)
+                    ? data
+                    : [];
 
-            if (!providerState) {
+            if (!states.length) {
 
                 return res.json({
                     success: true,
                     found: false
                 });
             }
+
+            // -----------------------------------------------------
+            // TERMINAL PSTN STATES ARE AUTHORITATIVE
+            // -----------------------------------------------------
+            // A browser/WebRTC parent can report "connected"
+            // while the PSTN child is still ringing.
+            //
+            // Therefore, if a terminal PSTN state exists, always
+            // return it instead of allowing a newer parent/connect
+            // status to make the call appear active again.
+            // -----------------------------------------------------
+
+            const terminalStates = [
+                "ended",
+                "failed",
+                "busy",
+                "declined",
+                "rejected",
+                "canceled",
+                "cancelled",
+                "no_answer",
+                "timeout"
+            ];
+
+            const terminalState =
+                states.find(row =>
+                    terminalStates.includes(
+                        String(row?.state || "").toLowerCase()
+                    )
+                );
+
+            const providerState =
+                terminalState || states[0];
 
             return res.json({
                 success: true,
