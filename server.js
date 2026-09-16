@@ -1191,13 +1191,14 @@ console.log(
     }
 );
             existingSubscriber =
-                subscribers.find((subscriber) => {
+    subscribers.find((subscriber) => {
 
-                    const subscriberId =
-                        subscriber?.id;
+        const subscriberId =
+            subscriber?.id ||
+            subscriber?.subscriber?.id;
 
-                    return subscriberId === expectedSubscriberId;
-                });
+        return subscriberId === expectedSubscriberId;
+    });
 
             if (existingSubscriber) {
                 break;
