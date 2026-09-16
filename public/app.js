@@ -559,9 +559,15 @@ let client = null;
 let signalWireInitializationPromise = null;
 
 let currentCall = null;
+
 let currentMuteSelf = null;
+let currentMuteState = false;
+
+let muteSelfSubscription = null;
 let muteStateSubscription = null;
+
 let currentHoldCall = null;
+
 let holdStateSubscription = null;
 let providerStatePollingInterval = null;
 let providerEndReason = null;
@@ -2252,10 +2258,67 @@ console.log("🧪 RAW OUTBOUND STATUS:", JSON.stringify(callStatus));
 // MUTE / UNMUTE CALL CONTROL
 // =========================================================
 
+function renderMuteButton(muted) {
+
+    currentMuteState = Boolean(muted);
+
+    if (!muteButton) {
+        return;
+    }
+
+    muteButton.disabled = !currentMuteSelf;
+
+    muteButton.classList.toggle(
+        "is-muted",
+        currentMuteState
+    );
+
+    muteButton.innerHTML = currentMuteState
+        ? `
+            <span>🎙</span>
+            <span class="mute-button-text">
+                Unmute
+            </span>
+        `
+        : `
+            <span>🎙</span>
+            <span class="mute-button-text">
+                Mute
+            </span>
+        `;
+}
+
+
 function resetMuteControl() {
 
     currentMuteSelf = null;
+    currentMuteState = false;
 
+
+    // -----------------------------------------------------
+    // Remove the active self-participant subscription
+    // -----------------------------------------------------
+
+    if (muteSelfSubscription) {
+
+        try {
+            muteSelfSubscription.unsubscribe();
+        } catch (error) {
+
+            console.warn(
+                "Could not remove mute self subscription:",
+                error
+            );
+
+        }
+
+        muteSelfSubscription = null;
+    }
+
+
+    // -----------------------------------------------------
+    // Remove the audio-muted state subscription
+    // -----------------------------------------------------
 
     if (muteStateSubscription) {
 
@@ -2264,7 +2327,7 @@ function resetMuteControl() {
         } catch (error) {
 
             console.warn(
-                "Could not remove mute subscription:",
+                "Could not remove mute state subscription:",
                 error
             );
 
@@ -2274,6 +2337,10 @@ function resetMuteControl() {
     }
 
 
+    // -----------------------------------------------------
+    // Reset button
+    // -----------------------------------------------------
+
     if (muteButton) {
 
         muteButton.disabled = true;
@@ -2282,14 +2349,12 @@ function resetMuteControl() {
             "is-muted"
         );
 
-
         muteButton.innerHTML = `
             <span>🎙</span>
             <span class="mute-button-text">
                 Mute
             </span>
         `;
-
     }
 
 }
@@ -2297,11 +2362,19 @@ function resetMuteControl() {
 
 function attachMuteControl(call) {
 
+    // -----------------------------------------------------
+    // Always clean up the previous call first
+    // -----------------------------------------------------
+
     resetMuteControl();
-    
 
 
     if (!muteButton) {
+
+        console.warn(
+            "⚠️ Mute button was not found."
+        );
+
         return;
     }
 
@@ -2320,119 +2393,201 @@ function attachMuteControl(call) {
     }
 
 
-    call.self$.subscribe((self) => {
+    console.log(
+        "🎙 Attaching mute control to SignalWire call:",
+        call.id || call.callId || "unknown"
+    );
 
-        if (!self) {
+
+    // -----------------------------------------------------
+    // Listen for the current call's self participant
+    // -----------------------------------------------------
+
+    muteSelfSubscription =
+        call.self$.subscribe((self) => {
+
+            if (!self) {
+                return;
+            }
+
+
+            currentMuteSelf = self;
+
+
+            console.log(
+                "🎙 SignalWire self participant attached:",
+                self
+            );
+
+
+            // -------------------------------------------------
+            // Remove any previous audio state subscription
+            // -------------------------------------------------
+
+            if (muteStateSubscription) {
+
+                try {
+                    muteStateSubscription.unsubscribe();
+                } catch (error) {
+
+                    console.warn(
+                        "Could not replace mute state subscription:",
+                        error
+                    );
+
+                }
+
+                muteStateSubscription = null;
+            }
+
+
+            // -------------------------------------------------
+            // Use SignalWire's actual audio mute state
+            // -------------------------------------------------
+
+            if (
+                self.audioMuted$ &&
+                typeof self.audioMuted$.subscribe ===
+                    "function"
+            ) {
+
+                muteStateSubscription =
+                    self.audioMuted$.subscribe(
+                        (muted) => {
+
+                            console.log(
+                                "🎙 SignalWire mute state:",
+                                muted
+                            );
+
+                            renderMuteButton(
+                                Boolean(muted)
+                            );
+
+                        }
+                    );
+
+            } else {
+
+                // Fallback to the synchronous property
+                renderMuteButton(
+                    Boolean(self.audioMuted)
+                );
+
+            }
+
+        });
+}
+
+
+// ---------------------------------------------------------
+// MUTE BUTTON
+// ---------------------------------------------------------
+
+if (muteButton) {
+
+    muteButton.onclick = async () => {
+
+        if (!currentCall) {
+
+            console.warn(
+                "Mute: no active call."
+            );
+
             return;
         }
 
 
-        currentMuteSelf =
-            self;
+        if (!currentMuteSelf) {
+
+            console.warn(
+                "Mute: self participant not available."
+            );
+
+            return;
+        }
 
 
-        muteButton.disabled =
-            false;
+        const self = currentMuteSelf;
+
+        // Use SignalWire's actual current state.
+        const currentlyMuted =
+            currentMuteState ||
+            Boolean(self.audioMuted);
 
 
-        if (
-            muteStateSubscription
-        ) {
+        console.log(
+            "🎙 MUTE BUTTON CLICKED"
+        );
 
-            try {
-                muteStateSubscription.unsubscribe();
-            } catch (error) {
+        console.log(
+            "🎙 Current mute state:",
+            currentlyMuted
+        );
 
-                console.warn(
-                    "Could not replace mute subscription:",
-                    error
+        console.log(
+            "🎙 SignalWire self participant:",
+            self
+        );
+
+
+        // Prevent double-click races
+        muteButton.disabled = true;
+
+
+        try {
+
+            if (currentlyMuted) {
+
+                console.log(
+                    "🎙 Sending UNMUTE command..."
+                );
+
+                await self.unmute();
+
+                console.log(
+                    "✅ SignalWire UNMUTE completed."
+                );
+
+            } else {
+
+                console.log(
+                    "🎙 Sending MUTE command..."
+                );
+
+                await self.mute();
+
+                console.log(
+                    "✅ SignalWire MUTE completed."
+                );
+
+            }
+
+        } catch (error) {
+
+            console.error(
+                "❌ Mute/unmute failed:",
+                error
+            );
+
+        } finally {
+
+            // SignalWire's audioMuted$ remains the
+            // authoritative source for the button state.
+
+            if (currentMuteSelf === self) {
+
+                renderMuteButton(
+                    Boolean(self.audioMuted)
                 );
 
             }
 
         }
 
-
-        if (
-            self.audioMuted$ &&
-            typeof self.audioMuted$.subscribe ===
-                "function"
-        ) {
-
-            muteStateSubscription =
-                self.audioMuted$.subscribe(
-                    (muted) => {
-
-                        if (!muteButton) {
-                            return;
-                        }
-
-
-                        muteButton.classList.toggle(
-                            "is-muted",
-                            Boolean(muted)
-                        );
-
-
-                        muteButton.innerHTML =
-                            muted
-                                ? `
-                                    <span>🎙</span>
-                                    <span class="mute-button-text">
-                                        Unmute
-                                    </span>
-                                `
-                                : `
-                                    <span>🎙</span>
-                                    <span class="mute-button-text">
-                                        Mute
-                                    </span>
-                                `;
-
-                    }
-                );
-
-        }
-
-    });
-
-}
-
-
-if (muteButton) {
-    muteButton.onclick = async () => {
-        if (!currentCall) {
-            console.warn("Mute: no active call.");
-            return;
-        }
-
-        const self = currentCall.self;
-
-        if (!self) {
-            console.warn("Mute: self participant not available.");
-            return;
-        }
-
-        console.log(
-    "🔐 MUTE CAPABILITIES:",
-    self.capabilities?.audio_mute,
-    self.capabilities?.audio_unmute
-);
-
-console.log(
-    "🔐 CALL CAPABILITIES:",
-    currentCall.capabilities
-);
-        console.log("🔐 SignalWire self object:", self);
-
-        try {
-            await self.toggleMute();
-        } catch (error) {
-            console.error("Mute/unmute failed:", error);
-        }
     };
-}
 
+}
 // =========================================================
 // HOLD / RESUME CALL CONTROL
 // =========================================================
