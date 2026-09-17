@@ -11353,14 +11353,7 @@ app.delete(
 
     }
 );
-// =========================================================
-// FRONTEND FALLBACK
-// =========================================================
-app.use((req, res) => {
-    res.sendFile(
-        path.join(__dirname, "public", "index.html")
-    );
-});
+
 // =========================================================
 // DIALEAZE CRM
 // =========================================================
@@ -11871,7 +11864,445 @@ app.post(
     }
 );
 
+// ---------------------------------------------------------
+// CRM: IMPORT CONTACTS
+// ---------------------------------------------------------
+//
+// Bulk import customer records from CSV / XLSX / XLS.
+//
+// The frontend sends already-mapped contacts in this format:
+//
+// {
+//     name,
+//     phone_number,
+//     email,
+//     comments
+// }
+//
+// Duplicate phone numbers are skipped automatically because
+// crm_contacts has a unique organization_id + phone_number
+// constraint.
+// ---------------------------------------------------------
 
+app.post(
+    "/api/crm/import",
+    async (req, res) => {
+
+        try {
+
+            const access =
+                await requireOrganizationMember(req);
+
+            if (!access.success) {
+
+                return res.status(
+                    access.status
+                ).json({
+                    success: false,
+                    error: access.error
+                });
+
+            }
+
+
+            const organizationId =
+                access.organization.id;
+
+
+            const userId =
+                access.user.id;
+
+
+            const contacts =
+                Array.isArray(
+                    req.body?.contacts
+                )
+                    ? req.body.contacts
+                    : [];
+
+
+            if (
+                contacts.length === 0
+            ) {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    error:
+                        "No customer records were provided.",
+
+                    imported: 0,
+
+                    duplicates: 0,
+
+                    invalid: 0,
+
+                    total: 0
+
+                });
+
+            }
+
+
+            /*
+             * Protect the endpoint from accidentally
+             * receiving an enormous request.
+             */
+            if (
+                contacts.length > 2000
+            ) {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    error:
+                        "You can import a maximum of 2,000 customers at a time.",
+
+                    imported: 0,
+
+                    duplicates: 0,
+
+                    invalid: contacts.length,
+
+                    total: contacts.length
+
+                });
+
+            }
+
+
+            let invalid =
+                0;
+
+
+            let duplicateCount =
+                0;
+
+
+            const uniqueContacts =
+                [];
+
+            
+            const seenPhones =
+                new Set();
+
+
+            /*
+             * Validate and normalize the incoming
+             * customer records.
+             */
+            for (
+                const contact of contacts
+            ) {
+
+                const name =
+                    String(
+                        contact?.name || ""
+                    ).trim();
+
+
+                const phoneNumber =
+                    String(
+                        contact?.phone_number || ""
+                    ).trim();
+
+
+                const email =
+                    String(
+                        contact?.email || ""
+                    ).trim();
+
+
+                const comments =
+                    String(
+                        contact?.comments || ""
+                    ).trim();
+
+
+                /*
+                 * Name and phone are required.
+                 */
+                if (
+                    !name ||
+                    !phoneNumber
+                ) {
+
+                    invalid++;
+
+                    continue;
+
+                }
+
+
+                /*
+                 * Respect the same field limits
+                 * used by the normal Create Contact API.
+                 */
+                if (
+                    name.length > 150 ||
+                    phoneNumber.length > 30 ||
+                    email.length > 255 ||
+                    comments.length > 10000
+                ) {
+
+                    invalid++;
+
+                    continue;
+
+                }
+
+
+                /*
+                 * Prevent duplicate phone numbers
+                 * inside the same uploaded file.
+                 *
+                 * We use the exact phone string after
+                 * trimming, matching the CRM's current
+                 * uniqueness rule.
+                 */
+                const phoneKey =
+                    phoneNumber;
+
+
+                if (
+                    seenPhones.has(
+                        phoneKey
+                    )
+                ) {
+
+                    duplicateCount++;
+
+                    continue;
+
+                }
+
+
+                seenPhones.add(
+                    phoneKey
+                );
+
+
+                uniqueContacts.push({
+
+                    organization_id:
+                        organizationId,
+
+                    name:
+                        name,
+
+                    phone_number:
+                        phoneNumber,
+
+                    email:
+                        email || null,
+
+                    comments:
+                        comments || null,
+
+                    assigned_to:
+                        null,
+
+                    assigned_at:
+                        null,
+
+                    created_by:
+                        userId
+
+                });
+
+            }
+
+
+            /*
+             * Everything was invalid or duplicated
+             * inside the uploaded file.
+             */
+            if (
+                uniqueContacts.length === 0
+            ) {
+
+                return res.json({
+
+                    success: true,
+
+                    imported: 0,
+
+                    duplicates:
+                        duplicateCount,
+
+                    invalid:
+                        invalid,
+
+                    total:
+                        contacts.length
+
+                });
+
+            }
+
+
+            /*
+             * Bulk insert.
+             *
+             * resolution=ignore-duplicates tells
+             * PostgREST to skip rows that violate the
+             * organization_id + phone_number unique index.
+             */
+            const response =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/crm_contacts?on_conflict=organization_id,phone_number`,
+                    {
+                        method: "POST",
+
+                        headers: {
+
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+
+                            "Content-Type":
+                                "application/json",
+
+                            Accept:
+                                "application/json",
+
+                            Prefer:
+                                "resolution=ignore-duplicates,return=representation"
+
+                        },
+
+                        body:
+                            JSON.stringify(
+                                uniqueContacts
+                            )
+
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (
+                !response.ok
+            ) {
+
+                console.error(
+                    "CRM bulk import error:",
+                    data
+                );
+
+
+                return res.status(
+                    response.status
+                ).json({
+
+                    success: false,
+
+                    error:
+                        data?.message ||
+                        data?.hint ||
+                        "Unable to import CRM customers.",
+
+                    imported: 0,
+
+                    duplicates:
+                        duplicateCount,
+
+                    invalid:
+                        invalid,
+
+                    total:
+                        contacts.length
+
+                });
+
+            }
+
+
+            /*
+             * With resolution=ignore-duplicates,
+             * Supabase returns the rows that were
+             * actually inserted.
+             */
+            const imported =
+                Array.isArray(data)
+                    ? data.length
+                    : 0;
+
+
+            /*
+             * Any valid records that were not inserted
+             * were already present in the organization.
+             */
+            const databaseDuplicates =
+                uniqueContacts.length -
+                imported;
+
+
+            const duplicates =
+                duplicateCount +
+                databaseDuplicates;
+
+
+            return res.json({
+
+                success: true,
+
+                imported:
+                    imported,
+
+                duplicates:
+                    duplicates,
+
+                invalid:
+                    invalid,
+
+                total:
+                    contacts.length
+
+            });
+
+
+        } catch (error) {
+
+            console.error(
+                "CRM bulk import exception:",
+                error
+            );
+
+
+            return res.status(500).json({
+
+                success: false,
+
+                error:
+                    "Unable to import CRM customers.",
+
+                imported: 0,
+
+                duplicates: 0,
+
+                invalid: 0,
+
+                total:
+                    Array.isArray(
+                        req.body?.contacts
+                    )
+                        ? req.body.contacts.length
+                        : 0
+
+            });
+
+        }
+
+    }
+);
 // ---------------------------------------------------------
 // CRM: UPDATE CONTACT
 // ---------------------------------------------------------
@@ -12304,6 +12735,28 @@ app.delete(
 
     }
 );
+
+// =========================================================
+// FRONTEND FALLBACK
+// =========================================================
+//
+// Keep this AFTER all API routes.
+// Otherwise it can catch /api/* requests before
+// their intended API handlers.
+// =========================================================
+
+app.use((req, res) => {
+
+    res.sendFile(
+        path.join(
+            __dirname,
+            "public",
+            "index.html"
+        )
+    );
+
+});
+
 app.listen(PORT, () => {
     console.log("");
     console.log("==========================================");
