@@ -528,6 +528,962 @@ async function requireOrganizationAdmin(req) {
     return result;
 }
 
+// =========================================================
+// DIALEAZE LIVE MONITORING
+// BUSINESS OWNER / ADMIN ONLY
+// =========================================================
+//
+// This is intentionally kept separate from the normal
+// Dialer call-control system.
+//
+// It tracks currently active calls for the authenticated
+// organization and provides supervisor-only call control.
+//
+// The map is ephemeral by design: Live Monitoring is a
+// real-time view, while Supabase remains the permanent
+// source of truth for normal call history.
+// =========================================================
+
+const liveMonitoringCalls = new Map();
+
+const LIVE_MONITORING_ACTIVE_STATES = new Set([
+    "created",
+    "trying",
+    "ringing",
+    "answered",
+    "connected",
+    "on_hold",
+    "held"
+]);
+
+const LIVE_MONITORING_TERMINAL_STATES = new Set([
+    "ended",
+    "failed",
+    "busy",
+    "declined",
+    "rejected",
+    "cancelled",
+    "canceled",
+    "no_answer",
+    "noanswer",
+    "timeout"
+]);
+
+function normalizeLiveMonitoringState(state) {
+
+    const value =
+        String(state || "")
+            .trim()
+            .toLowerCase();
+
+    if (
+        value === "answered" ||
+        value === "connected"
+    ) {
+        return "connected";
+    }
+
+    if (
+        value === "on_hold" ||
+        value === "held" ||
+        value === "hold"
+    ) {
+        return "on_hold";
+    }
+
+    if (
+        value === "ringing" ||
+        value === "trying" ||
+        value === "created"
+    ) {
+        return "ringing";
+    }
+
+    if (
+        LIVE_MONITORING_TERMINAL_STATES.has(value)
+    ) {
+        return "ended";
+    }
+
+    return value || "ringing";
+}
+
+
+function isLiveMonitoringActive(state) {
+
+    const normalized =
+        normalizeLiveMonitoringState(state);
+
+    return (
+        normalized === "ringing" ||
+        normalized === "connected" ||
+        normalized === "on_hold"
+    );
+}
+
+
+async function requireLiveMonitoringAccess(req) {
+
+    const access =
+        await requireOrganizationAdmin(req);
+
+    if (!access.success) {
+        return access;
+    }
+
+    const organization =
+        access.organization;
+
+    const plan =
+        String(
+            organization.plan || ""
+        ).toLowerCase();
+
+    if (plan !== "business") {
+
+        return {
+            success: false,
+            status: 403,
+            error:
+                "Live Monitoring is available only on the Business plan."
+        };
+
+    }
+
+    return {
+        ...access,
+        success: true
+    };
+}
+
+
+async function getOrganizationMembersForMonitoring(
+    organizationId
+) {
+
+    const response =
+        await fetch(
+            `${SUPABASE_URL}/rest/v1/organization_members` +
+            `?organization_id=eq.${encodeURIComponent(
+                organizationId
+            )}` +
+            `&status=eq.active` +
+            `&select=user_id,email,role`,
+            {
+                method: "GET",
+
+                headers: {
+                    Authorization:
+                        `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                    apikey:
+                        SUPABASE_SECRET_KEY,
+
+                    Accept:
+                        "application/json"
+                }
+            }
+        );
+
+    const data =
+        await response.json();
+
+    if (!response.ok) {
+
+        console.error(
+            "Live Monitoring members lookup failed:",
+            data
+        );
+
+        throw new Error(
+            "Unable to load organization members."
+        );
+
+    }
+
+    return Array.isArray(data)
+        ? data
+        : [];
+}
+
+
+async function getMonitoringProfiles(
+    userIds
+) {
+
+    if (
+        !Array.isArray(userIds) ||
+        userIds.length === 0
+    ) {
+        return new Map();
+    }
+
+    const encodedIds =
+        userIds
+            .map(
+                id =>
+                    `"${String(id).replace(
+                        /"/g,
+                        '\\"'
+                    )}"`
+            )
+            .join(",");
+
+    const response =
+        await fetch(
+            `${SUPABASE_URL}/rest/v1/profiles` +
+            `?id=in.(${encodedIds})` +
+            `&select=id,full_name,email`,
+            {
+                method: "GET",
+
+                headers: {
+                    Authorization:
+                        `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                    apikey:
+                        SUPABASE_SECRET_KEY,
+
+                    Accept:
+                        "application/json"
+                }
+            }
+        );
+
+    const data =
+        await response.json();
+
+    if (!response.ok) {
+
+        console.error(
+            "Live Monitoring profile lookup failed:",
+            data
+        );
+
+        return new Map();
+    }
+
+    const profileMap =
+        new Map();
+
+    if (Array.isArray(data)) {
+
+        data.forEach(profile => {
+
+            profileMap.set(
+                profile.id,
+                profile
+            );
+
+        });
+
+    }
+
+    return profileMap;
+}
+
+
+// =========================================================
+// LIVE MONITORING — ACTIVE CALLS
+// =========================================================
+
+app.get(
+    "/api/live-monitoring/calls",
+    async (req, res) => {
+
+        try {
+
+            const access =
+                await requireLiveMonitoringAccess(
+                    req
+                );
+
+            if (!access.success) {
+
+                return res
+                    .status(access.status)
+                    .json({
+                        success: false,
+                        error:
+                            access.error
+                    });
+
+            }
+
+            const organizationId =
+                access.organization.id;
+
+            const members =
+                await getOrganizationMembersForMonitoring(
+                    organizationId
+                );
+
+            const memberMap =
+                new Map();
+
+            members.forEach(member => {
+
+                memberMap.set(
+                    member.user_id,
+                    member
+                );
+
+            });
+
+            const profileMap =
+                await getMonitoringProfiles(
+                    members.map(
+                        member =>
+                            member.user_id
+                    )
+                );
+
+            const calls = [];
+
+            liveMonitoringCalls.forEach(
+                call => {
+
+                    const member =
+                        memberMap.get(
+                            call.userId
+                        );
+
+                    if (!member) {
+                        return;
+                    }
+
+                    const state =
+                        normalizeLiveMonitoringState(
+                            call.state
+                        );
+
+                    if (
+                        !isLiveMonitoringActive(
+                            state
+                        )
+                    ) {
+                        return;
+                    }
+
+                    const profile =
+                        profileMap.get(
+                            call.userId
+                        );
+
+                    const agentName =
+                        profile?.full_name ||
+                        member.email ||
+                        "Team Member";
+
+                    calls.push({
+
+                        callId:
+                            call.callId,
+
+                        parentCallId:
+                            call.parentCallId ||
+                            null,
+
+                        childCallId:
+                            call.childCallId ||
+                            null,
+
+                        usageId:
+                            call.usageId ||
+                            null,
+
+                        userId:
+                            call.userId,
+
+                        agentName,
+
+                        agentEmail:
+                            profile?.email ||
+                            member.email ||
+                            "",
+
+                        direction:
+                            call.direction ||
+                            "outbound",
+
+                        customerNumber:
+                            call.customerNumber ||
+                            "Unknown",
+
+                        dialeazeNumber:
+                            call.dialeazeNumber ||
+                            null,
+
+                        status:
+                            state,
+
+                        startedAt:
+                            call.startedAt ||
+                            call.createdAt ||
+                            new Date().toISOString(),
+
+                        answeredAt:
+                            call.answeredAt ||
+                            null,
+
+                        createdAt:
+                            call.createdAt ||
+                            null
+
+                    });
+
+                }
+            );
+
+            calls.sort(
+                (a, b) =>
+                    new Date(
+                        a.startedAt
+                    ) -
+                    new Date(
+                        b.startedAt
+                    )
+            );
+
+            return res.json({
+
+                success: true,
+
+                calls,
+
+                count:
+                    calls.length
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Live Monitoring calls error:",
+                error
+            );
+
+            return res.status(500).json({
+
+                success: false,
+
+                error:
+                    "Unable to load active calls."
+
+            });
+
+        }
+
+    }
+);
+
+
+// =========================================================
+// LIVE MONITORING — TODAY'S STATS
+// =========================================================
+
+app.get(
+    "/api/live-monitoring/stats",
+    async (req, res) => {
+
+        try {
+
+            const access =
+                await requireLiveMonitoringAccess(
+                    req
+                );
+
+            if (!access.success) {
+
+                return res
+                    .status(access.status)
+                    .json({
+                        success: false,
+                        error:
+                            access.error
+                    });
+
+            }
+
+            const organizationId =
+                access.organization.id;
+
+            const members =
+                await getOrganizationMembersForMonitoring(
+                    organizationId
+                );
+
+            const userIds =
+                members.map(
+                    member =>
+                        member.user_id
+                );
+
+            let todayTotal =
+                0;
+
+            if (userIds.length > 0) {
+
+                const encodedIds =
+                    userIds
+                        .map(
+                            id =>
+                                `"${String(id).replace(
+                                    /"/g,
+                                    '\\"'
+                                )}"`
+                        )
+                        .join(",");
+
+                const today =
+                    new Date();
+
+                today.setUTCHours(
+                    0,
+                    0,
+                    0,
+                    0
+                );
+
+                const response =
+                    await fetch(
+                        `${SUPABASE_URL}/rest/v1/customer_call_usage` +
+                        `?user_id=in.(${encodedIds})` +
+                        `&created_at=gte.${encodeURIComponent(
+                            today.toISOString()
+                        )}` +
+                        `&select=id`,
+                        {
+                            method: "GET",
+
+                            headers: {
+                                Authorization:
+                                    `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                                apikey:
+                                    SUPABASE_SECRET_KEY,
+
+                                Accept:
+                                    "application/json",
+
+                                Prefer:
+                                    "count=exact"
+                            }
+                        }
+                    );
+
+                if (response.ok) {
+
+                    const contentRange =
+                        response.headers.get(
+                            "content-range"
+                        );
+
+                    if (contentRange) {
+
+                        const match =
+                            contentRange.match(
+                                /\/(\d+)$/
+                            );
+
+                        if (match) {
+                            todayTotal =
+                                Number(
+                                    match[1]
+                                ) || 0;
+                        }
+
+                    } else {
+
+                        const rows =
+                            await response.json();
+
+                        todayTotal =
+                            Array.isArray(rows)
+                                ? rows.length
+                                : 0;
+
+                    }
+
+                }
+
+            }
+
+            const activeCalls =
+                Array.from(
+                    liveMonitoringCalls.values()
+                ).filter(
+                    call =>
+                        isLiveMonitoringActive(
+                            call.state
+                        )
+                );
+
+            const connectedCalls =
+                activeCalls.filter(
+                    call =>
+                        normalizeLiveMonitoringState(
+                            call.state
+                        ) === "connected"
+                );
+
+            const ringingCalls =
+                activeCalls.filter(
+                    call =>
+                        normalizeLiveMonitoringState(
+                            call.state
+                        ) === "ringing"
+                );
+
+            const onHoldCalls =
+                activeCalls.filter(
+                    call =>
+                        normalizeLiveMonitoringState(
+                            call.state
+                        ) === "on_hold"
+                );
+
+            return res.json({
+
+                success: true,
+
+                stats: {
+
+                    activeCalls:
+                        activeCalls.length,
+
+                    connectedCalls:
+                        connectedCalls.length,
+
+                    ringingCalls:
+                        ringingCalls.length,
+
+                    onHoldCalls:
+                        onHoldCalls.length,
+
+                    todayTotalCalls:
+                        todayTotal
+
+                }
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Live Monitoring stats error:",
+                error
+            );
+
+            return res.status(500).json({
+
+                success: false,
+
+                error:
+                    "Unable to load monitoring statistics."
+
+            });
+
+        }
+
+    }
+);
+
+
+// =========================================================
+// LIVE MONITORING — END ACTIVE CALL
+// =========================================================
+
+app.post(
+    "/api/live-monitoring/end",
+    async (req, res) => {
+
+        try {
+
+            const access =
+                await requireLiveMonitoringAccess(
+                    req
+                );
+
+            if (!access.success) {
+
+                return res
+                    .status(access.status)
+                    .json({
+                        success: false,
+                        error:
+                            access.error
+                    });
+
+            }
+
+            const {
+                callId
+            } = req.body || {};
+
+            if (!callId) {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    error:
+                        "callId is required."
+
+                });
+
+            }
+
+            const monitoredCall =
+                liveMonitoringCalls.get(
+                    callId
+                );
+
+            if (!monitoredCall) {
+
+                return res.status(404).json({
+
+                    success: false,
+
+                    error:
+                        "The call is no longer active."
+
+                });
+
+            }
+
+            /*
+             * Make absolutely sure this call belongs
+             * to the supervisor's organization.
+             */
+            const memberResponse =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/organization_members` +
+                    `?organization_id=eq.${encodeURIComponent(
+                        access.organization.id
+                    )}` +
+                    `&user_id=eq.${encodeURIComponent(
+                        monitoredCall.userId
+                    )}` +
+                    `&status=eq.active` +
+                    `&select=user_id` +
+                    `&limit=1`,
+                    {
+                        method: "GET",
+
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+
+                            Accept:
+                                "application/json"
+                        }
+                    }
+                );
+
+            const memberData =
+                await memberResponse.json();
+
+            if (
+                !memberResponse.ok ||
+                !Array.isArray(memberData) ||
+                memberData.length === 0
+            ) {
+
+                return res.status(403).json({
+
+                    success: false,
+
+                    error:
+                        "You are not authorized to control this call."
+
+                });
+
+            }
+
+            /*
+             * Prefer the PSTN child call because that is
+             * the actual customer leg of Dialeaze outbound
+             * calls.
+             */
+            const signalWireCallId =
+                monitoredCall.childCallId ||
+                monitoredCall.callId ||
+                monitoredCall.parentCallId;
+
+            if (!signalWireCallId) {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    error:
+                        "No SignalWire call ID is available."
+
+                });
+
+            }
+
+            const basicAuth =
+                Buffer
+                    .from(
+                        `${SIGNALWIRE_PROJECT_ID}:${SIGNALWIRE_API_TOKEN}`
+                    )
+                    .toString("base64");
+
+            const response =
+                await fetch(
+                    `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/calling/calls`,
+                    {
+                        method: "POST",
+
+                        headers: {
+
+                            Authorization:
+                                `Basic ${basicAuth}`,
+
+                            "Content-Type":
+                                "application/json",
+
+                            Accept:
+                                "application/json"
+
+                        },
+
+                        body:
+                            JSON.stringify({
+
+                                command:
+                                    "calling.end",
+
+                                id:
+                                    signalWireCallId,
+
+                                params: {
+
+                                    reason:
+                                        "hangup"
+
+                                }
+
+                            })
+
+                    }
+                );
+
+            const responseText =
+                await response.text();
+
+            let responseData =
+                null;
+
+            try {
+
+                responseData =
+                    responseText
+                        ? JSON.parse(
+                            responseText
+                        )
+                        : null;
+
+            } catch {
+
+                responseData =
+                    responseText;
+
+            }
+
+            if (!response.ok) {
+
+                console.error(
+                    "Live Monitoring SignalWire end error:",
+                    response.status,
+                    responseData
+                );
+
+                return res.status(502).json({
+
+                    success: false,
+
+                    error:
+                        "SignalWire could not end the call."
+
+                });
+
+            }
+
+            console.log(
+                "🔴 LIVE MONITORING ENDED CALL:",
+                {
+                    supervisor:
+                        access.user.id,
+
+                    organization:
+                        access.organization.id,
+
+                    callId,
+
+                    signalWireCallId
+
+                }
+            );
+
+            liveMonitoringCalls.delete(
+                callId
+            );
+
+            if (
+                monitoredCall.childCallId
+            ) {
+
+                liveMonitoringCalls.delete(
+                    monitoredCall.childCallId
+                );
+
+            }
+
+            if (
+                monitoredCall.parentCallId
+            ) {
+
+                liveMonitoringCalls.delete(
+                    monitoredCall.parentCallId
+                );
+
+            }
+
+            return res.json({
+
+                success: true,
+
+                message:
+                    "The call has been terminated."
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Live Monitoring end-call error:",
+                error
+            );
+
+            return res.status(500).json({
+
+                success: false,
+
+                error:
+                    "Unable to terminate the call."
+
+            });
+
+        }
+
+    }
+);
 
 async function requireOrganizationOwner(req) {
     const result =
@@ -8533,28 +9489,210 @@ app.post(
             null;
 
         if (
-            parentCallId &&
-            callState
+    parentCallId &&
+    callState
+) {
+
+    await saveSignalWireCallState({
+        parentCallId,
+        childCallId,
+        state: callState,
+        reason: endReason
+    });
+
+    console.log(
+        "📌 Stored SignalWire call state in Supabase:",
+        {
+            parentCallId,
+            childCallId,
+            state: callState,
+            reason: endReason
+        }
+    );
+
+    /*
+     * =====================================================
+     * LIVE MONITORING
+     * =====================================================
+     *
+     * Find the Dialeaze customer associated with this
+     * provider call.
+     */
+
+    try {
+
+        const providerIds = [
+            childCallId,
+            parentCallId
+        ].filter(Boolean);
+
+        let usage = null;
+
+        for (
+            const providerId of providerIds
         ) {
 
-            await saveSignalWireCallState({
-                parentCallId,
-                childCallId,
-                state: callState,
-                reason: endReason
-            });
+            const usageResponse =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/customer_call_usage` +
+                    `?provider_call_id=eq.${encodeURIComponent(
+                        providerId
+                    )}` +
+                    `&select=id,user_id,provider_call_id,caller_number,dialed_number,call_status,answered,answered_at,created_at` +
+                    `&limit=1`,
+                    {
+                        method: "GET",
 
-            console.log(
-                "ðŸ“Œ Stored SignalWire call state in Supabase:",
-                {
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+
+                            Accept:
+                                "application/json"
+                        }
+                    }
+                );
+
+            const usageRows =
+                await usageResponse.json();
+
+            if (
+                usageResponse.ok &&
+                Array.isArray(usageRows) &&
+                usageRows.length > 0
+            ) {
+
+                usage =
+                    usageRows[0];
+
+                break;
+
+            }
+
+        }
+
+        if (usage?.user_id) {
+
+            const monitoringState =
+                normalizeLiveMonitoringState(
+                    callState
+                );
+
+            const monitoringCall = {
+
+                callId:
+                    childCallId ||
                     parentCallId,
-                    childCallId,
-                    state: callState,
-                    reason: endReason
-                }
-            );
 
-        } else {
+                parentCallId,
+
+                childCallId:
+                    childCallId || null,
+
+                usageId:
+                    usage.id,
+
+                userId:
+                    usage.user_id,
+
+                direction:
+                    "outbound",
+
+                customerNumber:
+                    usage.dialed_number ||
+                    null,
+
+                dialeazeNumber:
+                    usage.caller_number ||
+                    null,
+
+                state:
+                    monitoringState,
+
+                createdAt:
+                    usage.created_at ||
+                    new Date().toISOString(),
+
+                startedAt:
+                    usage.created_at ||
+                    new Date().toISOString(),
+
+                answeredAt:
+                    usage.answered_at ||
+                    null
+
+            };
+
+            if (
+                isLiveMonitoringActive(
+                    monitoringState
+                )
+            ) {
+
+                liveMonitoringCalls.set(
+                    monitoringCall.callId,
+                    monitoringCall
+                );
+
+                /*
+                 * Also index the parent and child IDs so
+                 * supervisor controls can find either leg.
+                 */
+
+                if (
+                    parentCallId
+                ) {
+
+                    liveMonitoringCalls.set(
+                        parentCallId,
+                        monitoringCall
+                    );
+
+                }
+
+                if (
+                    childCallId
+                ) {
+
+                    liveMonitoringCalls.set(
+                        childCallId,
+                        monitoringCall
+                    );
+
+                }
+
+            } else {
+
+                liveMonitoringCalls.delete(
+                    monitoringCall.callId
+                );
+
+                liveMonitoringCalls.delete(
+                    parentCallId
+                );
+
+                liveMonitoringCalls.delete(
+                    childCallId
+                );
+
+            }
+
+        }
+
+    } catch (monitoringError) {
+
+        console.error(
+            "Live Monitoring state update error:",
+            monitoringError
+        );
+
+    }
+
+}
+else {
 
             console.warn(
                 "âš ï¸ SignalWire call-state webhook missing call ID or state."
@@ -9505,7 +10643,115 @@ app.post(
                     userId
                 }
             );
+// =========================================================
+// LIVE MONITORING — INBOUND CALL
+// =========================================================
 
+try {
+
+    if (
+        userId &&
+        callId &&
+        callState
+    ) {
+
+        const monitoringState =
+            normalizeLiveMonitoringState(
+                callState
+            );
+
+        const monitoringCall = {
+
+            callId,
+
+            parentCallId:
+                parentCallId || null,
+
+            childCallId:
+                null,
+
+            usageId:
+                null,
+
+            userId,
+
+            direction:
+                "inbound",
+
+            customerNumber:
+                fromNumber ||
+                "Unknown",
+
+            dialeazeNumber:
+                customerPhoneNumber ||
+                null,
+
+            state:
+                monitoringState,
+
+            createdAt:
+                new Date().toISOString(),
+
+            startedAt:
+                new Date().toISOString(),
+
+            answeredAt:
+                monitoringState === "connected"
+                    ? new Date().toISOString()
+                    : null
+
+        };
+
+        if (
+            isLiveMonitoringActive(
+                monitoringState
+            )
+        ) {
+
+            liveMonitoringCalls.set(
+                callId,
+                monitoringCall
+            );
+
+            if (
+                parentCallId
+            ) {
+
+                liveMonitoringCalls.set(
+                    parentCallId,
+                    monitoringCall
+                );
+
+            }
+
+        } else {
+
+            liveMonitoringCalls.delete(
+                callId
+            );
+
+            if (
+                parentCallId
+            ) {
+
+                liveMonitoringCalls.delete(
+                    parentCallId
+                );
+
+            }
+
+        }
+
+    }
+
+} catch (monitoringError) {
+
+    console.error(
+        "Inbound Live Monitoring update error:",
+        monitoringError
+    );
+
+}
             // -----------------------------------------
             // Create voicemail placeholder.
             //
