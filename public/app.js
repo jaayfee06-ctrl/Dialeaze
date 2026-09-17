@@ -130,7 +130,105 @@ window.addEventListener(
 
 );
 
-   
+   // =========================================================
+// CRM → DIALER CUSTOMER NUMBER
+// Receives a customer phone number from the CRM.
+// This only fills the number field.
+// It does NOT automatically place a call.
+// =========================================================
+
+window.addEventListener(
+    "message",
+    function (event) {
+
+        if (
+            event.origin !==
+            "https://dialeaze.com"
+        ) {
+            return;
+        }
+
+
+        if (
+            event.source !==
+            window.opener
+        ) {
+            return;
+        }
+
+
+        const data =
+            event.data;
+
+
+        if (
+            !data ||
+            data.type !==
+            "DIALEAZE_CRM_CALL"
+        ) {
+            return;
+        }
+
+
+        const number =
+            String(
+                data.phoneNumber ||
+                ""
+            ).trim();
+
+
+        if (!number) {
+
+            console.warn(
+                "CRM call request received without a phone number."
+            );
+
+            return;
+
+        }
+
+
+        const phoneInput =
+            document.getElementById(
+                "phoneNumber"
+            );
+
+
+        if (!phoneInput) {
+
+            console.error(
+                "CRM call request received, but phoneNumber input was not found."
+            );
+
+            return;
+
+        }
+
+
+        phoneInput.value =
+            number;
+
+
+        phoneInput.dispatchEvent(
+            new Event(
+                "input",
+                {
+                    bubbles: true
+                }
+            )
+        );
+
+
+        phoneInput.focus();
+
+
+        console.log(
+            "📞 CRM customer number loaded into dialer:",
+            number
+        );
+
+    }
+);
 // =========================================================
 // DIALEAZE DASHBOARD AUTH BRIDGE
 // Receives the logged-in customer's Supabase session
