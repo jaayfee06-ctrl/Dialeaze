@@ -11361,7 +11361,949 @@ app.use((req, res) => {
         path.join(__dirname, "public", "index.html")
     );
 });
+// =========================================================
+// DIALEAZE CRM
+// =========================================================
+//
+// Organization-wide customer management.
+//
+// Every CRM contact belongs to an organization.
+// Team members therefore share the same CRM.
+//
+// =========================================================
 
+
+// ---------------------------------------------------------
+// CRM: GET CONTACTS
+// ---------------------------------------------------------
+
+app.get(
+    "/api/crm/contacts",
+    async (req, res) => {
+
+        try {
+
+            const access =
+                await requireOrganizationMember(req);
+
+            if (!access.success) {
+
+                return res.status(
+                    access.status
+                ).json({
+                    success: false,
+                    error: access.error
+                });
+
+            }
+
+            const organizationId =
+                access.organization.id;
+
+            const response =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/crm_contacts` +
+                    `?organization_id=eq.${encodeURIComponent(
+                        organizationId
+                    )}` +
+                    `&select=id,organization_id,name,phone_number,email,comments,assigned_to,assigned_at,created_by,created_at,updated_at` +
+                    `&order=created_at.desc`,
+                    {
+                        method: "GET",
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+                            Accept:
+                                "application/json"
+                        }
+                    }
+                );
+
+            const contacts =
+                await response.json();
+
+            if (!response.ok) {
+
+                console.error(
+                    "CRM contacts lookup error:",
+                    contacts
+                );
+
+                return res.status(
+                    response.status
+                ).json({
+                    success: false,
+                    error:
+                        contacts?.message ||
+                        "Unable to load CRM contacts."
+                });
+
+            }
+
+            return res.json({
+                success: true,
+                contacts:
+                    Array.isArray(contacts)
+                        ? contacts
+                        : []
+            });
+
+        } catch (error) {
+
+            console.error(
+                "CRM GET contacts error:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    "Unable to load CRM contacts."
+            });
+
+        }
+
+    }
+);
+
+
+// ---------------------------------------------------------
+// CRM: GET TEAM MEMBERS
+// ---------------------------------------------------------
+
+app.get(
+    "/api/crm/members",
+    async (req, res) => {
+
+        try {
+
+            const access =
+                await requireOrganizationMember(req);
+
+            if (!access.success) {
+
+                return res.status(
+                    access.status
+                ).json({
+                    success: false,
+                    error: access.error
+                });
+
+            }
+
+            const organizationId =
+                access.organization.id;
+
+            const response =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/organization_members` +
+                    `?organization_id=eq.${encodeURIComponent(
+                        organizationId
+                    )}` +
+                    `&status=eq.active` +
+                    `&select=id,user_id,email,role,status,joined_at` +
+                    `&order=created_at.asc`,
+                    {
+                        method: "GET",
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+                            Accept:
+                                "application/json"
+                        }
+                    }
+                );
+
+            const members =
+                await response.json();
+
+            if (!response.ok) {
+
+                console.error(
+                    "CRM members lookup error:",
+                    members
+                );
+
+                return res.status(
+                    response.status
+                ).json({
+                    success: false,
+                    error:
+                        members?.message ||
+                        "Unable to load CRM team members."
+                });
+
+            }
+
+            const memberList =
+                Array.isArray(members)
+                    ? await Promise.all(
+                        members.map(
+                            async member => {
+
+                                let profile = null;
+
+                                try {
+
+                                    const profileResponse =
+                                        await fetch(
+                                            `${SUPABASE_URL}/rest/v1/profiles` +
+                                            `?id=eq.${encodeURIComponent(
+                                                member.user_id
+                                            )}` +
+                                            `&select=full_name,phone_number` +
+                                            `&limit=1`,
+                                            {
+                                                method: "GET",
+                                                headers: {
+                                                    Authorization:
+                                                        `Bearer ${SUPABASE_SECRET_KEY}`,
+                                                    apikey:
+                                                        SUPABASE_SECRET_KEY,
+                                                    Accept:
+                                                        "application/json"
+                                                }
+                                            }
+                                        );
+
+                                    const profileData =
+                                        await profileResponse.json();
+
+                                    if (
+                                        profileResponse.ok &&
+                                        Array.isArray(profileData) &&
+                                        profileData.length
+                                    ) {
+                                        profile =
+                                            profileData[0];
+                                    }
+
+                                } catch (
+                                    profileError
+                                ) {
+
+                                    console.warn(
+                                        "CRM member profile lookup failed:",
+                                        profileError
+                                    );
+
+                                }
+
+                                return {
+
+                                    id:
+                                        member.user_id,
+
+                                    membershipId:
+                                        member.id,
+
+                                    name:
+                                        profile?.full_name ||
+                                        member.email ||
+                                        "Team Member",
+
+                                    email:
+                                        member.email ||
+                                        "",
+
+                                    role:
+                                        member.role,
+
+                                    status:
+                                        member.status
+
+                                };
+
+                            }
+                        )
+                    )
+                    : [];
+
+            return res.json({
+                success: true,
+                members: memberList
+            });
+
+        } catch (error) {
+
+            console.error(
+                "CRM GET members error:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    "Unable to load CRM team members."
+            });
+
+        }
+
+    }
+);
+
+
+// ---------------------------------------------------------
+// CRM: CREATE CONTACT
+// ---------------------------------------------------------
+
+app.post(
+    "/api/crm/contacts",
+    async (req, res) => {
+
+        try {
+
+            const access =
+                await requireOrganizationMember(req);
+
+            if (!access.success) {
+
+                return res.status(
+                    access.status
+                ).json({
+                    success: false,
+                    error: access.error
+                });
+
+            }
+
+            const organizationId =
+                access.organization.id;
+
+            const userId =
+                access.user.id;
+
+            const name =
+                String(
+                    req.body?.name || ""
+                ).trim();
+
+            const phoneNumber =
+                String(
+                    req.body?.phone_number || ""
+                ).trim();
+
+            const email =
+                String(
+                    req.body?.email || ""
+                ).trim();
+
+            const comments =
+                String(
+                    req.body?.comments || ""
+                ).trim();
+
+            if (!name) {
+
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Customer name is required."
+                });
+
+            }
+
+            if (!phoneNumber) {
+
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Customer phone number is required."
+                });
+
+            }
+
+            if (name.length > 150) {
+
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Customer name is too long."
+                });
+
+            }
+
+            if (phoneNumber.length > 30) {
+
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Phone number is too long."
+                });
+
+            }
+
+            if (email.length > 255) {
+
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Email address is too long."
+                });
+
+            }
+
+            if (comments.length > 10000) {
+
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Comments are too long."
+                });
+
+            }
+
+            const contactRecord = {
+
+                organization_id:
+                    organizationId,
+
+                name:
+                    name,
+
+                phone_number:
+                    phoneNumber,
+
+                email:
+                    email || null,
+
+                comments:
+                    comments || null,
+
+                assigned_to:
+                    null,
+
+                assigned_at:
+                    null,
+
+                created_by:
+                    userId
+
+            };
+
+            const response =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/crm_contacts`,
+                    {
+                        method: "POST",
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+                            "Content-Type":
+                                "application/json",
+                            Accept:
+                                "application/json",
+                            Prefer:
+                                "return=representation"
+                        },
+                        body:
+                            JSON.stringify(
+                                contactRecord
+                            )
+                    }
+                );
+
+            const data =
+                await response.json();
+
+            if (!response.ok) {
+
+                console.error(
+                    "CRM create contact error:",
+                    data
+                );
+
+                if (
+                    data?.code === "23505"
+                ) {
+
+                    return res.status(409).json({
+                        success: false,
+                        error:
+                            "A customer with this phone number already exists in your CRM."
+                    });
+
+                }
+
+                return res.status(
+                    response.status
+                ).json({
+                    success: false,
+                    error:
+                        data?.message ||
+                        "Unable to create CRM contact."
+                });
+
+            }
+
+            return res.status(201).json({
+
+                success: true,
+
+                contact:
+                    Array.isArray(data)
+                        ? data[0]
+                        : data
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                "CRM create contact exception:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    "Unable to create CRM contact."
+            });
+
+        }
+
+    }
+);
+
+
+// ---------------------------------------------------------
+// CRM: UPDATE CONTACT
+// ---------------------------------------------------------
+
+app.patch(
+    "/api/crm/contacts/:id",
+    async (req, res) => {
+
+        try {
+
+            const access =
+                await requireOrganizationMember(req);
+
+            if (!access.success) {
+
+                return res.status(
+                    access.status
+                ).json({
+                    success: false,
+                    error: access.error
+                });
+
+            }
+
+            const organizationId =
+                access.organization.id;
+
+            const contactId =
+                String(
+                    req.params.id || ""
+                ).trim();
+
+            if (!contactId) {
+
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "CRM contact ID is required."
+                });
+
+            }
+
+            const updateData = {};
+
+            if (
+                Object.prototype.hasOwnProperty.call(
+                    req.body || {},
+                    "name"
+                )
+            ) {
+
+                const name =
+                    String(
+                        req.body.name || ""
+                    ).trim();
+
+                if (!name) {
+
+                    return res.status(400).json({
+                        success: false,
+                        error:
+                            "Customer name cannot be empty."
+                    });
+
+                }
+
+                updateData.name =
+                    name;
+
+            }
+
+            if (
+                Object.prototype.hasOwnProperty.call(
+                    req.body || {},
+                    "phone_number"
+                )
+            ) {
+
+                const phoneNumber =
+                    String(
+                        req.body.phone_number || ""
+                    ).trim();
+
+                if (!phoneNumber) {
+
+                    return res.status(400).json({
+                        success: false,
+                        error:
+                            "Customer phone number cannot be empty."
+                    });
+
+                }
+
+                updateData.phone_number =
+                    phoneNumber;
+
+            }
+
+            if (
+                Object.prototype.hasOwnProperty.call(
+                    req.body || {},
+                    "email"
+                )
+            ) {
+
+                const email =
+                    String(
+                        req.body.email || ""
+                    ).trim();
+
+                updateData.email =
+                    email || null;
+
+            }
+
+            if (
+                Object.prototype.hasOwnProperty.call(
+                    req.body || {},
+                    "comments"
+                )
+            ) {
+
+                const comments =
+                    String(
+                        req.body.comments || ""
+                    ).trim();
+
+                updateData.comments =
+                    comments || null;
+
+            }
+
+            if (
+                Object.prototype.hasOwnProperty.call(
+                    req.body || {},
+                    "assigned_to"
+                )
+            ) {
+
+                const assignedTo =
+                    String(
+                        req.body.assigned_to || ""
+                    ).trim();
+
+                if (!assignedTo) {
+
+                    updateData.assigned_to =
+                        null;
+
+                    updateData.assigned_at =
+                        null;
+
+                } else {
+
+                    // Verify that the selected person
+                    // actually belongs to this organization.
+
+                    const memberResponse =
+                        await fetch(
+                            `${SUPABASE_URL}/rest/v1/organization_members` +
+                            `?organization_id=eq.${encodeURIComponent(
+                                organizationId
+                            )}` +
+                            `&user_id=eq.${encodeURIComponent(
+                                assignedTo
+                            )}` +
+                            `&status=eq.active` +
+                            `&select=user_id` +
+                            `&limit=1`,
+                            {
+                                method: "GET",
+                                headers: {
+                                    Authorization:
+                                        `Bearer ${SUPABASE_SECRET_KEY}`,
+                                    apikey:
+                                        SUPABASE_SECRET_KEY,
+                                    Accept:
+                                        "application/json"
+                                }
+                            }
+                        );
+
+                    const memberData =
+                        await memberResponse.json();
+
+                    if (
+                        !memberResponse.ok
+                    ) {
+
+                        return res.status(500).json({
+                            success: false,
+                            error:
+                                "Unable to verify the selected team member."
+                        });
+
+                    }
+
+                    if (
+                        !Array.isArray(
+                            memberData
+                        ) ||
+                        memberData.length === 0
+                    ) {
+
+                        return res.status(400).json({
+                            success: false,
+                            error:
+                                "The selected team member does not belong to your organization."
+                        });
+
+                    }
+
+                    updateData.assigned_to =
+                        assignedTo;
+
+                    updateData.assigned_at =
+                        new Date().toISOString();
+
+                }
+
+            }
+
+            if (
+                Object.keys(updateData).length === 0
+            ) {
+
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "No CRM changes were provided."
+                });
+
+            }
+
+            updateData.updated_at =
+                new Date().toISOString();
+
+            const response =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/crm_contacts` +
+                    `?id=eq.${encodeURIComponent(
+                        contactId
+                    )}` +
+                    `&organization_id=eq.${encodeURIComponent(
+                        organizationId
+                    )}`,
+                    {
+                        method: "PATCH",
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+                            "Content-Type":
+                                "application/json",
+                            Accept:
+                                "application/json",
+                            Prefer:
+                                "return=representation"
+                        },
+                        body:
+                            JSON.stringify(
+                                updateData
+                            )
+                    }
+                );
+
+            const data =
+                await response.json();
+
+            if (!response.ok) {
+
+                console.error(
+                    "CRM update contact error:",
+                    data
+                );
+
+                return res.status(
+                    response.status
+                ).json({
+                    success: false,
+                    error:
+                        data?.message ||
+                        "Unable to update CRM contact."
+                });
+
+            }
+
+            if (
+                !Array.isArray(data) ||
+                data.length === 0
+            ) {
+
+                return res.status(404).json({
+                    success: false,
+                    error:
+                        "CRM contact not found."
+                });
+
+            }
+
+            return res.json({
+                success: true,
+                contact:
+                    data[0]
+            });
+
+        } catch (error) {
+
+            console.error(
+                "CRM update contact exception:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    "Unable to update CRM contact."
+            });
+
+        }
+
+    }
+);
+
+
+// ---------------------------------------------------------
+// CRM: DELETE CONTACT
+// ---------------------------------------------------------
+
+app.delete(
+    "/api/crm/contacts/:id",
+    async (req, res) => {
+
+        try {
+
+            const access =
+                await requireOrganizationAdmin(req);
+
+            if (!access.success) {
+
+                return res.status(
+                    access.status
+                ).json({
+                    success: false,
+                    error: access.error
+                });
+
+            }
+
+            const organizationId =
+                access.organization.id;
+
+            const contactId =
+                String(
+                    req.params.id || ""
+                ).trim();
+
+            if (!contactId) {
+
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "CRM contact ID is required."
+                });
+
+            }
+
+            const response =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/crm_contacts` +
+                    `?id=eq.${encodeURIComponent(
+                        contactId
+                    )}` +
+                    `&organization_id=eq.${encodeURIComponent(
+                        organizationId
+                    )}`,
+                    {
+                        method: "DELETE",
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+                            Accept:
+                                "application/json"
+                        }
+                    }
+                );
+
+            const data =
+                await response.json();
+
+            if (!response.ok) {
+
+                console.error(
+                    "CRM delete contact error:",
+                    data
+                );
+
+                return res.status(
+                    response.status
+                ).json({
+                    success: false,
+                    error:
+                        data?.message ||
+                        "Unable to delete CRM contact."
+                });
+
+            }
+
+            return res.json({
+                success: true
+            });
+
+        } catch (error) {
+
+            console.error(
+                "CRM delete contact exception:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    "Unable to delete CRM contact."
+            });
+
+        }
+
+    }
+);
 app.listen(PORT, () => {
     console.log("");
     console.log("==========================================");
