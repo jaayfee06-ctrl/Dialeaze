@@ -12843,7 +12843,7 @@ app.get(
         try {
 
             const access =
-                await requirePlatformOwner();
+                await requirePlatformOwner(req);
 
 
             if (!access.success) {
@@ -13005,7 +13005,7 @@ app.get(
         try {
 
             const access =
-                await requirePlatformOwner();
+                await requirePlatformOwner(req);
 
 
             if (!access.success) {
