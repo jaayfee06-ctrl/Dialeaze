@@ -11586,31 +11586,38 @@ app.get(
 
                                 }
 
-                                return {
+                               return {
 
-                                    id:
-                                        member.user_id,
+    id:
+        member.user_id,
 
-                                    membershipId:
-                                        member.id,
+    user_id:
+        member.user_id,
 
-                                    name:
-                                        profile?.full_name ||
-                                        member.email ||
-                                        "Team Member",
+    membershipId:
+        member.id,
 
-                                    email:
-                                        member.email ||
-                                        "",
+    name:
+        profile?.full_name ||
+        member.email ||
+        "Team Member",
 
-                                    role:
-                                        member.role,
+    full_name:
+        profile?.full_name ||
+        member.email ||
+        "Team Member",
 
-                                    status:
-                                        member.status
+    email:
+        member.email ||
+        "",
 
-                                };
+    role:
+        member.role,
 
+    status:
+        member.status
+
+};
                             }
                         )
                     )
