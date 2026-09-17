@@ -1513,6 +1513,81 @@ async function requireOrganizationOwner(req) {
 }
 
 // =========================================================
+// DIALEAZE PLATFORM OWNER
+// =========================================================
+//
+// Platform Owner is different from an organization owner.
+//
+// Organization owners can manage their own company.
+// Platform Owner can manage ALL Dialeaze organizations.
+//
+// The authorized user ID is stored only in Render
+// environment variables and is never exposed to the frontend.
+// =========================================================
+
+async function requirePlatformOwner(req) {
+
+    const auth =
+        await authenticateRequest(req);
+
+    if (!auth.success) {
+
+        return {
+            success: false,
+            status: auth.status,
+            error: auth.error
+        };
+
+    }
+
+
+    const platformOwnerId =
+        String(
+            process.env.DIALEAZE_PLATFORM_OWNER_USER_ID ||
+            ""
+        ).trim();
+
+
+    if (!platformOwnerId) {
+
+        console.error(
+            "DIALEAZE_PLATFORM_OWNER_USER_ID is not configured."
+        );
+
+        return {
+            success: false,
+            status: 500,
+            error:
+                "Platform owner configuration is missing."
+        };
+
+    }
+
+
+    if (
+        String(auth.user.id) !==
+        platformOwnerId
+    ) {
+
+        return {
+            success: false,
+            status: 403,
+            error:
+                "Platform Owner permission is required."
+        };
+
+    }
+
+
+    return {
+        success: true,
+        user: auth.user
+    };
+
+}
+
+
+// =========================================================
 // DIALEAZE PLAN FEATURE PERMISSIONS
 // $41 SOLO vs $100 BUSINESS
 // =========================================================
@@ -12742,7 +12817,323 @@ app.delete(
 
     }
 );
+// =========================================================
+// DIALEAZE OWNER CRM
+// PLATFORM OWNER ONLY
+// =========================================================
+//
+// These endpoints allow the Dialeaze platform owner to:
+//
+// 1. See every Dialeaze organization.
+// 2. See how many CRM contacts each organization has.
+// 3. Open one organization and see its CRM contacts.
+//
+// This is completely separate from the customer CRM APIs.
+// =========================================================
 
+
+// ---------------------------------------------------------
+// OWNER CRM: GET ALL ORGANIZATIONS
+// ---------------------------------------------------------
+
+app.get(
+    "/api/owner/crm/organizations",
+    async (req, res) => {
+
+        try {
+
+            const access =
+                await requirePlatformOwner();
+
+
+            if (!access.success) {
+
+                return res.status(
+                    access.status
+                ).json({
+                    success: false,
+                    error: access.error
+                });
+
+            }
+
+
+            const response =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/organizations` +
+                    `?select=id,name,owner_user_id,plan,status,created_at,updated_at,crm_contacts(count)` +
+                    `&order=created_at.desc`,
+                    {
+                        method: "GET",
+                        headers: {
+
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+
+                            Accept:
+                                "application/json"
+
+                        }
+                    }
+                );
+
+
+            const organizations =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                console.error(
+                    "Owner CRM organizations lookup error:",
+                    organizations
+                );
+
+
+                return res.status(
+                    response.status
+                ).json({
+
+                    success: false,
+
+                    error:
+                        organizations?.message ||
+                        "Unable to load organizations."
+
+                });
+
+            }
+
+
+            const formatted =
+                Array.isArray(
+                    organizations
+                )
+                    ? organizations.map(
+                        function (organization) {
+
+                            const count =
+                                Array.isArray(
+                                    organization.crm_contacts
+                                ) &&
+                                organization.crm_contacts[0]
+                                    ? Number(
+                                        organization
+                                            .crm_contacts[0]
+                                            .count || 0
+                                    )
+                                    : 0;
+
+
+                            return {
+
+                                id:
+                                    organization.id,
+
+                                name:
+                                    organization.name,
+
+                                owner_user_id:
+                                    organization.owner_user_id,
+
+                                plan:
+                                    organization.plan,
+
+                                status:
+                                    organization.status,
+
+                                created_at:
+                                    organization.created_at,
+
+                                updated_at:
+                                    organization.updated_at,
+
+                                contact_count:
+                                    count
+
+                            };
+
+                        }
+                    )
+                    : [];
+
+
+            return res.json({
+
+                success: true,
+
+                organizations:
+                    formatted
+
+            });
+
+
+        } catch (error) {
+
+            console.error(
+                "Owner CRM organizations exception:",
+                error
+            );
+
+
+            return res.status(500).json({
+
+                success: false,
+
+                error:
+                    "Unable to load Owner CRM organizations."
+
+            });
+
+        }
+
+    }
+);
+
+
+// ---------------------------------------------------------
+// OWNER CRM: GET CONTACTS FOR ONE ORGANIZATION
+// ---------------------------------------------------------
+
+app.get(
+    "/api/owner/crm/organizations/:organizationId/contacts",
+    async (req, res) => {
+
+        try {
+
+            const access =
+                await requirePlatformOwner();
+
+
+            if (!access.success) {
+
+                return res.status(
+                    access.status
+                ).json({
+
+                    success: false,
+
+                    error:
+                        access.error
+
+                });
+
+            }
+
+
+            const organizationId =
+                String(
+                    req.params.organizationId ||
+                    ""
+                ).trim();
+
+
+            if (!organizationId) {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    error:
+                        "Organization ID is required."
+
+                });
+
+            }
+
+
+            const response =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/crm_contacts` +
+                    `?organization_id=eq.${encodeURIComponent(
+                        organizationId
+                    )}` +
+                    `&select=id,organization_id,name,phone_number,email,comments,assigned_to,assigned_at,created_by,created_at,updated_at` +
+                    `&order=created_at.desc`,
+                    {
+                        method: "GET",
+                        headers: {
+
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+
+                            Accept:
+                                "application/json"
+
+                        }
+                    }
+                );
+
+
+            const contacts =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                console.error(
+                    "Owner CRM contacts lookup error:",
+                    contacts
+                );
+
+
+                return res.status(
+                    response.status
+                ).json({
+
+                    success: false,
+
+                    error:
+                        contacts?.message ||
+                        "Unable to load organization CRM contacts."
+
+                });
+
+            }
+
+
+            return res.json({
+
+                success: true,
+
+                organization_id:
+                    organizationId,
+
+                contacts:
+                    Array.isArray(contacts)
+                        ? contacts
+                        : []
+
+            });
+
+
+        } catch (error) {
+
+            console.error(
+                "Owner CRM contacts exception:",
+                error
+            );
+
+
+            return res.status(500).json({
+
+                success: false,
+
+                error:
+                    "Unable to load Owner CRM contacts."
+
+            });
+
+        }
+
+    }
+);
 // =========================================================
 // FRONTEND FALLBACK
 // =========================================================
