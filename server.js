@@ -8486,227 +8486,216 @@ console.log(
 // SIGNALWIRE VOICEMAIL RECORDING CALLBACK
 // =========================================================
 
-app.post(
-    "/api/signalwire/voicemail-recording-callback",
-    async (req, res) => {
+app.post("/api/signalwire/voicemail-recording-callback", async (req, res) => {
+    try {
+        console.log(
+            "📞 SIGNALWIRE VOICEMAIL RECORDING CALLBACK:",
+            JSON.stringify(req.body, null, 2)
+        );
 
-        try {
+        const params = req.body?.params || {};
 
-            console.log(
-                "ðŸ“¨ SIGNALWIRE VOICEMAIL RECORDING CALLBACK"
-            );
+        const directResult =
+            req.body?.source === "swml_record_result";
 
-            console.log(
-                JSON.stringify(
-                    req.body,
-                    null,
-                    2
+        const candidateCallIds = [
+            params.call_id,
+            params.parent_call_id,
+            params.parent?.call_id,
+            req.body?.call?.call_id,
+            req.body?.call_id
+        ]
+            .filter(Boolean)
+            .map((value) => String(value).trim())
+            .filter(Boolean);
+
+        const callIds = [...new Set(candidateCallIds)];
+
+        let state = directResult
+            ? (
+                String(req.body?.record_result || "").toLowerCase() ===
+                "success"
+                    ? "finished"
+                    : "error"
+            )
+            : String(params.state || "").toLowerCase();
+
+        const recordingUrl =
+            directResult
+                ? (
+                    req.body?.recording_url ||
+                    null
                 )
-            );
-
-            const params =
-                req.body?.params ||
-                {};
-
-            const callId =
-                params.call_id ||
-                null;
-
-            const state =
-                String(
-                    params.state ||
-                    ""
-                ).toLowerCase();
-
-            const recording =
-                params.record ||
-                {};
-
-            const recordingUrl =
-                params.url ||
-                recording.url ||
-                null;
-
-            const recordingId =
-                params.recording_id ||
-                recording.recording_id ||
-                null;
-
-            const duration =
-                params.duration ??
-                recording.duration ??
-                null;
-
-            if (!callId) {
-
-                console.warn(
-                    "âš ï¸ Voicemail callback missing call ID."
+                : (
+                    params.url ||
+                    null
                 );
 
-                return res.sendStatus(204);
-            }
+        const recordingId =
+            params.recording_id ||
+            null;
 
-            console.log(
-                "ðŸŽ™ï¸ Voicemail recording event:",
-                {
-                    callId,
-                    state,
-                    recordingId,
-                    recordingUrl,
-                    duration
-                }
-            );
+        const duration =
+            Number.isFinite(Number(params.duration))
+                ? Number(params.duration)
+                : null;
 
-            // -----------------------------------------
-            // Recording successfully completed
-            // -----------------------------------------
+        console.log(
+            "📞 Voicemail callback candidate call IDs:",
+            callIds
+        );
 
-            if (
-                state === "finished" ||
-                state === "no_input"
-            ) {
+        console.log(
+            "📞 Voicemail callback state:",
+            state,
+            "URL:",
+            recordingUrl,
+            "Recording ID:",
+            recordingId,
+            "Duration:",
+            duration
+        );
 
-                const updateData = {
-
-                    status:
-                        state === "no_input"
-                            ? "no_input"
-                            : "completed",
-
-                    recording_id:
-                        recordingId,
-
-                    recording_url:
-                        recordingUrl,
-
-                    duration_seconds:
-                        duration !== null
-                            ? Math.floor(
-                                Number(duration)
-                            )
-                            : null,
-
-                    updated_at:
-                        new Date().toISOString()
-
-                };
-
-                const updateResponse =
-                    await fetch(
-                        `${SUPABASE_URL}/rest/v1/voicemails` +
-                        `?provider_call_id=eq.${encodeURIComponent(callId)}`,
-
-                        {
-                            method: "PATCH",
-
-                            headers: {
-
-                                Authorization:
-                                    `Bearer ${SUPABASE_SECRET_KEY}`,
-
-                                apikey:
-                                    SUPABASE_SECRET_KEY,
-
-                                "Content-Type":
-                                    "application/json",
-
-                                Prefer:
-                                    "return=representation"
-                            },
-
-                            body:
-                                JSON.stringify(
-                                    updateData
-                                )
-                        }
-                    );
-
-                const updateResult =
-                    await updateResponse.json();
-
-                if (!updateResponse.ok) {
-
-                    console.error(
-                        "âŒ Failed to save voicemail recording:",
-                        updateResult
-                    );
-
-                } else {
-
-                    console.log(
-                        "âœ… Voicemail recording saved:",
-                        updateResult
-                    );
-
-                }
-
-            }
-
-            // -----------------------------------------
-            // Recording error
-            // -----------------------------------------
-
-            if (state === "error") {
-
-                const updateResponse =
-                    await fetch(
-                        `${SUPABASE_URL}/rest/v1/voicemails` +
-                        `?provider_call_id=eq.${encodeURIComponent(callId)}`,
-
-                        {
-                            method: "PATCH",
-
-                            headers: {
-
-                                Authorization:
-                                    `Bearer ${SUPABASE_SECRET_KEY}`,
-
-                                apikey:
-                                    SUPABASE_SECRET_KEY,
-
-                                "Content-Type":
-                                    "application/json"
-                            },
-
-                            body:
-                                JSON.stringify({
-                                    status:
-                                        "failed",
-
-                                    updated_at:
-                                        new Date().toISOString()
-                                })
-                        }
-                    );
-
-                if (!updateResponse.ok) {
-
-                    console.error(
-                        "âŒ Failed to mark voicemail as failed."
-                    );
-
-                }
-
-            }
-
-            return res.sendStatus(204);
-
-        } catch (error) {
-
+        if (!callIds.length) {
             console.error(
-                "âŒ Voicemail recording callback error:",
-                error
+                "❌ Voicemail callback did not contain a usable call ID."
             );
 
-            // SignalWire callbacks should not be
-            // repeatedly retried because our internal
-            // processing failed.
-
-            return res.sendStatus(204);
+            return res.sendStatus(200);
         }
 
+        if (
+            state !== "finished" &&
+            state !== "no_input" &&
+            state !== "error"
+        ) {
+            console.log(
+                "ℹ️ Voicemail callback is non-terminal:",
+                state
+            );
+
+            return res.sendStatus(200);
+        }
+
+        let matched = false;
+
+        for (const callId of callIds) {
+            const encodedCallId = encodeURIComponent(callId);
+
+            const lookupResponse = await fetch(
+                `${SUPABASE_URL}/rest/v1/voicemails?provider_call_id=eq.${encodedCallId}&select=id,status,provider_call_id`,
+                {
+                    headers: {
+                        apikey: SUPABASE_SERVICE_ROLE_KEY,
+                        Authorization:
+                            `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
+                    }
+                }
+            );
+
+            const lookupData = await lookupResponse.json();
+
+            if (!lookupResponse.ok) {
+                console.error(
+                    "❌ Voicemail lookup failed:",
+                    lookupResponse.status,
+                    lookupData
+                );
+
+                continue;
+            }
+
+            if (!Array.isArray(lookupData) || lookupData.length === 0) {
+                console.warn(
+                    "⚠️ No voicemail matched callback call ID:",
+                    callId
+                );
+
+                continue;
+            }
+
+            const status =
+                state === "error"
+                    ? "failed"
+                    : (
+                        state === "no_input" ||
+                        (!recordingUrl && directResult)
+                            ? "no_input"
+                            : "completed"
+                    );
+
+            const updateBody = {
+                status,
+                recording_id: recordingId,
+                recording_url: recordingUrl,
+                duration_seconds: duration,
+                updated_at: new Date().toISOString()
+            };
+
+            const updateResponse = await fetch(
+                `${SUPABASE_URL}/rest/v1/voicemails?provider_call_id=eq.${encodedCallId}`,
+                {
+                    method: "PATCH",
+
+                    headers: {
+                        apikey: SUPABASE_SERVICE_ROLE_KEY,
+                        Authorization:
+                            `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                        "Content-Type": "application/json",
+                        Prefer: "return=representation"
+                    },
+
+                    body: JSON.stringify(updateBody)
+                }
+            );
+
+            const updateData = await updateResponse.json();
+
+            if (!updateResponse.ok) {
+                console.error(
+                    "❌ Voicemail update failed:",
+                    updateResponse.status,
+                    updateData
+                );
+
+                continue;
+            }
+
+            if (!Array.isArray(updateData) || updateData.length === 0) {
+                console.error(
+                    "❌ Voicemail PATCH succeeded but updated zero rows for call ID:",
+                    callId
+                );
+
+                continue;
+            }
+
+            matched = true;
+
+            console.log(
+                "✅ Voicemail updated successfully:",
+                JSON.stringify(updateData, null, 2)
+            );
+
+            break;
+        }
+
+        if (!matched) {
+            console.error(
+                "❌ No voicemail row could be matched to callback."
+            );
+        }
+
+        return res.sendStatus(200);
+    } catch (error) {
+        console.error(
+            "❌ Voicemail recording callback error:",
+            error
+        );
+
+        return res.sendStatus(200);
     }
-);
+});
 // =========================================================
 // UPDATE OUTBOUND CALL USAGE LIFECYCLE
 // =========================================================
@@ -10163,7 +10152,37 @@ app.post(
                         "https://dialeaze.onrender.com/api/signalwire/voicemail-recording-callback"
                 }
             },
+{
+    request: {
+        url:
+            "https://dialeaze.onrender.com/api/signalwire/voicemail-recording-callback",
 
+        method:
+            "POST",
+
+        headers: {
+            "Content-Type":
+                "application/json"
+        },
+
+        body: {
+            source:
+                "swml_record_result",
+
+            call_id:
+                "%{call.call_id}",
+
+            recording_url:
+                "%{record_url}",
+
+            record_result:
+                "%{record_result}"
+        },
+
+        timeout:
+            5
+    }
+},
             {
                 play: {
                     url:
@@ -10627,24 +10646,6 @@ app.post("/api/signalwire/inbound-connect-status", (req, res) => {
     return res.sendStatus(200);
 });
 
-app.post("/api/signalwire/voicemail-recording-callback", (req, res) => {
-    console.log("ðŸŽ™ï¸ SIGNALWIRE VOICEMAIL RECORDING CALLBACK");
-
-    console.log(
-        "Voicemail recording payload:",
-        JSON.stringify(req.body, null, 2)
-    );
-
-    const params = req.body?.params || {};
-
-    console.log("ðŸ“¼ Voicemail recording state:", params.state);
-    console.log("ðŸ“¼ Voicemail recording ID:", params.recording_id);
-    console.log("ðŸ“¼ Voicemail recording URL:", params.url);
-    console.log("ðŸ“¼ Voicemail duration:", params.duration);
-    console.log("ðŸ“ž Voicemail call ID:", params.call_id);
-
-    return res.sendStatus(200);
-});
 
 // =========================================================
 // SIGNALWIRE INBOUND CALL STATE WEBHOOK
