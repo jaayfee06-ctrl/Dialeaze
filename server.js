@@ -8586,10 +8586,10 @@ app.post("/api/signalwire/voicemail-recording-callback", async (req, res) => {
                 `${SUPABASE_URL}/rest/v1/voicemails?provider_call_id=eq.${encodedCallId}&select=id,status,provider_call_id`,
                 {
                     headers: {
-                        apikey: SUPABASE_SERVICE_ROLE_KEY,
-                        Authorization:
-                            `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
-                    }
+    apikey: SUPABASE_SECRET_KEY,
+    Authorization:
+        `Bearer ${SUPABASE_SECRET_KEY}`
+}
                 }
             );
 
@@ -8638,12 +8638,12 @@ app.post("/api/signalwire/voicemail-recording-callback", async (req, res) => {
                     method: "PATCH",
 
                     headers: {
-                        apikey: SUPABASE_SERVICE_ROLE_KEY,
-                        Authorization:
-                            `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-                        "Content-Type": "application/json",
-                        Prefer: "return=representation"
-                    },
+    apikey: SUPABASE_SECRET_KEY,
+    Authorization:
+        `Bearer ${SUPABASE_SECRET_KEY}`,
+    "Content-Type": "application/json",
+    Prefer: "return=representation"
+},
 
                     body: JSON.stringify(updateBody)
                 }
