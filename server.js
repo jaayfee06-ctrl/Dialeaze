@@ -8722,9 +8722,15 @@ app.get("/api/call-recordings", async (req, res) => {
             });
         }
 
-        const response = await fetch(
+        const userId = auth.user.id;
+
+        // ---------------------------------------------------------
+        // LOAD RECORDINGS
+        // ---------------------------------------------------------
+
+        const recordingsResponse = await fetch(
             `${SUPABASE_URL}/rest/v1/call_recordings` +
-            `?user_id=eq.${encodeURIComponent(auth.user.id)}` +
+            `?user_id=eq.${encodeURIComponent(userId)}` +
             `&order=created_at.desc`,
             {
                 method: "GET",
@@ -8739,29 +8745,150 @@ app.get("/api/call-recordings", async (req, res) => {
             }
         );
 
-        const data = await response.json();
+        const recordingsData =
+            await recordingsResponse.json();
 
-        if (!response.ok) {
+        if (!recordingsResponse.ok) {
             console.error(
                 "❌ Call recordings fetch error:",
-                data
+                recordingsData
             );
 
-            return res.status(response.status).json({
+            return res.status(recordingsResponse.status).json({
                 success: false,
                 error:
-                    data?.message ||
-                    data?.error ||
+                    recordingsData?.message ||
+                    recordingsData?.error ||
                     "Unable to load call recordings."
             });
         }
 
+        const recordings =
+            Array.isArray(recordingsData)
+                ? recordingsData
+                : [];
+
+        // ---------------------------------------------------------
+        // LOAD CALL USAGE NUMBERS
+        //
+        // Each recording has usage_id.
+        // customer_call_usage contains:
+        //   caller_number
+        //   dialed_number
+        // ---------------------------------------------------------
+
+        const usageIds = [
+            ...new Set(
+                recordings
+                    .map(recording =>
+                        recording?.usage_id
+                    )
+                    .filter(Boolean)
+            )
+        ];
+
+        let usageRows = [];
+
+        if (usageIds.length) {
+
+            const usageFilter =
+                usageIds
+                    .map(id =>
+                        `"${String(id).replace(/"/g, '\\"')}"`
+                    )
+                    .join(",");
+
+            const usageResponse =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/customer_call_usage` +
+                    `?id=in.(${encodeURIComponent(
+                        usageFilter
+                    )})` +
+                    `&user_id=eq.${encodeURIComponent(
+                        userId
+                    )}` +
+                    `&select=id,caller_number,dialed_number`,
+                    {
+                        method: "GET",
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+
+                            Accept:
+                                "application/json"
+                        }
+                    }
+                );
+
+            const usageData =
+                await usageResponse.json();
+
+            if (!usageResponse.ok) {
+
+                console.error(
+                    "❌ Call usage lookup for recordings failed:",
+                    usageData
+                );
+
+            } else if (
+                Array.isArray(usageData)
+            ) {
+
+                usageRows = usageData;
+
+            }
+        }
+
+        // ---------------------------------------------------------
+        // CREATE QUICK LOOKUP MAP
+        // ---------------------------------------------------------
+
+        const usageMap =
+            new Map(
+                usageRows.map(usage => [
+                    String(usage.id),
+                    usage
+                ])
+            );
+
+        // ---------------------------------------------------------
+        // ATTACH CALLER / DIALED NUMBERS TO RECORDINGS
+        // ---------------------------------------------------------
+
+        const enrichedRecordings =
+            recordings.map(recording => {
+
+                const usage =
+                    usageMap.get(
+                        String(recording.usage_id)
+                    );
+
+                return {
+                    ...recording,
+
+                    caller_number:
+                        usage?.caller_number ||
+                        recording.caller_number ||
+                        null,
+
+                    dialed_number:
+                        usage?.dialed_number ||
+                        recording.dialed_number ||
+                        null
+                };
+            });
+
         return res.json({
             success: true,
-            recordings: data || []
+            recordings:
+                enrichedRecordings
         });
 
     } catch (error) {
+
         console.error(
             "❌ Call recordings GET error:",
             error
@@ -8769,7 +8896,8 @@ app.get("/api/call-recordings", async (req, res) => {
 
         return res.status(500).json({
             success: false,
-            error: "Unable to load call recordings."
+            error:
+                "Unable to load call recordings."
         });
     }
 });
