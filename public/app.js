@@ -2180,12 +2180,17 @@ attachHoldControl(
     currentCall
 );
 
-        const callerName =
-            ringingCall.fromName &&
-            ringingCall.fromName !== "_undef_"
-                ? ringingCall.fromName
-                : ringingCall.from || "Unknown";
+       const rawCaller =
+    ringingCall.from ||
+    "Unknown";
 
+const callerName =
+    ringingCall.fromName &&
+    ringingCall.fromName !== "_undef_"
+        ? ringingCall.fromName
+        : rawCaller
+            .replace(/^sip:/i, "")
+            .replace(/@sip\.signalwire\.com$/i, "");
         console.log("📞 Caller:", callerName);
 
         // Show your existing incoming-call panel
