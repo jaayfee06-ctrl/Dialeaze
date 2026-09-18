@@ -8807,7 +8807,7 @@ app.get("/api/call-recordings", async (req, res) => {
                     `&user_id=eq.${encodeURIComponent(
                         userId
                     )}` +
-                   `&select=id,caller_number,dialed_number`,
+                   `&select=id,caller_number,destination_number`,
                     {
                         method: "GET",
                         headers: {
@@ -8875,7 +8875,7 @@ app.get("/api/call-recordings", async (req, res) => {
     null,
 
 dialed_number:
-    usage?.dialed_number ||
+    usage?.destination_number ||
     recording.dialed_number ||
     null
                 };
