@@ -10245,11 +10245,13 @@ app.post(
 
 
         const normalDialeazeConnect = (
-            result
-        ) => ({
-            connect: {
-                to:
-                    "/private/junaid-sabir",
+    result,
+    privateAddress
+) => ({
+    connect: {
+        to:
+            privateAddress ||
+            "/private/junaid-sabir",
 
                 timeout:
                     30,
@@ -10280,79 +10282,248 @@ app.post(
             /*
              * The number that received the inbound call.
              */
-            const inboundNumber =
-                String(
-                    req.body?.call?.to || ""
-                ).trim();
-
-
             /*
-             * The original client caller.
-             */
-            const callerNumber =
-                String(
-                    req.body?.call?.from || ""
-                ).trim();
+ * SignalWire sends inbound calls to the customer's
+ * private Subscriber address.
+ *
+ * Example:
+ *
+ * sip:junaid-sabir@SPACE.call.signalwire.com;context=private
+ *
+ * becomes:
+ *
+ * /private/junaid-sabir
+ */
+const rawInboundDestination =
+    String(
+        req.body?.call?.to ||
+        req.body?.call?.to_number ||
+        ""
+    )
+        .trim()
+        .replace(/^sip:/i, "");
 
 
-            let assignedUserId =
-                null;
-
-            let settings =
-                null;
+let inboundPrivateAddress =
+    null;
 
 
-            /*
-             * Find the Dialeaze customer who owns
-             * the number that received this call.
-             */
-            if (
-                inboundNumber &&
-                SUPABASE_URL &&
-                SUPABASE_SECRET_KEY
-            ) {
+if (rawInboundDestination) {
 
-                const numberResponse =
-                    await fetch(
-                        `${SUPABASE_URL}/rest/v1/phone_numbers` +
-                        `?phone_number=eq.${encodeURIComponent(inboundNumber)}` +
-                        `&status=eq.assigned` +
-                        `&select=user_id` +
-                        `&limit=1`,
-                        {
-                            method: "GET",
+    const destinationMatch =
+        rawInboundDestination.match(
+            /^([^@]+)@[^;]+;context=([^;]+)$/i
+        );
 
-                            headers: {
-                                Authorization:
-                                    `Bearer ${SUPABASE_SECRET_KEY}`,
+    if (destinationMatch) {
 
-                                apikey:
-                                    SUPABASE_SECRET_KEY,
+        inboundPrivateAddress =
+            `/${destinationMatch[2]}/${destinationMatch[1]}`;
 
-                                Accept:
-                                    "application/json"
-                            }
-                        }
-                    );
+    }
+
+}
 
 
-                const numberData =
-                    await numberResponse.json();
+/*
+ * Actual phone number, when SignalWire
+ * provides it directly.
+ */
+const inboundNumber =
+    String(
+        req.body?.call?.to_number ||
+        req.body?.call?.to ||
+        ""
+    ).trim();
 
 
-                if (
-                    numberResponse.ok &&
-                    Array.isArray(numberData) &&
-                    numberData.length
-                ) {
+/*
+ * Original caller.
+ */
+const callerNumber =
+    String(
+        req.body?.call?.from ||
+        req.body?.call?.from_number ||
+        ""
+    ).trim();
 
-                    assignedUserId =
-                        numberData[0].user_id ||
-                        null;
+
+let assignedUserId =
+    null;
+
+
+let settings =
+    null;
+
+
+/*
+ * =========================================================
+ * PRIMARY USER LOOKUP
+ * =========================================================
+ *
+ * Find the Dialeaze customer using the SignalWire
+ * private Subscriber address.
+ */
+if (
+    inboundPrivateAddress &&
+    SUPABASE_URL &&
+    SUPABASE_SECRET_KEY
+) {
+
+    const profileResponse =
+        await fetch(
+            `${SUPABASE_URL}/rest/v1/profiles` +
+            `?signalwire_private_address=eq.${encodeURIComponent(inboundPrivateAddress)}` +
+            `&signalwire_provisioned=eq.true` +
+            `&select=id,signalwire_private_address` +
+            `&limit=1`,
+            {
+                method: "GET",
+
+                headers: {
+                    Authorization:
+                        `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                    apikey:
+                        SUPABASE_SECRET_KEY,
+
+                    Accept:
+                        "application/json"
                 }
             }
+        );
 
 
+    const profileData =
+        await profileResponse.json();
+
+
+    if (
+        profileResponse.ok &&
+        Array.isArray(profileData) &&
+        profileData.length
+    ) {
+
+        assignedUserId =
+            profileData[0].id ||
+            null;
+
+        inboundPrivateAddress =
+            profileData[0].signalwire_private_address ||
+            inboundPrivateAddress;
+
+    }
+
+}
+
+
+/*
+ * =========================================================
+ * FALLBACK USER LOOKUP
+ * =========================================================
+ *
+ * If SignalWire supplied a real E.164 number,
+ * resolve the owner from phone_numbers.
+ */
+if (
+    !assignedUserId &&
+    /^\+[1-9]\d{7,14}$/.test(inboundNumber) &&
+    SUPABASE_URL &&
+    SUPABASE_SECRET_KEY
+) {
+
+    const numberResponse =
+        await fetch(
+            `${SUPABASE_URL}/rest/v1/phone_numbers` +
+            `?phone_number=eq.${encodeURIComponent(inboundNumber)}` +
+            `&status=eq.assigned` +
+            `&select=user_id` +
+            `&limit=1`,
+            {
+                method: "GET",
+
+                headers: {
+                    Authorization:
+                        `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                    apikey:
+                        SUPABASE_SECRET_KEY,
+
+                    Accept:
+                        "application/json"
+                }
+            }
+        );
+
+
+    const numberData =
+        await numberResponse.json();
+
+
+    if (
+        numberResponse.ok &&
+        Array.isArray(numberData) &&
+        numberData.length
+    ) {
+
+        assignedUserId =
+            numberData[0].user_id ||
+            null;
+
+    }
+
+}
+
+
+/*
+ * If the phone-number fallback found the user,
+ * resolve that user's private Subscriber address.
+ */
+if (
+    assignedUserId &&
+    !inboundPrivateAddress
+) {
+
+    const profileResponse =
+        await fetch(
+            `${SUPABASE_URL}/rest/v1/profiles` +
+            `?id=eq.${encodeURIComponent(assignedUserId)}` +
+            `&select=signalwire_private_address` +
+            `&limit=1`,
+            {
+                method: "GET",
+
+                headers: {
+                    Authorization:
+                        `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                    apikey:
+                        SUPABASE_SECRET_KEY,
+
+                    Accept:
+                        "application/json"
+                }
+            }
+        );
+
+
+    const profileData =
+        await profileResponse.json();
+
+
+    if (
+        profileResponse.ok &&
+        Array.isArray(profileData) &&
+        profileData.length
+    ) {
+
+        inboundPrivateAddress =
+            profileData[0].signalwire_private_address ||
+            null;
+
+    }
+
+}
             /*
              * Load the Call Forwarding settings
              * belonging to this Dialeaze customer.
@@ -10575,9 +10746,10 @@ app.post(
 
                     main: [
 
-                        normalDialeazeConnect(
-                            result
-                        )
+                       normalDialeazeConnect(
+    result,
+    inboundPrivateAddress
+)
 
                     ]
                 }
@@ -10607,7 +10779,8 @@ app.post(
 
                     main: [
 
-                        normalDialeazeConnect([
+                        normalDialeazeConnect(
+    [
 
                             {
                                 when:
@@ -10627,7 +10800,10 @@ app.post(
                                 ]
                             }
 
-                        ])
+                                ],
+        inboundPrivateAddress
+    )
+
 
                     ]
                 }
