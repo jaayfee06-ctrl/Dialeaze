@@ -2158,9 +2158,6 @@ class DialeazeCredentialProvider {
         };
     }
 
-    refresh() {
-        return this.authenticate();
-    }
 }
 
 async function initializeSignalWire() {
@@ -2187,7 +2184,8 @@ async function initializeSignalWire() {
             client = new SignalWire(
     new DialeazeCredentialProvider(),
     {
-        skipRegister: true
+        skipRegister: true,
+        persistSession: true
     }
 );
 

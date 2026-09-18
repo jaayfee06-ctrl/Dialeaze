@@ -2406,12 +2406,51 @@ if (
             expectedSubscriberId
         );
 
+                const tokenParts =
+            String(tokenData.token || "")
+                .split(".");
+
+        let tokenExpiresAt =
+            Date.now() +
+            (2 * 60 * 60 * 1000);
+
+        if (tokenParts.length === 3) {
+            try {
+                const payload =
+                    JSON.parse(
+                        Buffer.from(
+                            tokenParts[1],
+                            "base64url"
+                        ).toString("utf8")
+                    );
+
+                if (
+                    Number.isFinite(
+                        Number(payload.exp)
+                    )
+                ) {
+                    tokenExpiresAt =
+                        Number(payload.exp) * 1000;
+                }
+            } catch (decodeError) {
+                console.warn(
+                    "Could not decode SignalWire SAT expiry; using default expiry.",
+                    decodeError
+                );
+            }
+        }
+
+        console.log(
+            "SignalWire SAT expiry:",
+            new Date(tokenExpiresAt).toISOString()
+        );
+
         return res.json({
             success: true,
-            token: tokenData.token,
+            token:
+                tokenData.token,
             expiresAt:
-                Date.now() +
-                (2 * 60 * 60 * 1000),
+                tokenExpiresAt,
             subscriberId:
                 tokenData.subscriber_id
         });
