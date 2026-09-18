@@ -1,6 +1,5 @@
 import {
-    SignalWire,
-    StaticCredentialProvider
+    SignalWire
 } from "https://esm.sh/@signalwire/js@4.0.0-rc.2";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -2095,6 +2094,75 @@ function stopCallTimer() {
 
 }
 
+// =========================================================
+// SIGNALWIRE CREDENTIAL PROVIDER
+// Client-bound SAT + automatic refresh.
+// =========================================================
+
+class DialeazeCredentialProvider {
+
+    async authenticate(context = {}) {
+
+        const response =
+            await authFetch(
+                "/api/signalwire-token",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+                    body: JSON.stringify({
+                        fingerprint:
+                            context?.fingerprint ||
+                            null
+                    })
+                }
+            );
+
+        const data =
+            await response.json();
+
+        console.log(
+            "SIGNALWIRE CREDENTIAL:",
+            {
+                success:
+                    data.success,
+                subscriberId:
+                    data.subscriberId,
+                expiresAt:
+                    data.expiresAt,
+                fingerprintSent:
+                    Boolean(
+                        context?.fingerprint
+                    )
+            }
+        );
+
+        if (
+            !response.ok ||
+            !data.success ||
+            !data.token
+        ) {
+            throw new Error(
+                data.error ||
+                "Unable to get SignalWire token."
+            );
+        }
+
+        return {
+            token:
+                data.token,
+            expiry_at:
+                data.expiresAt
+        };
+    }
+
+    refresh() {
+        return this.authenticate();
+    }
+}
+
 async function initializeSignalWire() {
     if (signalWireInitializationPromise) {
         return signalWireInitializationPromise;
@@ -2113,38 +2181,15 @@ async function initializeSignalWire() {
 
             status.textContent = "Connecting...";
 
-            const response = await authFetch("/api/signalwire-token", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({})
-            });
-
-            const data = await response.json();
-
-            console.log("SIGNALWIRE TOKEN RESPONSE:", {
-                success: data.success,
-                subscriberId: data.subscriberId,
-                expiresAt: data.expiresAt
-            });
-
-            if (!response.ok || !data.success || !data.token) {
-                throw new Error(
-                    data.error || "Unable to get SignalWire token."
-                );
-            }
-
-            console.log("Creating SignalWire client...");
-
+           console.log(
+    "Creating SignalWire client with refreshable credentials..."
+);
             client = new SignalWire(
-                new StaticCredentialProvider({
-                    token: data.token
-                }),
-                {
-                    skipRegister: true
-                }
-            );
+    new DialeazeCredentialProvider(),
+    {
+        skipRegister: true
+    }
+);
 
             console.log("SignalWire client created.");
 
