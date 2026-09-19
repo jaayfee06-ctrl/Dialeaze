@@ -717,55 +717,138 @@ function startIncomingRingtone() {
                 new AudioContextClass();
         }
 
-        const playTone = () => {
+       const playTone = () => {
 
-            if (
-                !incomingRingtoneContext ||
-                !incomingRingtoneActive
-            ) {
-                return;
-            }
+    if (
+        !incomingRingtoneContext ||
+        !incomingRingtoneActive
+    ) {
+        return;
+    }
 
-            const context =
-                incomingRingtoneContext;
+    const context =
+        incomingRingtoneContext;
+
+    const now =
+        context.currentTime;
+
+    const frequencies = [
+        440,
+        480
+    ];
+
+    frequencies.forEach((frequency) => {
+
+        const oscillator =
+            context.createOscillator();
+
+        const gain =
+            context.createGain();
+
+        oscillator.type = "sine";
+
+        oscillator.frequency.setValueAtTime(
+            frequency,
+            now
+        );
+
+        gain.gain.setValueAtTime(
+            0.0001,
+            now
+        );
+
+        gain.gain.exponentialRampToValueAtTime(
+            0.16,
+            now + 0.04
+        );
+
+        gain.gain.setValueAtTime(
+            0.16,
+            now + 0.35
+        );
+
+        gain.gain.exponentialRampToValueAtTime(
+            0.0001,
+            now + 0.45
+        );
+
+        oscillator.connect(gain);
+        gain.connect(
+            context.destination
+        );
+
+        oscillator.start(now);
+
+        oscillator.stop(
+            now + 0.5
+        );
+    });
+
+    setTimeout(() => {
+
+        if (
+            !incomingRingtoneActive ||
+            !incomingRingtoneContext
+        ) {
+            return;
+        }
+
+        const secondNow =
+            incomingRingtoneContext.currentTime;
+
+        [440, 480].forEach((frequency) => {
 
             const oscillator =
-                context.createOscillator();
+                incomingRingtoneContext
+                    .createOscillator();
 
             const gain =
-                context.createGain();
+                incomingRingtoneContext
+                    .createGain();
 
             oscillator.type = "sine";
 
             oscillator.frequency.setValueAtTime(
-                880,
-                context.currentTime
+                frequency,
+                secondNow
             );
 
             gain.gain.setValueAtTime(
                 0.0001,
-                context.currentTime
+                secondNow
             );
 
             gain.gain.exponentialRampToValueAtTime(
-                0.18,
-                context.currentTime + 0.03
+                0.16,
+                secondNow + 0.04
+            );
+
+            gain.gain.setValueAtTime(
+                0.16,
+                secondNow + 0.35
             );
 
             gain.gain.exponentialRampToValueAtTime(
                 0.0001,
-                context.currentTime + 0.45
+                secondNow + 0.45
             );
 
             oscillator.connect(gain);
-            gain.connect(context.destination);
 
-            oscillator.start();
+            gain.connect(
+                incomingRingtoneContext.destination
+            );
+
+            oscillator.start(secondNow);
 
             oscillator.stop(
-                context.currentTime + 0.5
+                secondNow + 0.5
             );
-        };
+
+        });
+
+    }, 650);
+};
 
         if (
             incomingRingtoneContext.state ===
@@ -799,18 +882,18 @@ function startIncomingRingtone() {
         }
 
         incomingRingtoneTimer =
-            setInterval(
-                () => {
+    setInterval(
+        () => {
 
-                    if (
-                        incomingRingtoneActive
-                    ) {
-                        playTone();
-                    }
+            if (
+                incomingRingtoneActive
+            ) {
+                playTone();
+            }
 
-                },
-                1200
-            );
+        },
+        2800
+    );
 
     } catch (error) {
 
