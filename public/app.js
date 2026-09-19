@@ -7304,56 +7304,6 @@ async function initializeApp() {
 // DIALEAZE TAB VISIBILITY RECOVERY
 // =========================================================
 
-document.addEventListener(
-    "visibilitychange",
-    async () => {
-
-        if (!document.hidden) {
-
-            console.log(
-                "👁️ Dialeaze tab became visible."
-            );
-
-            try {
-
-                if (
-                    client &&
-                    client.isConnected$ &&
-                    typeof client.connect ===
-                        "function"
-                ) {
-
-                    await client.connect();
-
-                }
-
-                if (
-                    client &&
-                    typeof client.register ===
-                        "function"
-                ) {
-
-                    await client.register();
-
-                }
-
-                console.log(
-                    "✅ Dialeaze SignalWire session verified after tab return."
-                );
-
-            } catch (error) {
-
-                console.warn(
-                    "⚠️ SignalWire visibility recovery:",
-                    error
-                );
-
-            }
-
-        }
-
-    }
-);
 
 if (window.opener) {
     window.opener.postMessage(
