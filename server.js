@@ -8449,7 +8449,68 @@ app.get(
                     ? recordingData
                     : [];
 
+// ---------------------------------------------------------
+// LOAD CALL USAGE FOR DURATION FALLBACK
+// ---------------------------------------------------------
 
+const usageIds = [
+    ...new Set(
+        transcriptionData
+            .map(row => row?.usage_id)
+            .filter(Boolean)
+    )
+];
+
+let usageRows = [];
+
+if (usageIds.length) {
+
+    const usageFilter =
+        usageIds
+            .map(id =>
+                `"${String(id).replace(/"/g, '\\"')}"`
+            )
+            .join(",");
+
+    const usageResponse =
+        await fetch(
+            `${SUPABASE_URL}/rest/v1/customer_call_usage` +
+            `?id=in.(${encodeURIComponent(usageFilter)})` +
+            `&user_id=eq.${encodeURIComponent(userId)}` +
+            `&select=id,duration_seconds,answered_at,ended_at`,
+            {
+                method: "GET",
+
+                headers: {
+                    Authorization:
+                        `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                    apikey:
+                        SUPABASE_SECRET_KEY,
+
+                    Accept:
+                        "application/json"
+                }
+            }
+        );
+
+    const usageData =
+        await usageResponse.json();
+
+    if (usageResponse.ok &&
+        Array.isArray(usageData)
+    ) {
+        usageRows = usageData;
+    }
+}
+
+const usageMap =
+    new Map(
+        usageRows.map(usage => [
+            String(usage.id),
+            usage
+        ])
+    );
             // ---------------------------------------------------------
             // CONVERT RECORDINGS INTO QUICK LOOKUP MAP
             // ---------------------------------------------------------
@@ -8502,7 +8563,20 @@ app.get(
             String(row.usage_id)
         )?.duration_seconds
     );
-
+console.log(
+    "🕐 AI CALL DURATION DEBUG:",
+    {
+        usageId: row.usage_id,
+        recordingDuration:
+            recording?.duration_seconds,
+        usageDuration:
+            usageMap.get(
+                String(row.usage_id)
+            )?.duration_seconds,
+        finalDurationSeconds:
+            durationSeconds
+    }
+);
 
                         const durationMinutes =
                             Number.isFinite(
