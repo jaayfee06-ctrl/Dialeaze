@@ -10682,28 +10682,41 @@ if (
              * 2. Destination is a valid E.164 number
              */
             const canForward =
-                enabled &&
-                /^\+[1-9]\d{7,14}$/.test(
-                    forwardTo
-                );
+    enabled &&
+    /^\+[1-9]\d{7,14}$/.test(
+        forwardTo
+    );
 
+console.log(
+    "📞 INBOUND FORWARDING:",
+    {
+        inboundNumber,
+        callerNumber,
+        assignedUserId,
+        enabled,
+        mode,
+        forwardTo:
+            canForward
+                ? forwardTo
+                : null,
+        timeoutSeconds
+    }
+);
 
-            console.log(
-                "📞 INBOUND FORWARDING:",
-                {
-                    inboundNumber,
-                    callerNumber,
-                    assignedUserId,
-                    enabled,
-                    mode,
-                    forwardTo:
-                        canForward
-                            ? forwardTo
-                            : null,
-                    timeoutSeconds
-                }
-            );
-
+console.log(
+    "🚨🚨🚨 FORWARDING DECISION CHECK 🚨🚨🚨",
+    {
+        inboundNumber,
+        callerNumber,
+        assignedUserId,
+        settings,
+        enabled,
+        mode,
+        forwardTo,
+        timeoutSeconds,
+        canForward
+    }
+);
 
             /*
              * =====================================================
