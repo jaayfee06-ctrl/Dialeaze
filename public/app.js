@@ -2158,6 +2158,15 @@ class DialeazeCredentialProvider {
         };
     }
 
+    async refresh(context = {}) {
+
+        console.log(
+            "🔄 SIGNALWIRE CREDENTIAL REFRESH STARTED"
+        );
+
+        return this.authenticate(context);
+    }
+
 }
 
 async function initializeSignalWire() {
