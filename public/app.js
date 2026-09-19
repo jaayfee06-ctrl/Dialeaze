@@ -683,6 +683,159 @@ let client = null;
 let signalWireInitializationPromise = null;
 
 let currentCall = null;
+// =========================================================
+// DIALEAZE INCOMING CALL RINGTONE
+// =========================================================
+
+let incomingRingtoneContext = null;
+let incomingRingtoneTimer = null;
+let incomingRingtoneActive = false;
+
+function startIncomingRingtone() {
+
+    if (incomingRingtoneActive) {
+        return;
+    }
+
+    incomingRingtoneActive = true;
+
+    try {
+
+        const AudioContextClass =
+            window.AudioContext ||
+            window.webkitAudioContext;
+
+        if (!AudioContextClass) {
+            console.warn(
+                "Web Audio API is not available."
+            );
+            return;
+        }
+
+        if (!incomingRingtoneContext) {
+            incomingRingtoneContext =
+                new AudioContextClass();
+        }
+
+        const playTone = () => {
+
+            if (
+                !incomingRingtoneContext ||
+                !incomingRingtoneActive
+            ) {
+                return;
+            }
+
+            const context =
+                incomingRingtoneContext;
+
+            const oscillator =
+                context.createOscillator();
+
+            const gain =
+                context.createGain();
+
+            oscillator.type = "sine";
+
+            oscillator.frequency.setValueAtTime(
+                880,
+                context.currentTime
+            );
+
+            gain.gain.setValueAtTime(
+                0.0001,
+                context.currentTime
+            );
+
+            gain.gain.exponentialRampToValueAtTime(
+                0.18,
+                context.currentTime + 0.03
+            );
+
+            gain.gain.exponentialRampToValueAtTime(
+                0.0001,
+                context.currentTime + 0.45
+            );
+
+            oscillator.connect(gain);
+            gain.connect(context.destination);
+
+            oscillator.start();
+
+            oscillator.stop(
+                context.currentTime + 0.5
+            );
+        };
+
+        if (
+            incomingRingtoneContext.state ===
+            "suspended"
+        ) {
+
+            incomingRingtoneContext
+                .resume()
+                .then(() => {
+
+                    if (
+                        incomingRingtoneActive
+                    ) {
+                        playTone();
+                    }
+
+                })
+                .catch((error) => {
+
+                    console.warn(
+                        "Incoming ringtone audio could not resume:",
+                        error
+                    );
+
+                });
+
+        } else {
+
+            playTone();
+
+        }
+
+        incomingRingtoneTimer =
+            setInterval(
+                () => {
+
+                    if (
+                        incomingRingtoneActive
+                    ) {
+                        playTone();
+                    }
+
+                },
+                1200
+            );
+
+    } catch (error) {
+
+        console.warn(
+            "Could not start incoming ringtone:",
+            error
+        );
+
+    }
+}
+
+function stopIncomingRingtone() {
+
+    incomingRingtoneActive = false;
+
+    if (incomingRingtoneTimer) {
+
+        clearInterval(
+            incomingRingtoneTimer
+        );
+
+        incomingRingtoneTimer = null;
+
+    }
+}
 
 let currentMuteSelf = null;
 let currentMuteState = false;
@@ -2333,17 +2486,20 @@ if (client.session && client.session.incomingCalls$) {
         }
 
         console.log("📲 INCOMING SIGNALWIRE CALL:", ringingCall);
-
+startIncomingRingtone();
 
 // =========================================================
 // BACKGROUND BROWSER NOTIFICATION
 // =========================================================
 
 const notificationCaller =
-    ringingCall.fromName &&
-    ringingCall.fromName !== "_undef_"
-        ? ringingCall.fromName
-        : ringingCall.from || "Unknown Number";
+    String(
+        ringingCall.from ||
+        "Unknown Number"
+    )
+        .replace(/^sip:/i, "")
+        .replace(/^tel:/i, "")
+        .split("@")[0];
 
 if (
     document.hidden &&
@@ -2429,11 +2585,18 @@ if (incomingCallerText) {
 
         // Listen for incoming call state changes
         ringingCall.status$.subscribe((callStatus) => {
+if (
+    callStatus !== "ringing"
+) {
 
+    stopIncomingRingtone();
+
+}
             console.log(
                 "📡 Incoming SignalWire call status:",
                 callStatus
             );
+            
 console.log("🧪 RAW OUTBOUND STATUS:", JSON.stringify(callStatus));
             if (callStatus === "connected") {
                 status.textContent = "Connected";
@@ -2444,6 +2607,7 @@ console.log("🧪 RAW OUTBOUND STATUS:", JSON.stringify(callStatus));
                 callStatus === "disconnected" ||
                 callStatus === "destroyed"
             ) {
+                stopIncomingRingtone();
                 console.log("📴 Incoming call ended.");
 
                 if (incomingCallPanel) {
