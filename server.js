@@ -1663,7 +1663,10 @@ function requirePlanFeature(feature) {
   return async (req, res, next) => {
     try {
       const auth = await authenticateRequest(req);
-      const subscription = await getUserSubscription(auth.user.id);
+
+req.dialeazeUser = auth.user;
+
+const subscription = await getUserSubscription(auth.user.id);
 
       if (!subscriptionAllowsService(subscription)) {
         return res.status(403).json({
