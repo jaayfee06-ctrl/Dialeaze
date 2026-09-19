@@ -10391,14 +10391,6 @@ const inboundNumber =
  * Original caller.
  */
 const callerNumber =
-console.log(
-    "🔎 INBOUND NUMBER RESOLUTION:",
-    {
-        rawInboundDestination,
-        inboundNumber,
-        callerNumber
-    }
-);
     String(
         req.body?.call?.from ||
         req.body?.call?.from_number ||
@@ -10409,6 +10401,14 @@ console.log(
         ""
     ).trim();
 
+console.log(
+    "🔎 INBOUND NUMBER RESOLUTION:",
+    {
+        rawInboundDestination,
+        inboundNumber,
+        callerNumber
+    }
+);
 
 let assignedUserId =
     null;
