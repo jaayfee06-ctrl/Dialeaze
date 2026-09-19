@@ -949,6 +949,16 @@ let customerAccount = null;
 
 let outboundHistorySaved = false;
 
+// =========================================================
+// INBOUND CALL HISTORY STATE
+// =========================================================
+
+let inboundHistorySaved = false;
+let inboundCallStartTime = null;
+let inboundAnsweredAt = null;
+let inboundCallRejected = false;
+let inboundHistoryCallerNumber = "";
+
 let callTimerInterval = null;
 
 let messagePollingInterval = null;
@@ -1822,7 +1832,18 @@ function renderRecentCalls() {
 
     recentCalls.forEach(
         call => {
+const callDirection =
+    String(
+        call.direction ||
+        "Outbound"
+    ).toLowerCase() === "inbound"
+        ? "Inbound"
+        : "Outbound";
 
+const callIcon =
+    callDirection === "Inbound"
+        ? "↙"
+        : "↗";
             const item =
                 document.createElement(
                     "div"
@@ -1838,8 +1859,8 @@ function renderRecentCalls() {
                 <div class="recent-left">
 
                     <div class="recent-icon">
-                        ↗
-                    </div>
+    ${callIcon}
+</div>
 
                     <div>
 
@@ -1852,8 +1873,8 @@ function renderRecentCalls() {
 </div>
 
                         <div class="recent-details">
-                            Outbound · ${call.status}
-                        </div>
+    ${callDirection} · ${call.status}
+</div>
 
                     </div>
 
@@ -1906,7 +1927,18 @@ function renderCallHistory() {
 
 
     callHistory.forEach(
-        call => {
+        call => { const callDirection =
+    String(
+        call.direction ||
+        "Outbound"
+    ).toLowerCase() === "inbound"
+        ? "Inbound"
+        : "Outbound";
+
+const callIcon =
+    callDirection === "Inbound"
+        ? "↙"
+        : "↗";
 
             const callItem =
                 document.createElement(
@@ -1923,8 +1955,8 @@ function renderCallHistory() {
                 <div class="call-history-left">
 
     <div class="call-icon">
-        ↗
-    </div>
+    ${callIcon}
+</div>
 
     <div>
 
@@ -1937,9 +1969,8 @@ function renderCallHistory() {
 </div>
 
         <div class="call-history-details">
-            Outbound · ${call.status}
-        </div>
-
+    ${callDirection} · ${call.status}
+</div>
         <div class="call-history-actions">
 
             <button
@@ -2568,8 +2599,37 @@ if (client.session && client.session.incomingCalls$) {
             return;
         }
 
-        console.log("📲 INCOMING SIGNALWIRE CALL:", ringingCall);
+       console.log("📲 INCOMING SIGNALWIRE CALL:", ringingCall);
 startIncomingRingtone();
+
+// =========================================================
+// START INBOUND CALL HISTORY TRACKING
+// =========================================================
+
+if (currentCall !== ringingCall) {
+
+    inboundHistorySaved = false;
+
+    inboundCallStartTime = Date.now();
+
+    inboundAnsweredAt = null;
+
+    inboundCallRejected = false;
+
+    inboundHistoryCallerNumber =
+        String(
+            ringingCall.from ||
+            "Unknown Number"
+        )
+            .replace(/^sip:/i, "")
+            .replace(/^tel:/i, "")
+            .split("@")[0];
+
+    console.log(
+        "📥 Inbound call history tracking started:",
+        inboundHistoryCallerNumber
+    );
+}
 
 // =========================================================
 // BACKGROUND BROWSER NOTIFICATION
@@ -2667,7 +2727,7 @@ if (incomingCallerText) {
         hangupButton.disabled = false;
 
         // Listen for incoming call state changes
-        ringingCall.status$.subscribe((callStatus) => {
+        ringingCall.status$.subscribe(async (callStatus) => {
 if (
     callStatus !== "ringing"
 ) {
@@ -2682,16 +2742,93 @@ if (
             
 console.log("🧪 RAW OUTBOUND STATUS:", JSON.stringify(callStatus));
             if (callStatus === "connected") {
-                status.textContent = "Connected";
-                startCallTimer();
-            }
+
+    status.textContent = "Connected";
+
+    if (!inboundAnsweredAt) {
+        inboundAnsweredAt = Date.now();
+    }
+
+    startCallTimer();
+}
 
             if (
                 callStatus === "disconnected" ||
                 callStatus === "destroyed"
             ) {
                 stopIncomingRingtone();
-                console.log("📴 Incoming call ended.");
+
+console.log("📴 Incoming call ended.");
+
+// =========================================================
+// SAVE INBOUND CALL HISTORY
+// =========================================================
+
+if (!inboundHistorySaved) {
+
+    inboundHistorySaved = true;
+
+    const inboundEndedAt =
+        Date.now();
+
+    const inboundDurationSeconds =
+        inboundAnsweredAt
+            ? Math.max(
+                  0,
+                  Math.floor(
+                      (
+                          inboundEndedAt -
+                          inboundAnsweredAt
+                      ) / 1000
+                  )
+              )
+            : 0;
+
+    const inboundStatus =
+        inboundAnsweredAt
+            ? "Completed"
+            : inboundCallRejected
+                ? "Declined"
+                : "Missed";
+
+    const savedInboundCall =
+        await saveCallHistoryToSupabase({
+
+            phoneNumber:
+                inboundHistoryCallerNumber,
+
+            callerNumber:
+                customerAccount?.phoneNumber ||
+                "",
+
+            direction:
+                "Inbound",
+
+            status:
+                inboundStatus,
+
+            startedAt:
+                inboundCallStartTime,
+
+            connectedAt:
+                inboundAnsweredAt,
+
+            endedAt:
+                inboundEndedAt,
+
+            duration:
+                inboundDurationSeconds
+        });
+
+    if (savedInboundCall) {
+
+        await loadLocalUserData();
+
+        console.log(
+            "✅ Inbound call added to call history."
+        );
+    }
+}
 
                 if (incomingCallPanel) {
                     incomingCallPanel.style.display = "none";
@@ -3643,7 +3780,7 @@ if (rejectCallButton) {
             console.log("🧪 REJECT BUTTON CLICKED");
 console.trace("🧪 Reject click stack");
             console.log("❌ Rejecting incoming SignalWire call...");
-
+inboundCallRejected = true;
             if (typeof currentCall.reject === "function") {
                 await currentCall.reject();
             } else if (typeof currentCall.hangup === "function") {
