@@ -8154,6 +8154,285 @@ console.log(
         }
     }
 );
+
+// =========================================================
+// AI TRANSCRIPTION CALLS
+// =========================================================
+
+app.get(
+    "/api/ai-transcription/calls",
+    requirePlanFeature("ai_transcription"),
+    async (req, res) => {
+
+        try {
+
+            const userId =
+                req.user?.id ||
+                req.auth?.user?.id ||
+                req.dialeazeUser?.id;
+
+            if (!userId) {
+
+                return res.status(401).json({
+                    error:
+                        "Authentication required."
+                });
+
+            }
+
+
+            // ---------------------------------------------------------
+            // LOAD COMPLETED TRANSCRIPTIONS
+            // ---------------------------------------------------------
+
+            const transcriptionResponse =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/call_transcriptions` +
+                    `?user_id=eq.${encodeURIComponent(userId)}` +
+                    `&status=eq.completed` +
+                    `&select=*` +
+                    `&order=created_at.desc`,
+                    {
+                        method: "GET",
+
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+
+                            Accept:
+                                "application/json"
+                        }
+                    }
+                );
+
+
+            const transcriptionData =
+                await transcriptionResponse.json();
+
+
+            if (!transcriptionResponse.ok) {
+
+                console.error(
+                    "❌ Failed to load AI transcriptions:",
+                    transcriptionData
+                );
+
+                return res.status(500).json({
+                    error:
+                        "Unable to load AI transcriptions."
+                });
+
+            }
+
+
+            if (
+                !Array.isArray(
+                    transcriptionData
+                )
+            ) {
+
+                return res.json({
+                    calls: []
+                });
+
+            }
+
+
+            // ---------------------------------------------------------
+            // LOAD RECORDINGS
+            //
+            // We use call_recordings to get:
+            // - recording URL
+            // - call duration
+            // ---------------------------------------------------------
+
+            const recordingResponse =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/call_recordings` +
+                    `?user_id=eq.${encodeURIComponent(userId)}` +
+                    `&select=usage_id,recording_url,duration_seconds`,
+                    {
+                        method: "GET",
+
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+
+                            Accept:
+                                "application/json"
+                        }
+                    }
+                );
+
+
+            const recordingData =
+                await recordingResponse.json();
+
+
+            const recordings =
+                Array.isArray(
+                    recordingData
+                )
+                    ? recordingData
+                    : [];
+
+
+            // ---------------------------------------------------------
+            // CONVERT RECORDINGS INTO QUICK LOOKUP MAP
+            // ---------------------------------------------------------
+
+            const recordingMap =
+                new Map();
+
+            for (
+                const recording
+                of recordings
+            ) {
+
+                if (
+                    recording?.usage_id
+                ) {
+
+                    recordingMap.set(
+                        String(
+                            recording.usage_id
+                        ),
+                        recording
+                    );
+
+                }
+
+            }
+
+
+            // ---------------------------------------------------------
+            // BUILD FRONTEND RESPONSE
+            // ---------------------------------------------------------
+
+            const calls =
+                transcriptionData.map(
+                    (row) => {
+
+                        const recording =
+                            recordingMap.get(
+                                String(
+                                    row.usage_id
+                                )
+                            ) ||
+                            null;
+
+
+                        const durationSeconds =
+                            Number(
+                                recording?.duration_seconds
+                            );
+
+
+                        const durationMinutes =
+                            Number.isFinite(
+                                durationSeconds
+                            )
+                                ? durationSeconds / 60
+                                : 0;
+
+
+                        return {
+
+                            id:
+                                row.id,
+
+                            callerName:
+                                row.caller_name ||
+                                row.caller_number ||
+                                "Unknown caller",
+
+                            callerNumber:
+                                row.caller_number ||
+                                "",
+
+                            phoneNumber:
+                                row.phone_number ||
+                                "",
+
+                            date:
+                                row.created_at,
+
+                            durationMinutes:
+                                durationMinutes,
+
+                            summary:
+                                row.summary ||
+                                "",
+
+                            transcript:
+                                row.transcript ||
+                                "",
+
+                            actionItems:
+                                Array.isArray(
+                                    row.action_items
+                                )
+                                    ? row.action_items
+                                    : [],
+
+                            sentiment:
+                                row.sentiment ||
+                                "",
+
+                            intent:
+                                row.intent ||
+                                "",
+
+                            outcome:
+                                row.outcome ||
+                                "",
+
+                            recordingUrl:
+                                recording?.recording_url ||
+                                null
+
+                        };
+
+                    }
+                );
+
+
+            console.log(
+                "✅ AI transcription calls loaded:",
+                {
+                    userId,
+                    count:
+                        calls.length
+                }
+            );
+
+
+            return res.json({
+                calls
+            });
+
+        } catch (error) {
+
+            console.error(
+                "❌ AI transcription calls error:",
+                error
+            );
+
+            return res.status(500).json({
+                error:
+                    "Unable to load AI transcription calls."
+            });
+
+        }
+
+    }
+);
 // =========================================================
 // SIGNALWIRE AI TRANSCRIPTION CALLBACK
 // =========================================================
