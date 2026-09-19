@@ -8155,6 +8155,394 @@ console.log(
     }
 );
 // =========================================================
+// SIGNALWIRE AI TRANSCRIPTION CALLBACK
+// =========================================================
+
+app.post(
+    "/api/signalwire/transcription-callback",
+    async (req, res) => {
+
+        try {
+
+            console.log(
+                "📝 SIGNALWIRE TRANSCRIPTION CALLBACK"
+            );
+
+            console.log(
+                JSON.stringify(
+                    req.body,
+                    null,
+                    2
+                )
+            );
+
+            const params =
+                req.body?.params ||
+                {};
+
+            const eventType =
+                String(
+                    req.body?.event_type ||
+                    ""
+                ).toLowerCase();
+
+            const transcript =
+                params.text ||
+                "";
+
+            const callId =
+                params.call_id ||
+                null;
+
+            const controlId =
+                params.control_id ||
+                "";
+
+            console.log(
+                "📝 Transcription event:",
+                eventType
+            );
+
+            console.log(
+                "📝 Transcription call ID:",
+                callId
+            );
+
+            console.log(
+                "📝 Transcription control ID:",
+                controlId
+            );
+
+            console.log(
+                "📝 Transcript length:",
+                transcript.length
+            );
+
+
+            // ---------------------------------------------------------
+            // EXTRACT USAGE ID FROM OUR CONTROL ID
+            // ---------------------------------------------------------
+
+            let usageId = null;
+
+            if (
+                controlId &&
+                String(controlId).startsWith(
+                    "dialeaze-transcribe-"
+                )
+            ) {
+
+                usageId =
+                    String(controlId).replace(
+                        "dialeaze-transcribe-",
+                        ""
+                    );
+
+            }
+
+
+            // ---------------------------------------------------------
+            // HANDLE FAILED TRANSCRIPTION
+            // ---------------------------------------------------------
+
+            if (
+                eventType ===
+                "calling.transcript.failed"
+            ) {
+
+                console.error(
+                    "❌ SignalWire transcription failed:",
+                    req.body
+                );
+
+                if (usageId) {
+
+                    await fetch(
+                        `${SUPABASE_URL}/rest/v1/call_transcriptions` +
+                        `?usage_id=eq.${encodeURIComponent(usageId)}`,
+                        {
+                            method: "PATCH",
+
+                            headers: {
+                                Authorization:
+                                    `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                                apikey:
+                                    SUPABASE_SECRET_KEY,
+
+                                "Content-Type":
+                                    "application/json"
+                            },
+
+                            body:
+                                JSON.stringify({
+                                    status:
+                                        "failed",
+
+                                    updated_at:
+                                        new Date().toISOString()
+                                })
+                        }
+                    );
+
+                }
+
+                return res.sendStatus(200);
+
+            }
+
+
+            // ---------------------------------------------------------
+            // ONLY PROCESS COMPLETED TRANSCRIPTS
+            // ---------------------------------------------------------
+
+            if (
+                eventType &&
+                eventType !==
+                    "calling.transcript.completed"
+            ) {
+
+                console.log(
+                    "ℹ️ Ignoring non-completed transcription event:",
+                    eventType
+                );
+
+                return res.sendStatus(200);
+
+            }
+
+
+            if (!transcript) {
+
+                console.warn(
+                    "⚠️ Transcription callback contained no text."
+                );
+
+                return res.sendStatus(200);
+
+            }
+
+
+            // ---------------------------------------------------------
+            // FIND CUSTOMER CALL USAGE
+            // ---------------------------------------------------------
+
+            let usageData = [];
+
+            if (usageId) {
+
+                const usageResponse =
+                    await fetch(
+                        `${SUPABASE_URL}/rest/v1/customer_call_usage` +
+                        `?id=eq.${encodeURIComponent(usageId)}` +
+                        `&select=id,user_id,provider_call_id,caller_number,destination_number` +
+                        `&limit=1`,
+                        {
+                            method: "GET",
+
+                            headers: {
+                                Authorization:
+                                    `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                                apikey:
+                                    SUPABASE_SECRET_KEY,
+
+                                Accept:
+                                    "application/json"
+                            }
+                        }
+                    );
+
+                usageData =
+                    await usageResponse.json();
+
+            }
+
+
+            // ---------------------------------------------------------
+            // FALLBACK: FIND BY SIGNALWIRE CALL ID
+            // ---------------------------------------------------------
+
+            if (
+                !Array.isArray(usageData) ||
+                !usageData.length
+            ) {
+
+                if (!callId) {
+
+                    console.error(
+                        "❌ Could not identify usage record for transcription."
+                    );
+
+                    return res.sendStatus(200);
+
+                }
+
+                const usageResponse =
+                    await fetch(
+                        `${SUPABASE_URL}/rest/v1/customer_call_usage` +
+                        `?provider_call_id=eq.${encodeURIComponent(callId)}` +
+                        `&select=id,user_id,provider_call_id,caller_number,destination_number` +
+                        `&limit=1`,
+                        {
+                            method: "GET",
+
+                            headers: {
+                                Authorization:
+                                    `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                                apikey:
+                                    SUPABASE_SECRET_KEY,
+
+                                Accept:
+                                    "application/json"
+                            }
+                        }
+                    );
+
+                usageData =
+                    await usageResponse.json();
+
+            }
+
+
+            if (
+                !Array.isArray(usageData) ||
+                !usageData.length
+            ) {
+
+                console.error(
+                    "❌ No customer_call_usage record found for transcription.",
+                    {
+                        usageId,
+                        callId
+                    }
+                );
+
+                return res.sendStatus(200);
+
+            }
+
+
+            const usage =
+                usageData[0];
+
+
+            usageId =
+                usage.id;
+
+
+            // ---------------------------------------------------------
+            // SAVE TRANSCRIPTION
+            // ---------------------------------------------------------
+
+            const transcriptionData = {
+
+                user_id:
+                    usage.user_id,
+
+                usage_id:
+                    usage.id,
+
+                provider_call_id:
+                    usage.provider_call_id ||
+                    callId ||
+                    null,
+
+                caller_number:
+                    usage.caller_number ||
+                    null,
+
+                phone_number:
+                    usage.destination_number ||
+                    null,
+
+                transcript:
+                    transcript,
+
+                status:
+                    "completed",
+
+                updated_at:
+                    new Date().toISOString()
+
+            };
+
+
+            const upsertResponse =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/call_transcriptions` +
+                    `?on_conflict=usage_id`,
+                    {
+                        method: "POST",
+
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+
+                            "Content-Type":
+                                "application/json",
+
+                            Prefer:
+                                "resolution=merge-duplicates,return=minimal"
+                        },
+
+                        body:
+                            JSON.stringify(
+                                transcriptionData
+                            )
+                    }
+                );
+
+
+            const upsertText =
+                await upsertResponse.text();
+
+
+            if (!upsertResponse.ok) {
+
+                console.error(
+                    "❌ Failed to save AI transcription:",
+                    upsertResponse.status,
+                    upsertText
+                );
+
+                return res.sendStatus(200);
+
+            }
+
+
+            console.log(
+                "✅ AI transcription saved successfully:",
+                {
+                    usageId,
+                    callId,
+                    transcriptLength:
+                        transcript.length
+                }
+            );
+
+
+            return res.sendStatus(200);
+
+        } catch (error) {
+
+            console.error(
+                "❌ AI transcription callback error:",
+                error
+            );
+
+            // Always acknowledge SignalWire webhook.
+            return res.sendStatus(200);
+
+        }
+
+    }
+);
+// =========================================================
 // SIGNALWIRE VOICEMAIL RECORDING CALLBACK
 // =========================================================
 
@@ -8767,23 +9155,44 @@ app.post(
         );
 
         return res.json({
-            version: "1.0.0",
-            sections: {
-                main: [
-                    {
-                        record_call: {
-                            control_id: controlId,
-                            format: "mp3",
-                            stereo: false,
-                            direction: "both",
-                            beep: false,
-                            status_url:
-                                "https://dialeaze.onrender.com/api/signalwire/recording-callback"
-                        }
-                    }
-                ]
+    version: "1.0.0",
+    sections: {
+        main: [
+
+            // ---------------------------------------------------------
+            // BACKGROUND CALL TRANSCRIPTION
+            // ---------------------------------------------------------
+            {
+    transcribe: {
+        control_id:
+            usageId
+                ? `dialeaze-transcribe-${usageId}`
+                : `dialeaze-transcribe-${callId || Date.now()}`,
+
+        status_url:
+            "https://dialeaze.onrender.com/api/signalwire/transcription-callback"
+    }
+},
+
+            // ---------------------------------------------------------
+            // EXISTING CALL RECORDING
+            // DO NOT REMOVE
+            // ---------------------------------------------------------
+            {
+                record_call: {
+                    control_id: controlId,
+                    format: "mp3",
+                    stereo: false,
+                    direction: "both",
+                    beep: false,
+                    status_url:
+                        "https://dialeaze.onrender.com/api/signalwire/recording-callback"
+                }
             }
-        });
+
+        ]
+    }
+});
     }
 );
 // =========================================================
