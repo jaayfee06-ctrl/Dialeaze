@@ -1,0 +1,60 @@
+﻿if (currentCall?.answered$) {
+    currentCall.answered$.subscribe((answered) => {
+        console.log("ðŸ“ž SignalWire answered$:", answered);
+
+        if (answered === false) {
+            console.warn("âŒ REMOTE PARTY REJECTED THE CALL.");
+
+            // The remote party already rejected the call.
+            // Do NOT call hangup() here.
+            // Do NOT unlock the outbound session here.
+            // Let SignalWire complete its normal call lifecycle.
+            
+            if (callStatus) {
+                callStatus.textContent = "Call rejected";
+            }
+
+            console.log(
+                "ðŸ›‘ Remote rejection detected. Waiting for SignalWire call-end lifecycle."
+            );
+        }
+    });
+}
+                // -----------------------------------------
+                // LISTEN FOR CALL STATUS
+                // -----------------------------------------
+
+                if (
+                    currentCall &&
+                    currentCall.status$
+                ) {
+
+                    currentCall.status$.subscribe(
+                        async callStatus => {
+
+                            console.log(
+                                "ðŸ“¡ SignalWire call status:",
+                                callStatus
+                            );
+
+
+                            let statusValue =
+                                typeof callStatus ===
+                                "string"
+                                    ? callStatus
+                                    : callStatus?.status ||
+                                      callStatus?.state ||
+                                      "";
+
+
+                            statusValue =
+                                String(
+                                    statusValue
+                                ).toLowerCase();
+
+
+                            // -----------------------------
+                            // RINGING / TRYING
+                            // -----------------------------
+
+                            if (

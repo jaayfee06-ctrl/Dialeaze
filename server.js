@@ -1607,7 +1607,6 @@ const DIALEAZE_PLAN_FEATURES = {
     live_monitoring: false,
     ai_transcription: false,
     crm_integrations: false,
-    call_forwarding: false,
     advanced_routing: false
   },
 
@@ -1625,7 +1624,6 @@ const DIALEAZE_PLAN_FEATURES = {
     live_monitoring: true,
     ai_transcription: true,
     crm_integrations: true,
-    call_forwarding: true,
     advanced_routing: true
   }
 };
@@ -1699,368 +1697,7 @@ function requirePlanFeature(feature) {
   };
 }
 
-// =========================================================
-// DIALEAZE CALL FORWARDING
-// BUSINESS PLAN ONLY
-// =========================================================
-//
-// Stores forwarding preferences in Supabase.
-// This API does NOT change SignalWire call routing.
-// SignalWire routing will be connected separately after
-// the settings API has been verified.
-//
-// =========================================================
 
-
-// ---------------------------------------------------------
-// GET CALL FORWARDING SETTINGS
-// ---------------------------------------------------------
-
-app.get(
-    "/api/call-forwarding",
-    async (req, res) => {
-        try {
-            const auth =
-                await authenticateRequest(req);
-
-            if (!auth.success) {
-                return res.status(
-                    auth.status
-                ).json({
-                    success: false,
-                    error: auth.error
-                });
-            }
-
-            const subscription =
-                await getUserSubscription(
-                    auth.user.id
-                );
-
-            if (
-                !subscriptionAllowsService(
-                    subscription
-                )
-            ) {
-                return res.status(403).json({
-                    success: false,
-                    error:
-                        "Active subscription required."
-                });
-            }
-
-            if (
-                !planHasFeature(
-                    subscription,
-                    "call_forwarding"
-                )
-            ) {
-                return res.status(403).json({
-                    success: false,
-                    error:
-                        "Call Forwarding is available on the Business plan.",
-                    feature:
-                        "call_forwarding",
-                    required_plan:
-                        "business"
-                });
-            }
-
-            const response =
-                await fetch(
-                    `${SUPABASE_URL}/rest/v1/call_forwarding_settings` +
-                    `?user_id=eq.${encodeURIComponent(auth.user.id)}` +
-                    `&select=id,user_id,enabled,mode,forward_to,timeout_seconds,created_at,updated_at` +
-                    `&limit=1`,
-                    {
-                        method: "GET",
-                        headers: {
-                            Authorization:
-                                `Bearer ${SUPABASE_SECRET_KEY}`,
-                            apikey:
-                                SUPABASE_SECRET_KEY,
-                            Accept:
-                                "application/json"
-                        }
-                    }
-                );
-
-            const data =
-                await response.json();
-
-            if (!response.ok) {
-                console.error(
-                    "Call forwarding settings lookup failed:",
-                    data
-                );
-
-                return res.status(500).json({
-                    success: false,
-                    error:
-                        "Unable to load call forwarding settings."
-                });
-            }
-
-            const settings =
-                Array.isArray(data) &&
-                data.length > 0
-                    ? data[0]
-                    : {
-                        enabled: false,
-                        mode: "unanswered",
-                        forward_to: "",
-                        timeout_seconds: 30
-                    };
-
-            return res.json({
-                success: true,
-                settings
-            });
-
-        } catch (error) {
-            console.error(
-                "Get call forwarding settings error:",
-                error
-            );
-
-            return res.status(500).json({
-                success: false,
-                error:
-                    "Unable to load call forwarding settings."
-            });
-        }
-    }
-);
-
-
-// ---------------------------------------------------------
-// SAVE CALL FORWARDING SETTINGS
-// ---------------------------------------------------------
-
-app.post(
-    "/api/call-forwarding",
-    async (req, res) => {
-        try {
-            const auth =
-                await authenticateRequest(req);
-
-            if (!auth.success) {
-                return res.status(
-                    auth.status
-                ).json({
-                    success: false,
-                    error: auth.error
-                });
-            }
-
-            const subscription =
-                await getUserSubscription(
-                    auth.user.id
-                );
-
-            if (
-                !subscriptionAllowsService(
-                    subscription
-                )
-            ) {
-                return res.status(403).json({
-                    success: false,
-                    error:
-                        "Active subscription required."
-                });
-            }
-
-            if (
-                !planHasFeature(
-                    subscription,
-                    "call_forwarding"
-                )
-            ) {
-                return res.status(403).json({
-                    success: false,
-                    error:
-                        "Call Forwarding is available on the Business plan.",
-                    feature:
-                        "call_forwarding",
-                    required_plan:
-                        "business"
-                });
-            }
-
-            const enabled =
-                req.body?.enabled === true;
-
-            const mode =
-                String(
-                    req.body?.mode ||
-                    "unanswered"
-                )
-                    .trim()
-                    .toLowerCase();
-
-            const forwardTo =
-                String(
-                    req.body?.forward_to ||
-                    ""
-                ).trim();
-
-            let timeoutSeconds =
-                Number(
-                    req.body?.timeout_seconds ??
-                    30
-                );
-
-            if (
-                !Number.isInteger(
-                    timeoutSeconds
-                ) ||
-                timeoutSeconds < 10 ||
-                timeoutSeconds > 60
-            ) {
-                return res.status(400).json({
-                    success: false,
-                    error:
-                        "Ring time must be between 10 and 60 seconds."
-                });
-            }
-
-            if (
-                ![
-                    "always",
-                    "unanswered",
-                    "busy"
-                ].includes(mode)
-            ) {
-                return res.status(400).json({
-                    success: false,
-                    error:
-                        "Invalid call forwarding mode."
-                });
-            }
-
-            /*
-             * When forwarding is enabled, a destination
-             * number is required.
-             */
-            if (
-                enabled &&
-                !forwardTo
-            ) {
-                return res.status(400).json({
-                    success: false,
-                    error:
-                        "Please enter a phone number to forward calls to."
-                });
-            }
-
-            /*
-             * Basic E.164 validation.
-             *
-             * Examples:
-             * +12125551234
-             * +442071234567
-             */
-            if (
-                forwardTo &&
-                !/^\+[1-9]\d{7,14}$/.test(
-                    forwardTo
-                )
-            ) {
-                return res.status(400).json({
-                    success: false,
-                    error:
-                        "Please enter a valid international phone number beginning with +."
-                });
-            }
-
-            const payload = {
-                user_id:
-                    auth.user.id,
-
-                enabled,
-
-                mode,
-
-                forward_to:
-                    forwardTo || null,
-
-                timeout_seconds:
-                    timeoutSeconds,
-
-                updated_at:
-                    new Date().toISOString()
-            };
-
-            const response =
-                await fetch(
-                    `${SUPABASE_URL}/rest/v1/call_forwarding_settings` +
-                    `?on_conflict=user_id`,
-                    {
-                        method: "POST",
-
-                        headers: {
-                            Authorization:
-                                `Bearer ${SUPABASE_SECRET_KEY}`,
-
-                            apikey:
-                                SUPABASE_SECRET_KEY,
-
-                            "Content-Type":
-                                "application/json",
-
-                            Prefer:
-                                "resolution=merge-duplicates,return=representation"
-                        },
-
-                        body:
-                            JSON.stringify(
-                                payload
-                            )
-                    }
-                );
-
-            const data =
-                await response.json();
-
-            if (!response.ok) {
-                console.error(
-                    "Call forwarding settings save failed:",
-                    data
-                );
-
-                return res.status(500).json({
-                    success: false,
-                    error:
-                        "Unable to save call forwarding settings."
-                });
-            }
-
-            const settings =
-                Array.isArray(data)
-                    ? data[0]
-                    : data;
-
-            return res.json({
-                success: true,
-                message:
-                    "Call forwarding settings saved.",
-                settings
-            });
-
-        } catch (error) {
-            console.error(
-                "Save call forwarding settings error:",
-                error
-            );
-
-            return res.status(500).json({
-                success: false,
-                error:
-                    "Unable to save call forwarding settings."
-            });
-        }
-    }
-);
 // =========================================================
 // SIGNALWIRE SUBSCRIBER ACCESS TOKEN
 // =========================================================
@@ -2840,11 +2477,7 @@ app.get("/api/organization/access", async (req, res) => {
         canUseCRMIntegrations:
           features.crm_integrations,
 
-        canUseCallForwarding:
-          features.call_forwarding,
-
-        canUseAdvancedRouting:
-          features.advanced_routing
+       
       },
 
       features
@@ -10157,7 +9790,7 @@ app.get(
 
 // =========================================================
 // SIGNALWIRE INBOUND SWML
-// CALL FORWARDING + EXISTING DIALER/VOICEMAIL FLOW
+// EXISTING DIALER/VOICEMAIL FLOW
 // =========================================================
 
 app.post(
@@ -10235,53 +9868,7 @@ app.post(
         ];
 
 
-        const forwardingConnect = (
-            forwardTo,
-            timeoutSeconds
-        ) => ({
-            connect: {
-                from:
-                    "%{call.from}",
-
-                to:
-                    forwardTo,
-
-                timeout:
-                    timeoutSeconds,
-
-                call_state_events: [
-                    "created",
-                    "ringing",
-                    "answered",
-                    "ended"
-                ],
-
-                call_state_url:
-                    "https://dialeaze.onrender.com/api/signalwire/inbound-call-state",
-
-                status_url:
-                    "https://dialeaze.onrender.com/api/signalwire/inbound-connect-status",
-
-                result: [
-                    {
-                        when:
-                            "connect_result == 'failed'",
-
-                        then:
-                            voicemailActions()
-                    },
-
-                    {
-                        else: [
-                            {
-                                hangup: {}
-                            }
-                        ]
-                    }
-                ]
-            }
-        });
-
+        
 
         const normalDialeazeConnect = (
     result,
@@ -10414,8 +10001,6 @@ let assignedUserId =
     null;
 
 
-let settings =
-    null;
 
 
 /*
@@ -10603,222 +10188,13 @@ if (
     }
 
 }
-            /*
-             * Load the Call Forwarding settings
-             * belonging to this Dialeaze customer.
-             */
-            if (assignedUserId) {
-
-                const settingsResponse =
-                    await fetch(
-                        `${SUPABASE_URL}/rest/v1/call_forwarding_settings` +
-                        `?user_id=eq.${encodeURIComponent(assignedUserId)}` +
-                        `&select=enabled,mode,forward_to,timeout_seconds` +
-                        `&limit=1`,
-                        {
-                            method: "GET",
-
-                            headers: {
-                                Authorization:
-                                    `Bearer ${SUPABASE_SECRET_KEY}`,
-
-                                apikey:
-                                    SUPABASE_SECRET_KEY,
-
-                                Accept:
-                                    "application/json"
-                            }
-                        }
-                    );
-
-
-                const settingsData =
-                    await settingsResponse.json();
-
-
-                if (
-                    settingsResponse.ok &&
-                    Array.isArray(settingsData) &&
-                    settingsData.length
-                ) {
-
-                    settings =
-                        settingsData[0];
-                }
-            }
-
-
-            const enabled =
-                settings?.enabled === true;
-
-
-            const mode =
-                String(
-                    settings?.mode ||
-                    "unanswered"
-                )
-                    .trim()
-                    .toLowerCase();
-
-
-            const forwardTo =
-                String(
-                    settings?.forward_to ||
-                    ""
-                ).trim();
-
-
-            const timeoutSeconds =
-                Number(
-                    settings?.timeout_seconds ||
-                    30
-                );
-
-
-            /*
-             * Only forward when:
-             *
-             * 1. Forwarding is enabled
-             * 2. Destination is a valid E.164 number
-             */
-            const canForward =
-    enabled &&
-    /^\+[1-9]\d{7,14}$/.test(
-        forwardTo
-    );
-
-console.log(
-    "📞 INBOUND FORWARDING:",
-    {
-        inboundNumber,
-        callerNumber,
-        assignedUserId,
-        enabled,
-        mode,
-        forwardTo:
-            canForward
-                ? forwardTo
-                : null,
-        timeoutSeconds
-    }
-);
-
-console.log(
-    "🚨🚨🚨 FORWARDING DECISION CHECK 🚨🚨🚨",
-    {
-        inboundNumber,
-        callerNumber,
-        assignedUserId,
-        settings,
-        enabled,
-        mode,
-        forwardTo,
-        timeoutSeconds,
-        canForward
-    }
-);
-
-            /*
-             * =====================================================
-             * ALWAYS
-             * =====================================================
-             *
-             * Client goes directly to the forwarding number.
-             */
-            if (
-                canForward &&
-                mode === "always"
-            ) {
-
-                return res.json({
-                    version:
-                        "1.0.0",
-
-                    sections: {
-                        main: [
-                            forwardingConnect(
-                                forwardTo,
-                                timeoutSeconds
-                            )
-                        ]
-                    }
-                });
-            }
-
-
-            /*
-             * =====================================================
-             * UNANSWERED
-             * =====================================================
-             *
-             * First ring the normal Dialeaze destination.
-             *
-             * If nobody answers, forward to the
-             * customer's external phone.
-             */
-            const result = [];
-
-
-            if (
-                canForward &&
-                mode === "unanswered"
-            ) {
-
-                result.push({
-
-                    when:
-                        "connect_result == 'failed' && (connect_failed_reason == 'no_answer' || connect_failed_reason == 'timeout' || connect_failed_reason == 'timed_out')",
-
-                    then: [
-
-                        forwardingConnect(
-                            forwardTo,
-                            timeoutSeconds
-                        )
-
-                    ]
-                });
-            }
-
-
-            /*
-             * =====================================================
-             * BUSY
-             * =====================================================
-             *
-             * First ring the normal Dialeaze destination.
-             *
-             * If SignalWire reports that destination as busy,
-             * forward the call.
-             */
-            if (
-                canForward &&
-                mode === "busy"
-            ) {
-
-                result.push({
-
-                    when:
-                        "connect_result == 'failed' && connect_failed_reason == 'busy'",
-
-                    then: [
-
-                        forwardingConnect(
-                            forwardTo,
-                            timeoutSeconds
-                        )
-
-                    ]
-                });
-            }
-
-
+         
             /*
              * =====================================================
              * EXISTING VOICEMAIL FLOW
              * =====================================================
              *
-             * If no forwarding rule matched, preserve
+             * If no routing rule matched, preserve
              * the existing Dialeaze voicemail behavior.
              */
             result.push({
@@ -10851,17 +10227,17 @@ console.log(
         } catch (error) {
 
             console.error(
-                "❌ Inbound SWML forwarding error:",
-                error
-            );
+    "❌ Inbound SWML error:",
+    error
+);
 
 
             /*
-             * SAFETY FALLBACK
-             *
-             * If the forwarding database lookup fails,
-             * normal Dialeaze calling still works.
-             */
+ * SAFETY FALLBACK
+ *
+ * If inbound call processing fails,
+ * normal Dialeaze calling still works.
+ */
             return res.json({
 
                 version:
