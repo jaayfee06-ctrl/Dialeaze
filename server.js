@@ -8496,9 +8496,12 @@ app.get(
 
 
                         const durationSeconds =
-                            Number(
-                                recording?.duration_seconds
-                            );
+    Number(
+        recording?.duration_seconds ??
+        usageMap.get(
+            String(row.usage_id)
+        )?.duration_seconds
+    );
 
 
                         const durationMinutes =
@@ -9302,7 +9305,7 @@ app.get("/api/call-recordings", async (req, res) => {
                     `&user_id=eq.${encodeURIComponent(
                         userId
                     )}` +
-                   `&select=id,caller_number,destination_number`,
+                   `&select=id,caller_number,destination_number,duration_seconds`,
                     {
                         method: "GET",
                         headers: {
