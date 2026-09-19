@@ -3,7 +3,34 @@ import {
 } from "https://esm.sh/@signalwire/js@4.0.0-rc.2";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// =========================================================
+// DIALEAZE BROWSER NOTIFICATION PERMISSION
+// =========================================================
 
+if (
+    "Notification" in window &&
+    Notification.permission === "default"
+) {
+
+    Notification.requestPermission()
+        .then((permission) => {
+
+            console.log(
+                "🔔 Dialeaze notification permission:",
+                permission
+            );
+
+        })
+        .catch((error) => {
+
+            console.warn(
+                "Notification permission request failed:",
+                error
+            );
+
+        });
+
+}
 // =========================================================
 // SUPABASE
 // =========================================================
@@ -2201,6 +2228,93 @@ async function initializeSignalWire() {
             console.log("✅ SIGNALWIRE REGISTERED");
 
             // =========================================================
+// SIGNALWIRE BACKGROUND CONNECTION MONITOR
+// Keep Dialeaze online even when another browser tab is active.
+// =========================================================
+
+if (
+    client.isConnected$ &&
+    typeof client.isConnected$.subscribe === "function"
+) {
+
+    client.isConnected$.subscribe(async (connected) => {
+
+        console.log(
+            "📡 SignalWire connection state:",
+            connected
+        );
+
+        if (!connected) {
+
+            console.warn(
+                "⚠️ SignalWire WebSocket disconnected."
+            );
+
+            status.textContent =
+                "Reconnecting...";
+
+            try {
+
+                if (
+                    typeof client.connect ===
+                    "function"
+                ) {
+
+                    await client.connect();
+
+                    console.log(
+                        "✅ SignalWire WebSocket reconnected."
+                    );
+                }
+
+                await client.register();
+
+                console.log(
+                    "✅ SignalWire re-registered for incoming calls."
+                );
+
+                status.textContent =
+                    "Connected";
+
+            } catch (error) {
+
+                console.error(
+                    "❌ SignalWire automatic reconnect failed:",
+                    error
+                );
+
+                status.textContent =
+                    "Connection retrying...";
+            }
+        }
+
+    });
+
+}
+
+
+// =========================================================
+// SIGNALWIRE CLIENT ERRORS
+// Never allow background connection errors to disappear.
+// =========================================================
+
+if (
+    client.errors$ &&
+    typeof client.errors$.subscribe === "function"
+) {
+
+    client.errors$.subscribe((error) => {
+
+        console.error(
+            "❌ SIGNALWIRE CLIENT ERROR:",
+            error
+        );
+
+    });
+
+}
+
+            // =========================================================
 // SIGNALWIRE INCOMING CALL LISTENER
 // =========================================================
 
@@ -2220,7 +2334,61 @@ if (client.session && client.session.incomingCalls$) {
 
         console.log("📲 INCOMING SIGNALWIRE CALL:", ringingCall);
 
-        currentCall = ringingCall;
+
+// =========================================================
+// BACKGROUND BROWSER NOTIFICATION
+// =========================================================
+
+const notificationCaller =
+    ringingCall.fromName &&
+    ringingCall.fromName !== "_undef_"
+        ? ringingCall.fromName
+        : ringingCall.from || "Unknown Number";
+
+if (
+    document.hidden &&
+    "Notification" in window &&
+    Notification.permission === "granted"
+) {
+
+    try {
+
+        const incomingNotification =
+            new Notification(
+                "📞 Incoming Dialeaze Call",
+                {
+                    body:
+                        notificationCaller +
+                        " is calling your Dialeaze number.",
+                    tag:
+                        "dialeaze-incoming-call",
+                    requireInteraction:
+                        true
+                }
+            );
+
+        incomingNotification.onclick =
+            function () {
+
+                window.focus();
+
+                incomingNotification.close();
+
+            };
+
+    } catch (error) {
+
+        console.warn(
+            "Could not show browser incoming-call notification:",
+            error
+        );
+
+    }
+
+}
+
+
+currentCall = ringingCall;
         attachMuteControl(
     currentCall
 );
@@ -7132,6 +7300,60 @@ async function initializeApp() {
 // =========================================================
 // DASHBOARD → DIALER READY SIGNAL
 // =========================================================
+// =========================================================
+// DIALEAZE TAB VISIBILITY RECOVERY
+// =========================================================
+
+document.addEventListener(
+    "visibilitychange",
+    async () => {
+
+        if (!document.hidden) {
+
+            console.log(
+                "👁️ Dialeaze tab became visible."
+            );
+
+            try {
+
+                if (
+                    client &&
+                    client.isConnected$ &&
+                    typeof client.connect ===
+                        "function"
+                ) {
+
+                    await client.connect();
+
+                }
+
+                if (
+                    client &&
+                    typeof client.register ===
+                        "function"
+                ) {
+
+                    await client.register();
+
+                }
+
+                console.log(
+                    "✅ Dialeaze SignalWire session verified after tab return."
+                );
+
+            } catch (error) {
+
+                console.warn(
+                    "⚠️ SignalWire visibility recovery:",
+                    error
+                );
+
+            }
+
+        }
+
+    }
+);
 
 if (window.opener) {
     window.opener.postMessage(
