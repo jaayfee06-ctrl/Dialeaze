@@ -1961,10 +1961,8 @@ console.log(
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    reference,
-                    fingerprint: req.body?.fingerprint,
-                    scope: "sat:refresh"
-                })
+    reference
+})
             }
         );
 
