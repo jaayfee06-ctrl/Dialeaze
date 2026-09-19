@@ -9902,9 +9902,11 @@ app.post(
             }
         });
 
+let inboundPrivateAddress = null;
 
-        try {
+const result = [];
 
+try {
             /*
              * The number that received the inbound call.
              */
@@ -9934,8 +9936,6 @@ const rawInboundDestination =
         .replace(/^sip:/i, "");
 
 
-let inboundPrivateAddress =
-    null;
 
 
 if (rawInboundDestination) {
