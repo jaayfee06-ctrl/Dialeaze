@@ -7483,7 +7483,118 @@ app.post("/api/outbound-call/record", async (req, res) => {
                 2
             )
         );
+// =========================================================
+// START BACKGROUND AI TRANSCRIPTION
+// =========================================================
 
+try {
+
+    const transcriptionControlId =
+        `dialeaze-transcribe-${
+            usageId ||
+            activeCallId
+        }`;
+
+    console.log(
+        "📝 Starting SignalWire AI transcription:",
+        {
+            usageId:
+                usageId || null,
+
+            callId:
+                activeCallId,
+
+            controlId:
+                transcriptionControlId
+        }
+    );
+
+    const transcriptionResponse =
+        await fetch(
+            `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/calling/calls`,
+            {
+                method: "POST",
+
+                headers: {
+                    Authorization:
+                        `Basic ${basicAuth}`,
+
+                    "Content-Type":
+                        "application/json",
+
+                    Accept:
+                        "application/json"
+                },
+
+                body:
+                    JSON.stringify({
+                        command:
+                            "calling.transcribe",
+
+                        id:
+                            activeCallId,
+
+                        params: {
+                            control_id:
+                                transcriptionControlId,
+
+                            status_url:
+                                "https://dialeaze.onrender.com/api/signalwire/transcription-callback"
+                        }
+                    })
+            }
+        );
+
+    const transcriptionText =
+        await transcriptionResponse.text();
+
+    let transcriptionData = null;
+
+    try {
+
+        transcriptionData =
+            transcriptionText
+                ? JSON.parse(
+                    transcriptionText
+                )
+                : null;
+
+    } catch {
+
+        transcriptionData =
+            transcriptionText;
+
+    }
+
+    if (!transcriptionResponse.ok) {
+
+        console.error(
+            "❌ SignalWire AI transcription error:",
+            transcriptionResponse.status,
+            transcriptionData
+        );
+
+    } else {
+
+        console.log(
+            "✅ SignalWire AI transcription started:",
+            JSON.stringify(
+                transcriptionData,
+                null,
+                2
+            )
+        );
+
+    }
+
+} catch (transcriptionError) {
+
+    console.error(
+        "❌ AI transcription start error:",
+        transcriptionError
+    );
+
+}
         return res.json({
             success: true,
             usageId:
@@ -9491,20 +9602,7 @@ app.post(
     sections: {
         main: [
 
-            // ---------------------------------------------------------
-            // BACKGROUND CALL TRANSCRIPTION
-            // ---------------------------------------------------------
-            {
-    transcribe: {
-        control_id:
-            usageId
-                ? `dialeaze-transcribe-${usageId}`
-                : `dialeaze-transcribe-${callId || Date.now()}`,
-
-        status_url:
-            "https://dialeaze.onrender.com/api/signalwire/transcription-callback"
-    }
-},
+     
 
             // ---------------------------------------------------------
             // EXISTING CALL RECORDING
