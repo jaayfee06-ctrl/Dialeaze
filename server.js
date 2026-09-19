@@ -10337,6 +10337,10 @@ const rawInboundDestination =
     String(
         req.body?.call?.to ||
         req.body?.call?.to_number ||
+        req.body?.call?.device?.params?.to ||
+        req.body?.call?.device?.params?.to_number ||
+        req.body?.params?.device?.params?.to ||
+        req.body?.params?.device?.params?.to_number ||
         ""
     )
         .trim()
@@ -10371,8 +10375,15 @@ if (rawInboundDestination) {
 const inboundNumber =
     String(
         req.body?.call?.to_number ||
-        req.body?.call?.to ||
-        ""
+        req.body?.call?.device?.params?.to_number ||
+        req.body?.params?.device?.params?.to_number ||
+        (
+            /^\+[1-9]\d{7,14}$/.test(
+                String(req.body?.call?.to || "").trim()
+            )
+                ? String(req.body?.call?.to).trim()
+                : ""
+        )
     ).trim();
 
 
@@ -10380,9 +10391,21 @@ const inboundNumber =
  * Original caller.
  */
 const callerNumber =
+console.log(
+    "🔎 INBOUND NUMBER RESOLUTION:",
+    {
+        rawInboundDestination,
+        inboundNumber,
+        callerNumber
+    }
+);
     String(
         req.body?.call?.from ||
         req.body?.call?.from_number ||
+        req.body?.call?.device?.params?.from ||
+        req.body?.call?.device?.params?.from_number ||
+        req.body?.params?.device?.params?.from ||
+        req.body?.params?.device?.params?.from_number ||
         ""
     ).trim();
 
