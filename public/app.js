@@ -2112,11 +2112,7 @@ class DialeazeCredentialProvider {
                         "Content-Type":
                             "application/json"
                     },
-                    body: JSON.stringify({
-                        fingerprint:
-                            context?.fingerprint ||
-                            null
-                    })
+                    body: JSON.stringify({})
                 }
             );
 
@@ -2194,7 +2190,7 @@ async function initializeSignalWire() {
     new DialeazeCredentialProvider(),
     {
         skipRegister: true,
-        persistSession: true
+        persistSession: false
     }
 );
 
