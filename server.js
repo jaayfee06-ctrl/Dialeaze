@@ -7309,7 +7309,56 @@ app.post("/api/outbound-call/record", async (req, res) => {
         const activeCallId =
             callId ||
             providerCallId;
+        // Link the actual PSTN child call ID to this usage record.
+        if (usageId && activeCallId) {
+            const linkResponse = await fetch(
+                `${SUPABASE_URL}/rest/v1/customer_call_usage` +
+                `?id=eq.${encodeURIComponent(usageId)}`,
+                {
+                    method: "PATCH",
 
+                    headers: {
+                        Authorization:
+                            `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                        apikey:
+                            SUPABASE_SECRET_KEY,
+
+                        "Content-Type":
+                            "application/json",
+
+                        Prefer:
+                            "return=minimal"
+                    },
+
+                    body: JSON.stringify({
+                        provider_call_id:
+                            activeCallId
+                    })
+                }
+            );
+
+            if (!linkResponse.ok) {
+                const linkError =
+                    await linkResponse.text();
+
+                console.error(
+                    "❌ Failed to link PSTN call to usage:",
+                    linkResponse.status,
+                    linkError
+                );
+            } else {
+                console.log(
+                    "✅ Linked PSTN child call to usage:",
+                    {
+                        usageId,
+                        providerCallId:
+                            activeCallId
+                    }
+                );
+            }
+        }
+        
         if (!activeCallId) {
             return res.status(400).json({
                 success: false,
