@@ -7284,6 +7284,10 @@ app.post("/api/outbound-call/link", async (req, res) => {
 // =========================================================
 
 app.post("/api/outbound-call/record", async (req, res) => {
+    console.log("🔥 OUTBOUND-CALL/RECORD ENDPOINT HIT", {
+        body: req.body
+    });
+
     try {
         const user = await authenticateRequest(req);
 
@@ -7430,6 +7434,8 @@ app.post("/api/outbound-call/record", async (req, res) => {
                 2
             )
         );
+
+        
 // =========================================================
 // START BACKGROUND AI TRANSCRIPTION
 // =========================================================
