@@ -10420,24 +10420,33 @@ let settings =
 
 /*
  * =========================================================
- * PRIMARY USER LOOKUP
+ * PRIMARY USER LOOKUP BY DIALEAZE PHONE NUMBER
  * =========================================================
  *
- * Find the Dialeaze customer using the SignalWire
- * private Subscriber address.
+ * The inbound SignalWire call contains the actual Dialeaze
+ * phone number in inboundNumber.
+ *
+ * phone_numbers.user_id tells us exactly which customer
+ * owns that number.
  */
 if (
-    inboundPrivateAddress &&
+    !assignedUserId &&
+    /^\+[1-9]\d{7,14}$/.test(inboundNumber) &&
     SUPABASE_URL &&
     SUPABASE_SECRET_KEY
 ) {
 
-    const profileResponse =
+    console.log(
+        "🔎 Looking up Dialeaze owner by phone number:",
+        inboundNumber
+    );
+
+    const numberResponse =
         await fetch(
-            `${SUPABASE_URL}/rest/v1/profiles` +
-            `?signalwire_private_address=eq.${encodeURIComponent(inboundPrivateAddress)}` +
-            `&signalwire_provisioned=eq.true` +
-            `&select=id,signalwire_private_address` +
+            `${SUPABASE_URL}/rest/v1/phone_numbers` +
+            `?phone_number=eq.${encodeURIComponent(inboundNumber)}` +
+            `&status=eq.assigned` +
+            `&select=user_id,phone_number,status` +
             `&limit=1`,
             {
                 method: "GET",
@@ -10455,30 +10464,38 @@ if (
             }
         );
 
+    const numberData =
+        await numberResponse.json();
 
-    const profileData =
-        await profileResponse.json();
-
+    console.log(
+        "🔎 Dialeaze phone owner lookup result:",
+        {
+            ok: numberResponse.ok,
+            status: numberResponse.status,
+            data: numberData
+        }
+    );
 
     if (
-        profileResponse.ok &&
-        Array.isArray(profileData) &&
-        profileData.length
+        numberResponse.ok &&
+        Array.isArray(numberData) &&
+        numberData.length &&
+        numberData[0].user_id
     ) {
 
         assignedUserId =
-            profileData[0].id ||
-            null;
+            numberData[0].user_id;
 
-        inboundPrivateAddress =
-            profileData[0].signalwire_private_address ||
-            inboundPrivateAddress;
-
+        console.log(
+            "✅ Dialeaze owner found:",
+            {
+                assignedUserId,
+                phoneNumber:
+                    numberData[0].phone_number
+            }
+        );
     }
-
 }
-
-
 /*
  * =========================================================
  * FALLBACK USER LOOKUP
