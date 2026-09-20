@@ -4381,3 +4381,193 @@ body {
     }
 
 }
+
+/* =========================================================
+   DIALEAZE — FINAL COMPACT DIALER
+========================================================= */
+
+
+/* =========================================================
+   SMALLER CENTER DIALER
+========================================================= */
+
+.dialer-card {
+    width: 500px !important;
+    height: 540px !important;
+
+    max-width: 500px !important;
+    max-height: 540px !important;
+
+    padding: 24px 28px !important;
+
+    justify-self: center !important;
+    align-self: center !important;
+
+    border-radius: 20px !important;
+}
+
+
+/* =========================================================
+   NUMBER DISPLAY
+========================================================= */
+
+.dialer-card .number-display {
+    width: 320px !important;
+    max-width: 320px !important;
+
+    height: 48px !important;
+
+    margin:
+        0 auto 12px !important;
+}
+
+
+/* =========================================================
+   COMPACT DIALPAD
+========================================================= */
+
+.dialer-card .dialpad {
+    width: 320px !important;
+    max-width: 320px !important;
+
+    gap: 7px 11px !important;
+
+    margin: 0 auto !important;
+}
+
+
+/* =========================================================
+   SMALLER GLOWING BUTTONS
+========================================================= */
+
+.dialer-card .dialpad button {
+    width: 58px !important;
+    height: 58px !important;
+
+    border-radius: 50% !important;
+}
+
+
+/* =========================================================
+   BUTTON NUMBER
+========================================================= */
+
+.dialer-card .dialpad button span {
+    font-size: 17px !important;
+}
+
+
+/* =========================================================
+   BUTTON LETTERS
+========================================================= */
+
+.dialer-card .dialpad button small {
+    font-size: 5px !important;
+    margin-top: 3px !important;
+}
+
+
+/* =========================================================
+   CALL CONTROLS
+========================================================= */
+
+.dialer-card .call-controls {
+    width: 320px !important;
+    max-width: 320px !important;
+
+    margin:
+        13px auto 0 !important;
+
+    gap: 8px !important;
+}
+
+
+.dialer-card .call-controls button {
+    height: 40px !important;
+
+    border-radius: 11px !important;
+
+    font-size: 9px !important;
+}
+
+
+/* =========================================================
+   RIGHT PANEL SPACING
+========================================================= */
+
+.right-panel {
+    padding: 12px !important;
+
+    gap: 10px !important;
+}
+
+
+/* =========================================================
+   MESSAGES CARD
+========================================================= */
+
+.right-panel .messages-card {
+    margin-bottom: 4px !important;
+}
+
+
+/* =========================================================
+   BUSINESS CONTACTS CARD
+========================================================= */
+
+.right-panel .contacts-card {
+    margin-top: 4px !important;
+}
+
+
+/* =========================================================
+   EXTRA SPACE BETWEEN THE TWO CARDS
+========================================================= */
+
+.right-panel .messages-card,
+.right-panel .contacts-card {
+    flex-shrink: 0 !important;
+}
+
+
+/* =========================================================
+   KEEP RIGHT PANEL CARDS SEPARATED
+========================================================= */
+
+.right-panel .messages-card + .contacts-card {
+    margin-top: 6px !important;
+}
+
+
+/* =========================================================
+   DESKTOP CENTERING
+========================================================= */
+
+@media (min-width: 1100px) {
+
+    .dialer-card {
+        width: 500px !important;
+        height: 540px !important;
+
+        max-width: 500px !important;
+        max-height: 540px !important;
+    }
+
+}
+
+
+/* =========================================================
+   SMALLER SCREEN
+========================================================= */
+
+@media (max-width: 850px) {
+
+    .dialer-card {
+        width: 94% !important;
+        height: auto !important;
+
+        max-width: 500px !important;
+        max-height: none !important;
+    }
+
+}
