@@ -2500,3 +2500,466 @@ textarea:focus-visible {
         grid-column: auto;
     }
 }
+/* =========================================================
+   FINAL DIALER GRID FIX
+========================================================= */
+
+.main-content {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+
+    display: grid !important;
+
+    grid-template-columns:
+        215px
+        minmax(450px, 1fr)
+        380px !important;
+
+    grid-template-rows: 1fr !important;
+
+    grid-template-areas:
+        "sidebar dialer rightpanel" !important;
+
+    gap: 0 !important;
+
+    overflow: hidden !important;
+
+    position: relative !important;
+}
+
+
+/* =========================================================
+   LEFT SIDEBAR
+========================================================= */
+
+.dialeaze-sidebar {
+    grid-area: sidebar !important;
+
+    width: 215px !important;
+    min-width: 215px !important;
+    height: 100% !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+
+    position: relative !important;
+
+    overflow: hidden !important;
+
+    padding: 22px 14px 14px !important;
+
+    background:
+        linear-gradient(
+            180deg,
+            #091423 0%,
+            #06101c 100%
+        ) !important;
+
+    border-right:
+        1px solid
+        rgba(148, 163, 184, 0.10) !important;
+}
+
+
+/* =========================================================
+   CENTER DIALER
+========================================================= */
+
+.dialer-card {
+    grid-area: dialer !important;
+
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 100% !important;
+    min-height: 0 !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+
+    align-items: center !important;
+    justify-content: center !important;
+
+    position: relative !important;
+
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+
+    padding: 30px 45px !important;
+
+    background:
+        radial-gradient(
+            circle at 50% 25%,
+            rgba(37, 99, 235, 0.15),
+            transparent 35%
+        ),
+        linear-gradient(
+            145deg,
+            #0b192b,
+            #07111f
+        ) !important;
+
+    border: none !important;
+
+    border-left:
+        1px solid
+        rgba(148, 163, 184, 0.06) !important;
+
+    border-right:
+        1px solid
+        rgba(148, 163, 184, 0.08) !important;
+}
+
+
+/* =========================================================
+   RIGHT PANEL
+========================================================= */
+
+.right-panel {
+    grid-area: rightpanel !important;
+
+    width: 380px !important;
+    min-width: 380px !important;
+    height: 100% !important;
+
+    min-height: 0 !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+
+    gap: 12px !important;
+
+    padding: 18px !important;
+
+    position: relative !important;
+
+    overflow: hidden !important;
+
+    background:
+        linear-gradient(
+            180deg,
+            #081422 0%,
+            #06101c 100%
+        ) !important;
+
+    border-left:
+        1px solid
+        rgba(148, 163, 184, 0.10) !important;
+}
+
+
+/* =========================================================
+   RIGHT PANEL RECENT CALLS
+========================================================= */
+
+.right-panel .recent-card {
+    width: 100% !important;
+
+    flex: 1 1 auto !important;
+
+    min-height: 0 !important;
+
+    overflow: hidden !important;
+
+    padding: 16px !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+
+/* =========================================================
+   RECENT CALL LIST
+========================================================= */
+
+.right-panel .recent-calls-list {
+    flex: 1 1 auto !important;
+
+    min-height: 0 !important;
+
+    overflow-y: auto !important;
+}
+
+
+/* =========================================================
+   MESSAGES
+========================================================= */
+
+.right-panel .messages-card {
+    width: 100% !important;
+
+    height: 68px !important;
+    min-height: 68px !important;
+
+    flex: 0 0 68px !important;
+}
+
+
+/* =========================================================
+   CONTACTS
+========================================================= */
+
+.right-panel .contacts-card {
+    width: 100% !important;
+
+    height: 68px !important;
+    min-height: 68px !important;
+
+    flex: 0 0 68px !important;
+}
+
+
+/* =========================================================
+   DIALER NUMBER DISPLAY
+========================================================= */
+
+.dialer-card .number-display {
+    width:
+        min(100%, 500px) !important;
+
+    flex-shrink: 0 !important;
+
+    margin:
+        0 auto 20px !important;
+}
+
+
+/* =========================================================
+   DIALPAD
+========================================================= */
+
+.dialer-card .dialpad {
+    width:
+        min(100%, 500px) !important;
+
+    flex-shrink: 0 !important;
+
+    display: grid !important;
+
+    grid-template-columns:
+        repeat(3, 1fr) !important;
+
+    gap: 11px !important;
+
+    margin: 0 auto !important;
+}
+
+
+/* =========================================================
+   GLOWING DIALPAD
+========================================================= */
+
+.dialer-card .dialpad button {
+    height: 64px !important;
+
+    position: relative !important;
+
+    border-radius: 50% !important;
+
+    border:
+        1px solid
+        rgba(74, 144, 255, 0.50) !important;
+
+    background:
+        radial-gradient(
+            circle at 50% 40%,
+            #173967 0%,
+            #102744 55%,
+            #0a192d 100%
+        ) !important;
+
+    color: #f8fafc !important;
+
+    box-shadow:
+        0 0 8px
+        rgba(37, 99, 235, 0.20),
+
+        0 0 18px
+        rgba(37, 99, 235, 0.12),
+
+        inset 0 0 14px
+        rgba(96, 165, 250, 0.08) !important;
+
+    transition:
+        transform .15s ease,
+        box-shadow .15s ease,
+        border-color .15s ease !important;
+}
+
+
+.dialer-card .dialpad button::before {
+    content: "" !important;
+
+    position: absolute !important;
+
+    inset: -4px !important;
+
+    border-radius: 50% !important;
+
+    background:
+        rgba(59, 130, 246, 0.55) !important;
+
+    filter:
+        blur(8px) !important;
+
+    opacity: .20 !important;
+
+    z-index: -1 !important;
+
+    pointer-events: none !important;
+}
+
+
+.dialer-card .dialpad button:hover {
+    transform:
+        translateY(-2px) !important;
+
+    border-color:
+        rgba(96, 165, 250, 0.95) !important;
+
+    box-shadow:
+        0 0 12px
+        rgba(59, 130, 246, 0.65),
+
+        0 0 28px
+        rgba(37, 99, 235, 0.38),
+
+        inset 0 0 18px
+        rgba(96, 165, 250, 0.12) !important;
+}
+
+
+.dialer-card .dialpad button:hover::before {
+    opacity: .65 !important;
+}
+
+
+.dialer-card .dialpad button:active {
+    transform:
+        scale(.94) !important;
+
+    box-shadow:
+        0 0 18px
+        rgba(59, 130, 246, 0.90),
+
+        0 0 38px
+        rgba(37, 99, 235, 0.55),
+
+        inset 0 0 22px
+        rgba(147, 197, 253, 0.20) !important;
+}
+
+
+/* =========================================================
+   DIALPAD TEXT
+========================================================= */
+
+.dialer-card .dialpad button span {
+    font-size: 21px !important;
+
+    font-weight: 650 !important;
+
+    color: #f8fafc !important;
+
+    text-shadow:
+        0 0 10px
+        rgba(147, 197, 253, 0.45) !important;
+}
+
+
+.dialer-card .dialpad button small {
+    margin-top: 4px !important;
+
+    color: #8fa8c5 !important;
+
+    font-size: 7px !important;
+
+    letter-spacing: 1px !important;
+}
+
+
+/* =========================================================
+   CALL CONTROLS
+========================================================= */
+
+.dialer-card .call-controls {
+    width:
+        min(100%, 500px) !important;
+
+    margin:
+        20px auto 0 !important;
+
+    display: grid !important;
+
+    grid-template-columns:
+        repeat(2, 1fr) !important;
+
+    gap: 10px !important;
+
+    flex-shrink: 0 !important;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1100px) {
+
+    .main-content {
+        grid-template-columns:
+            190px
+            minmax(400px, 1fr)
+            330px !important;
+    }
+
+    .dialeaze-sidebar {
+        width: 190px !important;
+        min-width: 190px !important;
+    }
+
+    .right-panel {
+        width: 330px !important;
+        min-width: 330px !important;
+    }
+}
+
+
+@media (max-width: 850px) {
+
+    .main-content {
+        height: auto !important;
+
+        grid-template-columns:
+            1fr !important;
+
+        grid-template-rows:
+            auto
+            auto
+            auto !important;
+
+        grid-template-areas:
+            "sidebar"
+            "dialer"
+            "rightpanel" !important;
+
+        overflow: visible !important;
+    }
+
+    .dialeaze-sidebar {
+        width: 100% !important;
+        min-width: 0 !important;
+        height: auto !important;
+    }
+
+    .dialer-card {
+        width: 100% !important;
+        min-height: 650px !important;
+    }
+
+    .right-panel {
+        width: 100% !important;
+        min-width: 0 !important;
+        height: auto !important;
+    }
+}
