@@ -2334,3 +2334,54 @@ textarea:focus-visible {
         width: 96vw;
     }
 }
+
+/* =========================================================
+   FINAL 3-COLUMN SPACING / HEIGHT FIX
+   ========================================================= */
+
+.main-content {
+    display: grid !important;
+
+    /* Left | Dialer | Right */
+    grid-template-columns: 220px 470px 345px !important;
+
+    gap: 18px !important;
+
+    /* Keep the three sections together in the center */
+    justify-content: center !important;
+    align-items: center !important;
+
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+}
+
+/* LEFT SIDEBAR */
+.dialeaze-sidebar {
+    width: 220px !important;
+    height: 570px !important;
+
+    align-self: center !important;
+
+    overflow: hidden !important;
+}
+
+/* CENTER DIALER */
+.dialer-card {
+    width: 470px !important;
+    height: 570px !important;
+
+    margin: 0 !important;
+    align-self: center !important;
+}
+
+/* RIGHT SIDE */
+.right-panel {
+    width: 345px !important;
+    height: 570px !important;
+
+    margin: 0 !important;
+    align-self: center !important;
+
+    overflow: hidden !important;
+}
