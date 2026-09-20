@@ -1,12 +1,7 @@
 /* =========================================================
    DIALEAZE DIALER
-   CLEAN PREMIUM DARK SAAS DESIGN
-   COMPLETE REPLACEMENT CSS
-========================================================= */
-
-
-/* =========================================================
-   RESET
+   CLEAN COMPLETE STYLESHEET
+   Designed for the current index.html
 ========================================================= */
 
 * {
@@ -22,22 +17,13 @@ body {
 }
 
 html {
-    background: #030914;
+    background: #ffffff;
 }
 
 body {
     min-height: 100vh;
-
-    background:
-        radial-gradient(
-            circle at 50% 0%,
-            rgba(25, 70, 130, 0.12),
-            transparent 38%
-        ),
-        #030914;
-
+    overflow: hidden;
     color: #e5edf8;
-
     font-family:
         Inter,
         ui-sans-serif,
@@ -46,8 +32,6 @@ body {
         BlinkMacSystemFont,
         "Segoe UI",
         sans-serif;
-
-    overflow: hidden;
 }
 
 button,
@@ -63,41 +47,39 @@ button {
 button:focus-visible,
 input:focus-visible,
 textarea:focus-visible {
-    outline:
-        2px solid
-        rgba(59, 130, 246, 0.75);
-
+    outline: 2px solid rgba(59,130,246,.75);
     outline-offset: 2px;
 }
 
 
 /* =========================================================
-   MAIN APP
+   OUTER APPLICATION
 ========================================================= */
 
 .app-shell {
-    width: 100%;
-    height: 100vh;
-    min-height: 650px;
+    width: min(1500px, calc(100vw - 48px));
+    height: min(860px, calc(100vh - 48px));
 
-    padding: 18px;
+    margin: 24px auto;
 
     display: flex;
     flex-direction: column;
 
-    background:
-        radial-gradient(
-            circle at 70% 30%,
-            rgba(30, 78, 150, 0.08),
-            transparent 35%
-        );
+    overflow: hidden;
+
+    border: 1px solid #dbe3ed;
+    border-radius: 18px;
+
+    background: #07111f;
+
+    box-shadow:
+        0 25px 70px rgba(15,23,42,.16);
 }
 
 
 /* =========================================================
    OLD TOP HEADER
-   Hidden because user information now lives
-   at bottom of sidebar.
+   User information now lives in sidebar.
 ========================================================= */
 
 .topbar {
@@ -106,59 +88,42 @@ textarea:focus-visible {
 
 
 /* =========================================================
-   MAIN THREE-COLUMN LAYOUT
+   MAIN THREE-PANEL LAYOUT
+
+   SIDEBAR | DIALER | RIGHT PANEL
 ========================================================= */
 
 .main-content {
     width: 100%;
     height: 100%;
-
     min-height: 0;
 
     display: grid;
 
     grid-template-columns:
-        215px
-        minmax(430px, 1fr)
-        380px;
-
-    grid-template-rows:
-        1fr;
+        205px
+        minmax(0, 1fr)
+        345px;
 
     grid-template-areas:
         "sidebar dialer rightpanel";
 
-    gap: 0;
-
     overflow: hidden;
-
-    border:
-        1px solid
-        rgba(148, 163, 184, 0.12);
-
-    border-radius: 18px;
-
-    background: #07111f;
-
-    box-shadow:
-        0 25px 80px
-        rgba(0, 0, 0, 0.35);
 }
 
 
 /* =========================================================
-   LEFT SIDEBAR
+   SIDEBAR
 ========================================================= */
 
 .dialeaze-sidebar {
     grid-area: sidebar;
 
-    width: 215px;
-    min-width: 215px;
+    width: 205px;
+    min-width: 205px;
     height: 100%;
 
-    padding:
-        22px 14px 14px;
+    padding: 22px 13px 14px;
 
     display: flex;
     flex-direction: column;
@@ -168,13 +133,11 @@ textarea:focus-visible {
     background:
         linear-gradient(
             180deg,
-            #091423 0%,
+            #091523 0%,
             #06101c 100%
         );
 
-    border-right:
-        1px solid
-        rgba(148, 163, 184, 0.10);
+    border-right: 1px solid rgba(148,163,184,.10);
 }
 
 
@@ -185,22 +148,17 @@ textarea:focus-visible {
 .dialeaze-sidebar-brand {
     display: flex;
     align-items: center;
-
     gap: 10px;
 
-    padding:
-        0 8px 20px;
+    padding: 0 7px 19px;
 
-    border-bottom:
-        1px solid
-        rgba(148, 163, 184, 0.08);
+    border-bottom: 1px solid rgba(148,163,184,.08);
 }
 
 .dialeaze-sidebar-logo {
-    width: 36px;
-    height: 36px;
-
-    flex: 0 0 36px;
+    width: 35px;
+    height: 35px;
+    flex: 0 0 35px;
 
     display: flex;
     align-items: center;
@@ -215,48 +173,41 @@ textarea:focus-visible {
             #2563eb
         );
 
-    color: white;
+    color: #fff;
 
     font-size: 16px;
     font-weight: 800;
 
     box-shadow:
-        0 8px 24px
-        rgba(37, 99, 235, 0.35);
+        0 7px 20px rgba(37,99,235,.32);
 }
 
 .dialeaze-sidebar-name {
     color: #f8fafc;
-
     font-size: 14px;
-
     font-weight: 750;
 }
 
 .dialeaze-sidebar-subtitle {
     margin-top: 2px;
-
     color: #64748b;
-
     font-size: 8px;
 }
 
 
 /* =========================================================
-   SIDEBAR SECTION TITLE
+   SIDEBAR SECTION
 ========================================================= */
 
 .dialeaze-sidebar-section-title {
-    margin:
-        25px 8px 9px;
+    margin: 24px 8px 9px;
 
-    color: #4b5d75;
+    color: #52637a;
 
     font-size: 9px;
-
     font-weight: 800;
 
-    letter-spacing: 1.6px;
+    letter-spacing: 1.5px;
 }
 
 
@@ -267,34 +218,28 @@ textarea:focus-visible {
 .dialeaze-sidebar-nav {
     display: flex;
     flex-direction: column;
-
-    gap: 4px;
+    gap: 3px;
 }
 
 .dialeaze-sidebar-item {
     width: 100%;
-    height: 43px;
+    height: 41px;
 
     display: flex;
     align-items: center;
 
-    gap: 11px;
+    gap: 10px;
 
-    padding:
-        0 11px;
+    padding: 0 10px;
 
-    border:
-        1px solid
-        transparent;
-
-    border-radius: 10px;
+    border: 1px solid transparent;
+    border-radius: 9px;
 
     background: transparent;
 
-    color: #8190a7;
+    color: #7f8da3;
 
     font-size: 11px;
-
     font-weight: 600;
 
     text-align: left;
@@ -302,20 +247,19 @@ textarea:focus-visible {
     cursor: pointer;
 
     transition:
-        background 0.18s ease,
-        color 0.18s ease,
-        border-color 0.18s ease,
-        transform 0.18s ease;
+        background .16s ease,
+        color .16s ease,
+        border-color .16s ease,
+        transform .16s ease;
 }
 
 .dialeaze-sidebar-item:hover {
     color: #e2e8f0;
 
     background:
-        rgba(59, 130, 246, 0.07);
+        rgba(59,130,246,.07);
 
-    transform:
-        translateX(2px);
+    transform: translateX(2px);
 }
 
 .dialeaze-sidebar-item.active {
@@ -324,20 +268,19 @@ textarea:focus-visible {
     background:
         linear-gradient(
             135deg,
-            rgba(37, 99, 235, 0.22),
-            rgba(37, 99, 235, 0.06)
+            rgba(37,99,235,.20),
+            rgba(37,99,235,.055)
         );
 
-    border:
-        1px solid
-        rgba(59, 130, 246, 0.18);
+    border-color:
+        rgba(96,165,250,.15);
 
     box-shadow:
         inset 3px 0 0 #3b82f6;
 }
 
 .dialeaze-sidebar-icon {
-    width: 20px;
+    width: 19px;
 
     display: inline-flex;
     align-items: center;
@@ -355,7 +298,7 @@ textarea:focus-visible {
 
 
 /* =========================================================
-   SIDEBAR BOTTOM USER
+   SIDEBAR USER
 ========================================================= */
 
 .dialeaze-sidebar-spacer {
@@ -363,10 +306,9 @@ textarea:focus-visible {
 }
 
 .dialeaze-sidebar-user {
-    margin-top: 15px;
+    margin-top: 14px;
 
-    padding:
-        13px 7px 3px;
+    padding: 12px 6px 3px;
 
     display: flex;
     align-items: center;
@@ -374,15 +316,13 @@ textarea:focus-visible {
     gap: 9px;
 
     border-top:
-        1px solid
-        rgba(148, 163, 184, 0.08);
+        1px solid rgba(148,163,184,.08);
 }
 
 .dialeaze-sidebar-user-avatar {
-    width: 35px;
-    height: 35px;
-
-    flex: 0 0 35px;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
 
     display: flex;
     align-items: center;
@@ -398,17 +338,12 @@ textarea:focus-visible {
         );
 
     border:
-        1px solid
-        rgba(96, 165, 250, 0.25);
+        1px solid rgba(96,165,250,.22);
 
     color: white;
 
     font-size: 9px;
     font-weight: 800;
-
-    box-shadow:
-        0 0 18px
-        rgba(37, 99, 235, 0.18);
 }
 
 .dialeaze-sidebar-user-info {
@@ -418,15 +353,12 @@ textarea:focus-visible {
 
 .dialeaze-sidebar-user-name {
     overflow: hidden;
-
     text-overflow: ellipsis;
-
     white-space: nowrap;
 
     color: #e2e8f0;
 
     font-size: 10px;
-
     font-weight: 700;
 }
 
@@ -434,9 +366,7 @@ textarea:focus-visible {
     margin-top: 3px;
 
     overflow: hidden;
-
     text-overflow: ellipsis;
-
     white-space: nowrap;
 
     color: #64748b;
@@ -450,7 +380,6 @@ textarea:focus-visible {
     color: #4ade80;
 
     font-size: 8px;
-
     font-weight: 650;
 }
 
@@ -462,95 +391,83 @@ textarea:focus-visible {
 .dialer-card {
     grid-area: dialer;
 
-    width: 100%;
-    height: 100%;
+    width: 470px;
+    height: 570px;
 
     min-width: 0;
     min-height: 0;
 
-    padding:
-        30px 45px;
+    margin: auto;
+
+    padding: 25px 28px;
 
     display: flex;
     flex-direction: column;
-
     align-items: center;
     justify-content: center;
 
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: hidden;
+
+    border:
+        1px solid rgba(96,165,250,.18);
+
+    border-radius: 22px;
 
     background:
         radial-gradient(
-            circle at 50% 18%,
-            rgba(37, 99, 235, 0.15),
-            transparent 34%
+            circle at 50% 8%,
+            rgba(37,99,235,.14),
+            transparent 38%
         ),
         linear-gradient(
             145deg,
-            #0a1728,
-            #07111f
+            #0d1d32,
+            #081422
         );
 
-    border: none;
+    box-shadow:
+        0 22px 55px rgba(0,0,0,.28),
+        inset 0 1px 0 rgba(255,255,255,.035);
 }
 
 
 /* =========================================================
-   BUSINESS NUMBER CARD
-   Hidden from center/right because number
-   belongs to sidebar user area.
-========================================================= */
-
-.business-card {
-    display: none !important;
-}
-
-
-/* =========================================================
-   NUMBER INPUT
+   NUMBER DISPLAY
 ========================================================= */
 
 .number-display {
-    width:
-        min(100%, 500px);
-
-    height: 60px;
-
     position: relative;
+
+    width: 330px;
+    height: 50px;
 
     display: flex;
     align-items: center;
 
-    margin:
-        0 auto 22px;
+    margin: 0 auto 13px;
 
     border:
-        1px solid
-        rgba(96, 165, 250, 0.18);
+        1px solid rgba(96,165,250,.18);
 
-    border-radius: 15px;
+    border-radius: 13px;
 
     background:
         linear-gradient(
             145deg,
-            rgba(19, 39, 67, 0.95),
-            rgba(12, 27, 47, 0.95)
+            #132a47,
+            #0b1d32
         );
 
     box-shadow:
-        inset 0 1px 0
-        rgba(255, 255, 255, 0.035),
-        0 12px 35px
-        rgba(0, 0, 0, 0.18);
+        inset 0 1px 0 rgba(255,255,255,.035),
+        0 10px 25px rgba(0,0,0,.16);
 }
 
 .number-display input {
     width: 100%;
     height: 100%;
 
-    padding:
-        0 48px 0 18px;
+    padding: 0 45px 0 15px;
 
     border: none;
     outline: none;
@@ -561,11 +478,10 @@ textarea:focus-visible {
 
     text-align: center;
 
-    font-size: 21px;
-
+    font-size: 19px;
     font-weight: 650;
 
-    letter-spacing: 0.5px;
+    letter-spacing: .4px;
 }
 
 .number-display input::placeholder {
@@ -574,17 +490,16 @@ textarea:focus-visible {
 
 .input-clear {
     position: absolute;
+    right: 8px;
 
-    right: 13px;
-
-    width: 34px;
-    height: 34px;
+    width: 32px;
+    height: 32px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    border-radius: 9px;
+    border-radius: 8px;
 
     background: transparent;
 
@@ -592,18 +507,12 @@ textarea:focus-visible {
 
     cursor: pointer;
 
-    font-size: 15px;
-
-    transition:
-        color 0.15s ease,
-        background 0.15s ease;
+    font-size: 14px;
 }
 
 .input-clear:hover {
     color: #e2e8f0;
-
-    background:
-        rgba(255, 255, 255, 0.06);
+    background: rgba(255,255,255,.06);
 }
 
 
@@ -612,72 +521,58 @@ textarea:focus-visible {
 ========================================================= */
 
 .dialpad {
-    width:
-        min(100%, 500px);
+    width: 330px;
 
     display: grid;
 
     grid-template-columns:
         repeat(3, 1fr);
 
-    gap: 11px;
+    gap: 9px 12px;
 
     margin: 0 auto;
 }
 
-
-/* =========================================================
-   DIALPAD BUTTONS
-========================================================= */
-
 .dialpad button {
-    position: relative;
+    width: 68px;
+    height: 58px;
 
-    width: 100%;
-    height: 64px;
+    justify-self: center;
+
+    position: relative;
 
     display: flex;
     flex-direction: column;
-
     align-items: center;
     justify-content: center;
 
     border:
-        1px solid
-        rgba(96, 165, 250, 0.20);
+        1px solid rgba(96,165,250,.62);
 
-    border-radius: 15px;
+    border-radius: 50%;
 
     background:
-        linear-gradient(
-            145deg,
-            #172f50,
-            #0d1e35
+        radial-gradient(
+            circle at 50% 35%,
+            #1c416f 0%,
+            #123052 46%,
+            #0b1e34 100%
         );
 
     color: #f8fafc;
 
     cursor: pointer;
 
-    overflow: visible;
-
     box-shadow:
-        0 5px 18px
-        rgba(0, 0, 0, 0.22),
-        inset 0 1px 0
-        rgba(255, 255, 255, 0.035);
+        0 0 7px rgba(59,130,246,.50),
+        0 0 18px rgba(37,99,235,.25),
+        inset 0 0 11px rgba(147,197,253,.07);
 
     transition:
-        transform 0.14s ease,
-        border-color 0.14s ease,
-        box-shadow 0.14s ease,
-        background 0.14s ease;
+        transform .14s ease,
+        box-shadow .14s ease,
+        border-color .14s ease;
 }
-
-
-/* =========================================================
-   BLUE ELECTRIC GLOW
-========================================================= */
 
 .dialpad button::before {
     content: "";
@@ -688,155 +583,85 @@ textarea:focus-visible {
 
     z-index: -1;
 
-    border-radius: 18px;
+    border-radius: 50%;
 
     background:
         linear-gradient(
             135deg,
-            rgba(59, 130, 246, 0.85),
-            rgba(96, 165, 250, 0.10),
-            rgba(37, 99, 235, 0.80)
+            rgba(59,130,246,.80),
+            rgba(96,165,250,.08),
+            rgba(37,99,235,.70)
         );
 
-    filter: blur(7px);
+    filter: blur(6px);
 
-    opacity: 0.24;
+    opacity: .20;
 
     pointer-events: none;
-
-    transition:
-        opacity 0.16s ease,
-        filter 0.16s ease;
 }
 
+.dialpad button:hover {
+    transform: translateY(-2px);
 
-/* =========================================================
-   DIALPAD NUMBER
-========================================================= */
+    border-color:
+        rgba(147,197,253,.95);
+
+    box-shadow:
+        0 0 12px rgba(96,165,250,.85),
+        0 0 27px rgba(37,99,235,.48),
+        inset 0 0 15px rgba(147,197,253,.10);
+}
+
+.dialpad button:hover::before {
+    opacity: .70;
+}
+
+.dialpad button:active {
+    transform: scale(.94);
+
+    box-shadow:
+        0 0 28px rgba(37,99,235,.70),
+        inset 0 0 18px rgba(96,165,250,.18);
+}
 
 .dialpad button span {
     position: relative;
-
     z-index: 1;
 
     color: #f8fafc;
 
-    font-size: 21px;
-
+    font-size: 18px;
     line-height: 1;
-
     font-weight: 650;
-
-    text-shadow:
-        0 0 10px
-        rgba(96, 165, 250, 0.35);
 }
-
-
-/* =========================================================
-   DIALPAD LETTERS
-========================================================= */
 
 .dialpad button small {
     position: relative;
-
     z-index: 1;
 
-    margin-top: 5px;
+    margin-top: 4px;
 
     color: #8ca0ba;
 
-    font-size: 7px;
-
+    font-size: 6px;
     line-height: 1;
 
-    letter-spacing: 1.1px;
+    letter-spacing: 1px;
 
     font-weight: 700;
 }
 
-
-/* =========================================================
-   DIALPAD HOVER
-========================================================= */
-
-.dialpad button:hover {
-    transform:
-        translateY(-2px);
-
-    border-color:
-        rgba(96, 165, 250, 0.70);
-
-    background:
-        linear-gradient(
-            145deg,
-            #1b3d66,
-            #102846
-        );
-
-    box-shadow:
-        0 0 24px
-        rgba(37, 99, 235, 0.36),
-        inset 0 0 18px
-        rgba(59, 130, 246, 0.08);
-}
-
-.dialpad button:hover::before {
-    opacity: 0.72;
-
-    filter:
-        blur(8px);
-}
-
-
-/* =========================================================
-   DIALPAD PRESS
-========================================================= */
-
-.dialpad button:active {
-    transform:
-        scale(0.95);
-
-    border-color:
-        rgba(147, 197, 253, 0.95);
-
-    background:
-        linear-gradient(
-            145deg,
-            #20549a,
-            #153765
-        );
-
-    box-shadow:
-        0 0 35px
-        rgba(37, 99, 235, 0.72),
-        inset 0 0 25px
-        rgba(96, 165, 250, 0.20);
-}
-
-.dialpad button:active::before {
-    opacity: 1;
-
-    filter:
-        blur(10px);
-}
-
-
-/* =========================================================
-   EXTRA KEYS
-========================================================= */
-
 .dialpad .extra-key {
     background:
-        linear-gradient(
-            145deg,
-            #132741,
-            #0b1a2e
+        radial-gradient(
+            circle at 50% 35%,
+            #17365c,
+            #0b1e34
         );
 }
 
 .dialpad .extra-key span {
-    font-size: 19px;
+    font-size: 17px;
 }
 
 
@@ -845,55 +670,49 @@ textarea:focus-visible {
 ========================================================= */
 
 .call-controls {
-    width:
-        min(100%, 500px);
+    width: 330px;
 
-    margin:
-        20px auto 0;
+    margin: 14px auto 0;
 
     display: grid;
 
     grid-template-columns:
         repeat(2, 1fr);
 
-    gap: 10px;
+    gap: 8px;
 }
 
-
-/* =========================================================
-   ALL CALL BUTTONS
-========================================================= */
-
 .call-controls button {
-    height: 53px;
+    height: 41px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    gap: 7px;
+    gap: 6px;
 
-    border-radius: 14px;
+    border-radius: 10px;
 
     color: #e2e8f0;
 
-    font-size: 11px;
-
+    font-size: 9px;
     font-weight: 700;
 
     cursor: pointer;
 
     transition:
-        transform 0.15s ease,
-        box-shadow 0.15s ease,
-        border-color 0.15s ease,
-        opacity 0.15s ease;
+        transform .14s ease,
+        box-shadow .14s ease,
+        border-color .14s ease,
+        opacity .14s ease;
+}
+
+.call-controls button:hover:not(:disabled) {
+    transform: translateY(-1px);
 }
 
 
-/* =========================================================
-   CALL
-========================================================= */
+/* CALL */
 
 .call-button {
     background:
@@ -904,29 +723,21 @@ textarea:focus-visible {
         );
 
     border:
-        1px solid
-        rgba(96, 165, 250, 0.45);
+        1px solid rgba(96,165,250,.42);
 
     color: white !important;
 
     box-shadow:
-        0 8px 25px
-        rgba(37, 99, 235, 0.30);
+        0 7px 20px rgba(37,99,235,.28);
 }
 
 .call-button:hover:not(:disabled) {
-    transform:
-        translateY(-2px);
-
     box-shadow:
-        0 12px 30px
-        rgba(37, 99, 235, 0.42);
+        0 10px 26px rgba(37,99,235,.42);
 }
 
 
-/* =========================================================
-   MUTE
-========================================================= */
+/* MUTE */
 
 .mute-button {
     background:
@@ -937,23 +748,19 @@ textarea:focus-visible {
         );
 
     border:
-        1px solid
-        rgba(148, 163, 184, 0.11);
+        1px solid rgba(148,163,184,.11);
 }
 
 .mute-button:hover:not(:disabled) {
     border-color:
-        rgba(96, 165, 250, 0.45);
+        rgba(96,165,250,.45);
 
     box-shadow:
-        0 0 18px
-        rgba(37, 99, 235, 0.18);
+        0 0 16px rgba(37,99,235,.17);
 }
 
 
-/* =========================================================
-   HOLD
-========================================================= */
+/* HOLD */
 
 .hold-button {
     background:
@@ -964,23 +771,19 @@ textarea:focus-visible {
         );
 
     border:
-        1px solid
-        rgba(148, 163, 184, 0.11);
+        1px solid rgba(148,163,184,.11);
 }
 
 .hold-button:hover:not(:disabled) {
     border-color:
-        rgba(96, 165, 250, 0.45);
+        rgba(96,165,250,.45);
 
     box-shadow:
-        0 0 18px
-        rgba(37, 99, 235, 0.18);
+        0 0 16px rgba(37,99,235,.17);
 }
 
 
-/* =========================================================
-   HANG UP
-========================================================= */
+/* HANG UP */
 
 .hangup-button {
     background:
@@ -991,41 +794,30 @@ textarea:focus-visible {
         );
 
     border:
-        1px solid
-        rgba(248, 113, 113, 0.20);
+        1px solid rgba(248,113,113,.20);
 
     color: white !important;
 
     box-shadow:
-        0 8px 22px
-        rgba(127, 29, 45, 0.22);
+        0 7px 20px rgba(127,29,45,.22);
 }
 
 .hangup-button:hover:not(:disabled) {
-    transform:
-        translateY(-2px);
-
     box-shadow:
-        0 12px 28px
-        rgba(220, 38, 38, 0.28);
+        0 10px 25px rgba(220,38,38,.28);
 }
 
 
-/* =========================================================
-   DISABLED CALL CONTROLS
-========================================================= */
+/* DISABLED */
 
 .call-controls button:disabled {
-    opacity: 0.30;
-
-    cursor:
-        not-allowed;
-
+    opacity: .30;
+    cursor: not-allowed;
     box-shadow: none;
 }
 
 .call-controls .call-button:disabled {
-    opacity: 0.75;
+    opacity: .72;
 }
 
 
@@ -1033,32 +825,31 @@ textarea:focus-visible {
    RIGHT PANEL
 ========================================================= */
 
-.left-column {
+.right-panel {
     grid-area: rightpanel;
 
-    width: 380px;
-    min-width: 380px;
+    width: 345px;
+    min-width: 345px;
     height: 100%;
 
-    padding: 18px;
+    padding: 13px;
 
     display: flex;
     flex-direction: column;
 
-    gap: 12px;
+    gap: 10px;
 
     overflow: hidden;
 
     background:
         linear-gradient(
             180deg,
-            #081422,
+            #081321,
             #06101c
         );
 
     border-left:
-        1px solid
-        rgba(148, 163, 184, 0.09);
+        1px solid rgba(148,163,184,.09);
 }
 
 
@@ -1073,37 +864,37 @@ textarea:focus-visible {
 
     flex: 1 1 auto;
 
-    padding: 16px;
-
     display: flex;
     flex-direction: column;
 
     overflow: hidden;
 
+    padding: 14px;
+
     border:
-        1px solid
-        rgba(148, 163, 184, 0.10);
+        1px solid rgba(148,163,184,.11);
 
     border-radius: 15px;
 
     background:
         linear-gradient(
             145deg,
-            #0f2036,
+            #122640,
             #091728
         );
 
     box-shadow:
-        0 12px 30px
-        rgba(0, 0, 0, 0.15);
+        0 10px 25px rgba(0,0,0,.15);
 }
 
 .recent-header {
+    height: 28px;
+
     display: flex;
     align-items: center;
     justify-content: space-between;
 
-    margin-bottom: 10px;
+    margin-bottom: 6px;
 }
 
 .recent-header h2 {
@@ -1112,13 +903,11 @@ textarea:focus-visible {
     color: #f1f5f9;
 
     font-size: 14px;
-
     font-weight: 700;
 }
 
 .recent-header span {
-    color: #64748b;
-
+    color: #7187a3;
     font-size: 9px;
 }
 
@@ -1129,61 +918,125 @@ textarea:focus-visible {
 
     overflow-y: auto;
 
-    padding-right: 3px;
+    padding-right: 2px;
 }
 
 
 /* =========================================================
-   RECENT CALL SCROLLBAR
+   DYNAMIC RECENT CALL ROWS
+   These match the markup generated by app.js.
 ========================================================= */
 
-.recent-calls-list::-webkit-scrollbar {
-    width: 4px;
-}
+.recent-call {
+    width: 100%;
+    min-height: 61px;
 
-.recent-calls-list::-webkit-scrollbar-track {
-    background: transparent;
-}
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 
-.recent-calls-list::-webkit-scrollbar-thumb {
-    background:
-        rgba(96, 165, 250, 0.20);
+    padding: 7px 3px;
 
-    border-radius: 10px;
-}
-
-
-/* =========================================================
-   RECENT CALL ROWS
-   Supports the existing dynamically-generated markup.
-========================================================= */
-
-.recent-calls-list > div,
-.recent-calls-list > article,
-.recent-call-item {
     border-bottom:
-        1px solid
-        rgba(148, 163, 184, 0.07);
+        1px solid rgba(148,163,184,.08);
 
-    padding:
-        10px 4px;
+    background: transparent;
 
-    color: #cbd5e1;
+    transition:
+        background .15s ease,
+        transform .15s ease;
 }
 
-.recent-calls-list > div:last-child,
-.recent-calls-list > article:last-child,
-.recent-call-item:last-child {
+.recent-call:last-child {
     border-bottom: none;
 }
 
+.recent-call:hover {
+    background: rgba(59,130,246,.055);
+    border-radius: 8px;
+    transform: translateX(2px);
+}
 
-/* =========================================================
-   EMPTY RECENT
-========================================================= */
+.recent-left {
+    min-width: 0;
+
+    display: flex;
+    align-items: center;
+
+    gap: 9px;
+}
+
+.recent-icon {
+    width: 31px;
+    height: 31px;
+    min-width: 31px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background:
+        linear-gradient(
+            145deg,
+            #6388bb,
+            #3c5c87
+        );
+
+    border:
+        1px solid rgba(147,197,253,.20);
+
+    color: #f8fafc;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    box-shadow:
+        0 4px 12px rgba(37,99,235,.15);
+}
+
+.recent-number {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    color: #f1f5f9;
+
+    font-size: 11px;
+    font-weight: 650;
+}
+
+.recent-contact-number {
+    margin-top: 2px;
+
+    color: #7187a3;
+
+    font-size: 8px;
+}
+
+.recent-details {
+    margin-top: 3px;
+
+    color: #8298b1;
+
+    font-size: 8px;
+}
+
+.recent-time {
+    flex-shrink: 0;
+
+    margin-left: 7px;
+
+    color: #8298b1;
+
+    font-size: 8px;
+
+    white-space: nowrap;
+}
 
 .empty-recent {
-    min-height: 120px;
+    min-height: 100px;
 
     display: flex;
     align-items: center;
@@ -1191,7 +1044,7 @@ textarea:focus-visible {
 
     color: #64748b;
 
-    font-size: 11px;
+    font-size: 10px;
 }
 
 
@@ -1201,41 +1054,36 @@ textarea:focus-visible {
 
 .history-button {
     width: 100%;
+    height: 34px;
 
-    height: 38px;
+    flex-shrink: 0;
 
-    margin-top: 9px;
+    margin-top: 8px;
 
     border:
-        1px solid
-        rgba(96, 165, 250, 0.14);
+        1px solid rgba(96,165,250,.17);
 
-    border-radius: 10px;
+    border-radius: 9px;
 
     background:
-        rgba(37, 99, 235, 0.08);
+        rgba(37,99,235,.08);
 
-    color: #93c5fd;
+    color: #60a5fa;
 
-    font-size: 9px;
-
+    font-size: 8px;
     font-weight: 750;
 
-    letter-spacing: 0.6px;
+    letter-spacing: .8px;
 
     cursor: pointer;
-
-    transition:
-        background 0.15s ease,
-        border-color 0.15s ease;
 }
 
 .history-button:hover {
     background:
-        rgba(37, 99, 235, 0.15);
+        rgba(37,99,235,.15);
 
     border-color:
-        rgba(96, 165, 250, 0.30);
+        rgba(96,165,250,.34);
 }
 
 
@@ -1246,22 +1094,25 @@ textarea:focus-visible {
 .call-history-panel {
     display: none;
 
-    margin-top: 10px;
+    margin-top: 8px;
 
-    max-height: 260px;
+    max-height: 230px;
 
     overflow-y: auto;
 
-    border:
-        1px solid
-        rgba(148, 163, 184, 0.08);
+    padding: 10px;
 
-    border-radius: 10px;
+    border:
+        1px solid rgba(148,163,184,.09);
+
+    border-radius: 12px;
 
     background:
-        rgba(3, 9, 20, 0.45);
-
-    padding: 10px;
+        linear-gradient(
+            145deg,
+            #0c1c30,
+            #081523
+        );
 }
 
 .call-history-panel.open,
@@ -1270,83 +1121,56 @@ textarea:focus-visible {
 }
 
 .history-title {
-    color: #94a3b8;
+    margin-bottom: 7px;
+
+    color: #f1f5f9;
 
     font-size: 10px;
-
     font-weight: 700;
-
-    margin-bottom: 8px;
 }
 
 .empty-history {
     color: #64748b;
-
-    font-size: 10px;
+    font-size: 9px;
 }
 
 
 /* =========================================================
-   MESSAGES CARD
+   DYNAMIC CALL HISTORY
 ========================================================= */
 
-.messages-card {
-    width: 100%;
+.call-history-item {
+    min-height: 58px;
 
-    height: 68px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 
-    flex:
-        0 0 68px;
+    gap: 8px;
+
+    padding: 7px 2px;
+
+    border-bottom:
+        1px solid rgba(148,163,184,.07);
+}
+
+.call-history-item:last-child {
+    border-bottom: none;
+}
+
+.call-history-left {
+    min-width: 0;
 
     display: flex;
     align-items: center;
 
-    gap: 11px;
-
-    padding:
-        11px 13px;
-
-    border:
-        1px solid
-        rgba(148, 163, 184, 0.10);
-
-    border-radius: 14px;
-
-    background:
-        linear-gradient(
-            145deg,
-            #0f2036,
-            #091728
-        );
-
-    cursor: pointer;
-
-    transition:
-        transform 0.15s ease,
-        border-color 0.15s ease,
-        background 0.15s ease;
+    gap: 8px;
 }
 
-.messages-card:hover {
-    transform:
-        translateY(-1px);
-
-    border-color:
-        rgba(96, 165, 250, 0.28);
-
-    background:
-        linear-gradient(
-            145deg,
-            #122947,
-            #0b1b30
-        );
-}
-
-.messages-card-icon {
-    width: 37px;
-    height: 37px;
-
-    flex: 0 0 37px;
+.call-icon {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
 
     display: flex;
     align-items: center;
@@ -1355,11 +1179,159 @@ textarea:focus-visible {
     border-radius: 50%;
 
     background:
-        rgba(37, 99, 235, 0.12);
+        linear-gradient(
+            145deg,
+            #557fb6,
+            #294d78
+        );
+
+    color: #dbeafe;
+
+    font-size: 10px;
+}
+
+.call-history-number {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    color: #f1f5f9;
+
+    font-size: 10px;
+    font-weight: 650;
+}
+
+.call-history-contact-number {
+    margin-top: 2px;
+
+    color: #7187a3;
+
+    font-size: 7px;
+}
+
+.call-history-details {
+    margin-top: 2px;
+
+    color: #8298b1;
+
+    font-size: 7px;
+}
+
+.call-history-right {
+    flex-shrink: 0;
+
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+
+    gap: 2px;
+
+    text-align: right;
+}
+
+.call-history-duration {
+    color: #94a3b8;
+    font-size: 7px;
+}
+
+.call-history-time {
+    color: #64748b;
+    font-size: 7px;
+    white-space: nowrap;
+}
+
+.call-history-actions {
+    display: flex;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.history-call-button,
+.history-message-button {
+    height: 21px;
+
+    padding: 0 6px;
 
     border:
-        1px solid
-        rgba(96, 165, 250, 0.12);
+        1px solid rgba(96,165,250,.15);
+
+    border-radius: 6px;
+
+    background:
+        rgba(37,99,235,.08);
+
+    color: #93c5fd;
+
+    font-size: 7px;
+    font-weight: 650;
+
+    cursor: pointer;
+}
+
+
+/* =========================================================
+   MESSAGES / CONTACTS CARDS
+========================================================= */
+
+.messages-card,
+.contacts-card {
+    width: 100%;
+    height: 62px;
+    min-height: 62px;
+
+    flex: 0 0 62px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 10px 12px;
+
+    border:
+        1px solid rgba(148,163,184,.10);
+
+    border-radius: 13px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #102239,
+            #091728
+        );
+
+    cursor: pointer;
+
+    transition:
+        transform .15s ease,
+        border-color .15s ease;
+}
+
+.messages-card:hover,
+.contacts-card:hover {
+    transform: translateY(-1px);
+
+    border-color:
+        rgba(96,165,250,.25);
+}
+
+.messages-card-icon,
+.contacts-icon {
+    width: 35px;
+    height: 35px;
+    min-width: 35px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background:
+        rgba(37,99,235,.12);
+
+    border:
+        1px solid rgba(96,165,250,.12);
 
     font-size: 14px;
 }
@@ -1369,15 +1341,16 @@ textarea:focus-visible {
     flex: 1;
 }
 
-.messages-card-title {
+.messages-card-title,
+.contacts-title {
     color: #f1f5f9;
 
-    font-size: 11px;
-
+    font-size: 10px;
     font-weight: 700;
 }
 
-.messages-card-subtitle {
+.messages-card-subtitle,
+.contacts-subtitle {
     margin-top: 3px;
 
     color: #64748b;
@@ -1387,103 +1360,7 @@ textarea:focus-visible {
 
 .messages-card-arrow {
     color: #64748b;
-
-    font-size: 19px;
-}
-
-
-/* =========================================================
-   CONTACTS CARD
-========================================================= */
-
-.contacts-card {
-    width: 100%;
-
-    height: 68px;
-
-    flex:
-        0 0 68px;
-
-    display: flex;
-    align-items: center;
-
-    gap: 11px;
-
-    padding:
-        11px 13px;
-
-    border:
-        1px solid
-        rgba(148, 163, 184, 0.10);
-
-    border-radius: 14px;
-
-    background:
-        linear-gradient(
-            145deg,
-            #0f2036,
-            #091728
-        );
-
-    cursor: pointer;
-
-    transition:
-        transform 0.15s ease,
-        border-color 0.15s ease,
-        background 0.15s ease;
-}
-
-.contacts-card:hover {
-    transform:
-        translateY(-1px);
-
-    border-color:
-        rgba(96, 165, 250, 0.28);
-
-    background:
-        linear-gradient(
-            145deg,
-            #122947,
-            #0b1b30
-        );
-}
-
-.contacts-icon {
-    width: 37px;
-    height: 37px;
-
-    flex: 0 0 37px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 50%;
-
-    background:
-        rgba(37, 99, 235, 0.12);
-
-    border:
-        1px solid
-        rgba(96, 165, 250, 0.12);
-
-    font-size: 14px;
-}
-
-.contacts-title {
-    color: #f1f5f9;
-
-    font-size: 11px;
-
-    font-weight: 700;
-}
-
-.contacts-subtitle {
-    margin-top: 3px;
-
-    color: #64748b;
-
-    font-size: 8px;
+    font-size: 18px;
 }
 
 
@@ -1493,7 +1370,6 @@ textarea:focus-visible {
 
 .dialeaze-incoming-overlay {
     position: fixed;
-
     inset: 0;
 
     z-index: 9999;
@@ -1506,10 +1382,9 @@ textarea:focus-visible {
     padding: 20px;
 
     background:
-        rgba(2, 8, 18, 0.78);
+        rgba(2,8,18,.78);
 
-    backdrop-filter:
-        blur(10px);
+    backdrop-filter: blur(10px);
 }
 
 .dialeaze-incoming-overlay.active,
@@ -1518,16 +1393,14 @@ textarea:focus-visible {
 }
 
 .dialeaze-incoming-card {
-    width:
-        min(420px, 100%);
+    width: min(420px, 100%);
 
     padding: 28px;
 
     text-align: center;
 
     border:
-        1px solid
-        rgba(96, 165, 250, 0.22);
+        1px solid rgba(96,165,250,.22);
 
     border-radius: 20px;
 
@@ -1539,10 +1412,7 @@ textarea:focus-visible {
         );
 
     box-shadow:
-        0 30px 80px
-        rgba(0, 0, 0, 0.55),
-        0 0 50px
-        rgba(37, 99, 235, 0.12);
+        0 30px 80px rgba(0,0,0,.55);
 }
 
 .dialeaze-incoming-top {
@@ -1555,7 +1425,6 @@ textarea:focus-visible {
     color: #60a5fa;
 
     font-size: 9px;
-
     font-weight: 800;
 
     letter-spacing: 1.5px;
@@ -1570,16 +1439,14 @@ textarea:focus-visible {
     background: #4ade80;
 
     box-shadow:
-        0 0 10px
-        rgba(74, 222, 128, 0.8);
+        0 0 10px rgba(74,222,128,.8);
 }
 
 .dialeaze-phone-ring {
     width: 72px;
     height: 72px;
 
-    margin:
-        25px auto 15px;
+    margin: 24px auto 15px;
 
     display: flex;
     align-items: center;
@@ -1588,26 +1455,20 @@ textarea:focus-visible {
     border-radius: 50%;
 
     background:
-        rgba(37, 99, 235, 0.16);
+        rgba(37,99,235,.16);
 
     border:
-        1px solid
-        rgba(96, 165, 250, 0.22);
+        1px solid rgba(96,165,250,.22);
 
     color: #60a5fa;
 
     font-size: 27px;
-
-    box-shadow:
-        0 0 35px
-        rgba(37, 99, 235, 0.20);
 }
 
 .dialeaze-incoming-title {
     color: #f8fafc;
 
     font-size: 20px;
-
     font-weight: 750;
 }
 
@@ -1617,7 +1478,6 @@ textarea:focus-visible {
     color: #bfdbfe;
 
     font-size: 15px;
-
     font-weight: 650;
 }
 
@@ -1657,16 +1517,12 @@ textarea:focus-visible {
 }
 
 .dialeaze-decline {
-    background:
-        #7f1d2d;
-
+    background: #7f1d2d;
     color: white;
 }
 
 .dialeaze-answer {
-    background:
-        #2563eb;
-
+    background: #2563eb;
     color: white;
 }
 
@@ -1677,7 +1533,6 @@ textarea:focus-visible {
 
 .messages-overlay {
     position: fixed;
-
     inset: 0;
 
     z-index: 9000;
@@ -1690,10 +1545,9 @@ textarea:focus-visible {
     padding: 25px;
 
     background:
-        rgba(2, 8, 18, 0.78);
+        rgba(2,8,18,.78);
 
-    backdrop-filter:
-        blur(10px);
+    backdrop-filter: blur(10px);
 }
 
 .messages-overlay.active,
@@ -1702,11 +1556,8 @@ textarea:focus-visible {
 }
 
 .messages-window {
-    width:
-        min(1100px, 96vw);
-
-    height:
-        min(720px, 90vh);
+    width: min(1100px, 96vw);
+    height: min(720px, 90vh);
 
     display: flex;
     flex-direction: column;
@@ -1714,49 +1565,39 @@ textarea:focus-visible {
     overflow: hidden;
 
     border:
-        1px solid
-        rgba(148, 163, 184, 0.14);
+        1px solid rgba(148,163,184,.14);
 
     border-radius: 18px;
 
-    background:
-        #091625;
+    background: #091625;
 
     box-shadow:
-        0 30px 100px
-        rgba(0, 0, 0, 0.55);
+        0 30px 100px rgba(0,0,0,.55);
 }
 
 .messages-header {
     height: 70px;
-
     flex: 0 0 70px;
 
     display: flex;
     align-items: center;
     justify-content: space-between;
 
-    padding:
-        0 20px;
+    padding: 0 20px;
 
     border-bottom:
-        1px solid
-        rgba(148, 163, 184, 0.09);
+        1px solid rgba(148,163,184,.09);
 }
 
 .messages-title {
     color: #f8fafc;
-
     font-size: 16px;
-
     font-weight: 750;
 }
 
 .messages-number {
     margin-top: 3px;
-
     color: #64748b;
-
     font-size: 9px;
 }
 
@@ -1768,7 +1609,7 @@ textarea:focus-visible {
     border-radius: 9px;
 
     background:
-        rgba(255, 255, 255, 0.04);
+        rgba(255,255,255,.04);
 
     color: #94a3b8;
 
@@ -1777,29 +1618,21 @@ textarea:focus-visible {
     cursor: pointer;
 }
 
-
-/* =========================================================
-   MESSAGES BODY
-========================================================= */
-
 .messages-inbox-body {
     flex: 1;
-
     min-height: 0;
 
     display: grid;
 
     grid-template-columns:
-        300px
-        1fr;
+        300px 1fr;
 }
 
 .messages-inbox-list {
     min-width: 0;
 
     border-right:
-        1px solid
-        rgba(148, 163, 184, 0.09);
+        1px solid rgba(148,163,184,.09);
 }
 
 .messages-inbox-list-header {
@@ -1809,15 +1642,12 @@ textarea:focus-visible {
     align-items: center;
     justify-content: space-between;
 
-    padding:
-        0 14px;
+    padding: 0 14px;
 }
 
 .messages-inbox-heading {
     color: #e2e8f0;
-
     font-size: 12px;
-
     font-weight: 700;
 }
 
@@ -1827,17 +1657,14 @@ textarea:focus-visible {
 
     border-radius: 8px;
 
-    background:
-        #2563eb;
-
+    background: #2563eb;
     color: white;
 
     cursor: pointer;
 }
 
 .messages-search-area {
-    padding:
-        0 12px 10px;
+    padding: 0 12px 10px;
 }
 
 .messages-search-area input,
@@ -1845,19 +1672,17 @@ textarea:focus-visible {
     width: 100%;
     height: 38px;
 
+    padding: 0 11px;
+
     border:
-        1px solid
-        rgba(148, 163, 184, 0.10);
+        1px solid rgba(148,163,184,.10);
 
     border-radius: 9px;
 
     outline: none;
 
-    padding:
-        0 11px;
-
     background:
-        rgba(3, 9, 20, 0.55);
+        rgba(3,9,20,.55);
 
     color: #e2e8f0;
 
@@ -1866,7 +1691,6 @@ textarea:focus-visible {
 
 .messages-conversation-list {
     height: calc(100% - 103px);
-
     overflow-y: auto;
 }
 
@@ -1885,12 +1709,10 @@ textarea:focus-visible {
 
     gap: 10px;
 
-    padding:
-        0 16px;
+    padding: 0 16px;
 
     border-bottom:
-        1px solid
-        rgba(148, 163, 184, 0.09);
+        1px solid rgba(148,163,184,.09);
 }
 
 .messages-back-button {
@@ -1900,7 +1722,7 @@ textarea:focus-visible {
     border-radius: 8px;
 
     background:
-        rgba(255, 255, 255, 0.04);
+        rgba(255,255,255,.04);
 
     color: #94a3b8;
 
@@ -1911,7 +1733,6 @@ textarea:focus-visible {
     color: #f1f5f9;
 
     font-size: 12px;
-
     font-weight: 700;
 }
 
@@ -1930,13 +1751,11 @@ textarea:focus-visible {
     height: 1px;
 
     opacity: 0;
-
     pointer-events: none;
 }
 
 .messages-conversation {
     flex: 1;
-
     min-height: 0;
 
     overflow-y: auto;
@@ -1957,12 +1776,10 @@ textarea:focus-visible {
 }
 
 .message-composer {
-    padding:
-        12px 15px;
+    padding: 12px 15px;
 
     border-top:
-        1px solid
-        rgba(148, 163, 184, 0.09);
+        1px solid rgba(148,163,184,.09);
 }
 
 .message-composer textarea {
@@ -1971,15 +1788,14 @@ textarea:focus-visible {
     resize: none;
 
     border:
-        1px solid
-        rgba(148, 163, 184, 0.10);
+        1px solid rgba(148,163,184,.10);
 
     border-radius: 10px;
 
     padding: 10px;
 
     background:
-        rgba(3, 9, 20, 0.55);
+        rgba(3,9,20,.55);
 
     color: #e2e8f0;
 
@@ -1998,27 +1814,23 @@ textarea:focus-visible {
 
 .message-character-count {
     color: #64748b;
-
     font-size: 8px;
 }
 
 .send-message-button {
     height: 34px;
 
-    padding:
-        0 14px;
+    padding: 0 14px;
 
     border-radius: 9px;
 
-    background:
-        #2563eb;
+    background: #2563eb;
 
     color: white;
 
     cursor: pointer;
 
     font-size: 9px;
-
     font-weight: 700;
 }
 
@@ -2029,7 +1841,6 @@ textarea:focus-visible {
 
 .contacts-overlay {
     position: fixed;
-
     inset: 0;
 
     z-index: 9000;
@@ -2042,10 +1853,9 @@ textarea:focus-visible {
     padding: 25px;
 
     background:
-        rgba(2, 8, 18, 0.78);
+        rgba(2,8,18,.78);
 
-    backdrop-filter:
-        blur(10px);
+    backdrop-filter: blur(10px);
 }
 
 .contacts-overlay.active,
@@ -2054,11 +1864,8 @@ textarea:focus-visible {
 }
 
 .contacts-window {
-    width:
-        min(900px, 95vw);
-
-    max-height:
-        90vh;
+    width: min(900px, 95vw);
+    max-height: 90vh;
 
     overflow: hidden;
 
@@ -2066,17 +1873,14 @@ textarea:focus-visible {
     flex-direction: column;
 
     border:
-        1px solid
-        rgba(148, 163, 184, 0.14);
+        1px solid rgba(148,163,184,.14);
 
     border-radius: 18px;
 
-    background:
-        #091625;
+    background: #091625;
 
     box-shadow:
-        0 30px 100px
-        rgba(0, 0, 0, 0.55);
+        0 30px 100px rgba(0,0,0,.55);
 }
 
 .contacts-header {
@@ -2086,19 +1890,16 @@ textarea:focus-visible {
     align-items: center;
     justify-content: space-between;
 
-    padding:
-        0 20px;
+    padding: 0 20px;
 
     border-bottom:
-        1px solid
-        rgba(148, 163, 184, 0.09);
+        1px solid rgba(148,163,184,.09);
 }
 
 .contacts-window-title {
     color: #f8fafc;
 
     font-size: 16px;
-
     font-weight: 750;
 }
 
@@ -2124,32 +1925,27 @@ textarea:focus-visible {
 .contacts-add-button {
     height: 38px;
 
-    padding:
-        0 15px;
+    padding: 0 15px;
 
     border-radius: 9px;
 
-    background:
-        #2563eb;
+    background: #2563eb;
 
     color: white;
 
     cursor: pointer;
 
     font-size: 10px;
-
     font-weight: 700;
 }
 
 .contacts-list {
     flex: 1;
-
     min-height: 200px;
 
     overflow-y: auto;
 
-    padding:
-        0 14px 14px;
+    padding: 0 14px 14px;
 }
 
 .contacts-empty {
@@ -2170,8 +1966,7 @@ textarea:focus-visible {
     padding: 18px;
 
     border-top:
-        1px solid
-        rgba(148, 163, 184, 0.09);
+        1px solid rgba(148,163,184,.09);
 }
 
 .contact-form-title {
@@ -2180,7 +1975,6 @@ textarea:focus-visible {
     color: #f1f5f9;
 
     font-size: 13px;
-
     font-weight: 700;
 }
 
@@ -2201,13 +1995,11 @@ textarea:focus-visible {
 }
 
 .contact-field-full {
-    grid-column:
-        1 / -1;
+    grid-column: 1 / -1;
 }
 
 .contact-field label {
     color: #94a3b8;
-
     font-size: 9px;
 }
 
@@ -2216,16 +2008,14 @@ textarea:focus-visible {
     width: 100%;
 
     border:
-        1px solid
-        rgba(148, 163, 184, 0.10);
+        1px solid rgba(148,163,184,.10);
 
     border-radius: 8px;
 
-    padding:
-        9px;
+    padding: 9px;
 
     background:
-        rgba(3, 9, 20, 0.55);
+        rgba(3,9,20,.55);
 
     color: #e2e8f0;
 
@@ -2255,35 +2045,40 @@ textarea:focus-visible {
 .contact-save-button {
     height: 35px;
 
-    padding:
-        0 14px;
+    padding: 0 14px;
 
     border-radius: 8px;
 
     cursor: pointer;
 
     font-size: 9px;
-
     font-weight: 700;
 }
 
 .contact-cancel-button {
     background:
-        rgba(255, 255, 255, 0.05);
+        rgba(255,255,255,.05);
 
     color: #94a3b8;
 }
 
 .contact-save-button {
-    background:
-        #2563eb;
-
+    background: #2563eb;
     color: white;
 }
 
 
 /* =========================================================
-   GENERAL SCROLLBARS
+   REMOTE AUDIO
+========================================================= */
+
+#remoteMedia {
+    display: block;
+}
+
+
+/* =========================================================
+   SCROLLBARS
 ========================================================= */
 
 *::-webkit-scrollbar {
@@ -2297,52 +2092,62 @@ textarea:focus-visible {
 
 *::-webkit-scrollbar-thumb {
     background:
-        rgba(100, 116, 139, 0.28);
+        rgba(100,116,139,.28);
 
     border-radius: 10px;
 }
 
 
 /* =========================================================
-   RESPONSIVE — TABLET
+   TABLET
 ========================================================= */
 
 @media (max-width: 1100px) {
 
+    .app-shell {
+        width: calc(100vw - 28px);
+        height: calc(100vh - 28px);
+
+        margin: 14px;
+    }
+
     .main-content {
         grid-template-columns:
-            190px
-            minmax(380px, 1fr)
-            330px;
+            180px
+            minmax(0, 1fr)
+            315px;
     }
 
     .dialeaze-sidebar {
-        width: 190px;
-        min-width: 190px;
+        width: 180px;
+        min-width: 180px;
     }
 
-    .left-column {
-        width: 330px;
-        min-width: 330px;
+    .right-panel {
+        width: 315px;
+        min-width: 315px;
     }
 
     .dialer-card {
-        padding:
-            25px 30px;
+        width: 430px;
+        height: 540px;
     }
 
-    .dialpad {
-        gap: 8px;
+    .dialpad,
+    .number-display,
+    .call-controls {
+        width: 310px;
     }
 
     .dialpad button {
-        height: 58px;
+        width: 62px;
+        height: 55px;
     }
 }
 
 
 /* =========================================================
-   RESPONSIVE — SMALLER SCREEN
+   MOBILE
 ========================================================= */
 
 @media (max-width: 850px) {
@@ -2352,19 +2157,19 @@ textarea:focus-visible {
     }
 
     .app-shell {
+        width: calc(100vw - 16px);
         height: auto;
-        min-height: 100vh;
+        min-height: calc(100vh - 16px);
 
-        padding: 10px;
+        margin: 8px;
+
+        overflow: visible;
     }
 
     .main-content {
         height: auto;
 
-        min-height: 0;
-
-        grid-template-columns:
-            1fr;
+        grid-template-columns: 1fr;
 
         grid-template-rows:
             auto
@@ -2384,21 +2189,28 @@ textarea:focus-visible {
         min-width: 0;
         height: auto;
 
-        border-right: none;
+        padding: 14px;
 
+        border-right: none;
         border-bottom:
-            1px solid
-            rgba(148, 163, 184, 0.10);
+            1px solid rgba(148,163,184,.10);
+    }
+
+    .dialeaze-sidebar-brand {
+        padding-bottom: 13px;
     }
 
     .dialeaze-sidebar-nav {
         flex-direction: row;
 
         overflow-x: auto;
+
+        padding-bottom: 3px;
     }
 
     .dialeaze-sidebar-item {
-        min-width: 120px;
+        width: auto;
+        min-width: 110px;
     }
 
     .dialeaze-sidebar-spacer {
@@ -2410,78 +2222,91 @@ textarea:focus-visible {
     }
 
     .dialer-card {
-        width: 100%;
+        width: min(470px, 94%);
+        height: 570px;
 
-        min-height: 680px;
-
-        padding:
-            30px 18px;
+        margin: 22px auto;
     }
 
-    .left-column {
+    .right-panel {
         width: 100%;
         min-width: 0;
-
         height: auto;
+
+        max-height: 700px;
+
+        border-left: none;
+        border-top:
+            1px solid rgba(148,163,184,.09);
     }
 
     .recent-card {
-        min-height: 400px;
+        min-height: 360px;
     }
 }
 
 
 /* =========================================================
-   MOBILE
+   SMALL MOBILE
 ========================================================= */
 
 @media (max-width: 520px) {
 
     .app-shell {
-        padding: 6px;
+        width: calc(100vw - 10px);
+        min-height: calc(100vh - 10px);
+
+        margin: 5px;
     }
 
-    .main-content {
-        border-radius: 12px;
+    .dialeaze-sidebar {
+        padding: 11px;
+    }
+
+    .dialeaze-sidebar-subtitle {
+        display: none;
     }
 
     .dialer-card {
-        min-height: 620px;
+        width: calc(100% - 20px);
+        height: 500px;
 
-        padding:
-            22px 14px;
+        padding: 18px 12px;
+
+        border-radius: 18px;
+    }
+
+    .number-display,
+    .dialpad,
+    .call-controls {
+        width: 285px;
+        max-width: 100%;
     }
 
     .number-display {
-        height: 55px;
-    }
-
-    .number-display input {
-        font-size: 17px;
+        height: 46px;
     }
 
     .dialpad {
-        gap: 7px;
+        gap: 7px 9px;
     }
 
     .dialpad button {
-        height: 54px;
-
-        border-radius: 12px;
+        width: 54px;
+        height: 50px;
     }
 
     .dialpad button span {
-        font-size: 19px;
+        font-size: 16px;
     }
 
     .call-controls {
-        gap: 7px;
+        gap: 6px;
     }
 
     .call-controls button {
-        height: 48px;
-
-        font-size: 10px;
+        height: 38px;
+        font-size: 8px;
     }
 
     .messages-inbox-body {
@@ -2499,2231 +2324,13 @@ textarea:focus-visible {
     .contact-field-full {
         grid-column: auto;
     }
-}
-/* =========================================================
-   DIALEAZE — PREMIUM CENTER DIALER
-   REFERENCE STYLE
-========================================================= */
 
-
-/* =========================================================
-   CENTER AREA
-========================================================= */
-
-.dialer-card {
-    grid-area: dialer !important;
-
-    width: min(650px, 88%) !important;
-    height: min(720px, 88%) !important;
-
-    min-width: 0 !important;
-    min-height: 0 !important;
-
-    justify-self: center !important;
-    align-self: center !important;
-
-    padding: 38px 55px 34px !important;
-
-    display: flex !important;
-    flex-direction: column !important;
-
-    align-items: center !important;
-    justify-content: center !important;
-
-    position: relative !important;
-
-    overflow: hidden !important;
-
-    border:
-        1px solid
-        rgba(96, 165, 250, 0.16) !important;
-
-    border-radius: 24px !important;
-
-    background:
-        radial-gradient(
-            circle at 50% 20%,
-            rgba(37, 99, 235, 0.16),
-            transparent 38%
-        ),
-        linear-gradient(
-            145deg,
-            #0d1c30,
-            #081321
-        ) !important;
-
-    box-shadow:
-        0 25px 70px
-        rgba(0, 0, 0, 0.30),
-
-        inset 0 1px 0
-        rgba(255, 255, 255, 0.035);
-}
-
-
-/* =========================================================
-   SUBTLE BLUE LIGHT AROUND DIALER
-========================================================= */
-
-.dialer-card::before {
-    content: "";
-
-    position: absolute;
-
-    width: 420px;
-    height: 280px;
-
-    top: -150px;
-    left: 50%;
-
-    transform: translateX(-50%);
-
-    background:
-        radial-gradient(
-            circle,
-            rgba(37, 99, 235, 0.18),
-            transparent 68%
-        );
-
-    filter: blur(25px);
-
-    pointer-events: none;
-}
-
-
-/* =========================================================
-   NUMBER DISPLAY
-========================================================= */
-
-.dialer-card .number-display {
-    width: 100% !important;
-    max-width: 430px !important;
-
-    height: 58px !important;
-
-    margin:
-        0 auto 25px !important;
-
-    flex-shrink: 0 !important;
-
-    border:
-        1px solid
-        rgba(96, 165, 250, 0.18) !important;
-
-    border-radius: 13px !important;
-
-    background:
-        rgba(13, 31, 53, 0.92) !important;
-
-    box-shadow:
-        inset 0 1px 0
-        rgba(255,255,255,.035),
-
-        0 8px 25px
-        rgba(0,0,0,.16) !important;
-}
-
-
-.dialer-card .number-display input {
-    height: 100% !important;
-
-    padding:
-        0 45px 0 15px !important;
-
-    color: #dbeafe !important;
-
-    text-align: center !important;
-
-    font-size: 18px !important;
-
-    font-weight: 650 !important;
-
-    letter-spacing: .6px !important;
-}
-
-
-.dialer-card .number-display input::placeholder {
-    color:
-        #6f87a5 !important;
-}
-
-
-/* =========================================================
-   DIALPAD
-========================================================= */
-
-.dialer-card .dialpad {
-    width: 100% !important;
-    max-width: 430px !important;
-
-    display: grid !important;
-
-    grid-template-columns:
-        repeat(3, 1fr) !important;
-
-    gap: 12px 15px !important;
-
-    margin:
-        0 auto !important;
-
-    flex-shrink: 0 !important;
-}
-
-
-/* =========================================================
-   CIRCULAR DIAL BUTTONS
-========================================================= */
-
-.dialer-card .dialpad button {
-    width: 76px !important;
-    height: 76px !important;
-
-    justify-self: center !important;
-
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    flex-direction: column !important;
-
-    position: relative !important;
-
-    border-radius: 50% !important;
-
-    border:
-        1px solid
-        rgba(96, 165, 250, 0.70) !important;
-
-    background:
-        radial-gradient(
-            circle at 50% 35%,
-            #1a3c68 0%,
-            #102947 48%,
-            #0b1c31 100%
-        ) !important;
-
-    color: #f8fafc !important;
-
-    cursor: pointer !important;
-
-    box-shadow:
-
-        0 0 7px
-        rgba(59, 130, 246, 0.45),
-
-        0 0 19px
-        rgba(37, 99, 235, 0.26),
-
-        inset 0 0 15px
-        rgba(96, 165, 250, 0.10) !important;
-
-    transition:
-        transform .15s ease,
-        box-shadow .15s ease,
-        border-color .15s ease,
-        background .15s ease !important;
-}
-
-
-/* =========================================================
-   OUTER GLOW
-========================================================= */
-
-.dialer-card .dialpad button::before {
-    content: "";
-
-    position: absolute;
-
-    inset: -5px;
-
-    border-radius: 50%;
-
-    background:
-        radial-gradient(
-            circle,
-            rgba(59, 130, 246, 0.55),
-            transparent 65%
-        );
-
-    filter:
-        blur(8px);
-
-    opacity: .55;
-
-    z-index: -1;
-
-    pointer-events: none;
-
-    transition:
-        opacity .15s ease,
-        filter .15s ease;
-}
-
-
-/* =========================================================
-   NUMBER
-========================================================= */
-
-.dialer-card .dialpad button span {
-    position: relative;
-
-    color: #f8fafc !important;
-
-    font-size: 19px !important;
-
-    line-height: 1 !important;
-
-    font-weight: 700 !important;
-
-    text-shadow:
-        0 0 9px
-        rgba(147, 197, 253, 0.65);
-}
-
-
-/* =========================================================
-   LETTERS
-========================================================= */
-
-.dialer-card .dialpad button small {
-    margin-top: 5px !important;
-
-    color: #a6bdd7 !important;
-
-    font-size: 6px !important;
-
-    line-height: 1 !important;
-
-    font-weight: 700 !important;
-
-    letter-spacing: 1px !important;
-}
-
-
-/* =========================================================
-   HOVER
-========================================================= */
-
-.dialer-card .dialpad button:hover {
-    transform:
-        translateY(-2px) scale(1.035) !important;
-
-    border-color:
-        #93c5fd !important;
-
-    background:
-        radial-gradient(
-            circle at 50% 35%,
-            #22518a 0%,
-            #14375f 48%,
-            #0b2038 100%
-        ) !important;
-
-    box-shadow:
-
-        0 0 10px
-        rgba(96, 165, 250, 0.85),
-
-        0 0 27px
-        rgba(37, 99, 235, 0.55),
-
-        0 0 50px
-        rgba(37, 99, 235, 0.18),
-
-        inset 0 0 18px
-        rgba(147, 197, 253, 0.15) !important;
-}
-
-
-.dialer-card .dialpad button:hover::before {
-    opacity: .9;
-
-    filter:
-        blur(11px);
-}
-
-
-/* =========================================================
-   PRESS
-========================================================= */
-
-.dialer-card .dialpad button:active {
-    transform:
-        scale(.92) !important;
-
-    border-color:
-        #bfdbfe !important;
-
-    box-shadow:
-
-        0 0 15px
-        rgba(147, 197, 253, 0.95),
-
-        0 0 35px
-        rgba(37, 99, 235, 0.70),
-
-        inset 0 0 22px
-        rgba(147, 197, 253, 0.22) !important;
-}
-
-
-/* =========================================================
-   EXTRA KEYS
-========================================================= */
-
-.dialer-card .dialpad button.extra-key {
-    background:
-        radial-gradient(
-            circle at 50% 35%,
-            #17345a,
-            #0c2038
-        ) !important;
-}
-
-
-/* =========================================================
-   CALL CONTROLS
-========================================================= */
-
-.dialer-card .call-controls {
-    width: 100% !important;
-    max-width: 430px !important;
-
-    margin:
-        25px auto 0 !important;
-
-    display: grid !important;
-
-    grid-template-columns:
-        repeat(2, 1fr) !important;
-
-    gap: 10px !important;
-
-    flex-shrink: 0 !important;
-}
-
-
-/* =========================================================
-   CONTROL BUTTONS
-========================================================= */
-
-.dialer-card .call-controls button {
-    height: 48px !important;
-
-    border-radius: 13px !important;
-
-    border:
-        1px solid
-        rgba(148, 163, 184, 0.10) !important;
-
-    background:
-        linear-gradient(
-            145deg,
-            #162941,
-            #0e1d30
-        ) !important;
-
-    color: #d5dfec !important;
-
-    font-size: 10px !important;
-
-    font-weight: 700 !important;
-
-    box-shadow:
-        inset 0 1px 0
-        rgba(255,255,255,.025) !important;
-
-    transition:
-        transform .15s ease,
-        border-color .15s ease,
-        box-shadow .15s ease !important;
-}
-
-
-.dialer-card .call-controls button:hover:not(:disabled) {
-    transform:
-        translateY(-1px) !important;
-
-    border-color:
-        rgba(96, 165, 250, 0.40) !important;
-
-    box-shadow:
-        0 0 18px
-        rgba(37, 99, 235, 0.18) !important;
-}
-
-
-/* =========================================================
-   CALL BUTTON
-========================================================= */
-
-.dialer-card .call-controls .call-button {
-    background:
-        linear-gradient(
-            135deg,
-            #3180f5,
-            #2563eb
-        ) !important;
-
-    color: white !important;
-
-    border-color:
-        rgba(96, 165, 250, 0.50) !important;
-
-    box-shadow:
-        0 8px 24px
-        rgba(37, 99, 235, 0.30) !important;
-}
-
-
-/* =========================================================
-   HANG UP
-========================================================= */
-
-.dialer-card .call-controls .hangup-button {
-    background:
-        linear-gradient(
-            135deg,
-            #8f2637,
-            #681b2a
-        ) !important;
-
-    color: #fff !important;
-
-    border-color:
-        rgba(248, 113, 113, 0.22) !important;
-
-    box-shadow:
-        0 8px 24px
-        rgba(127, 29, 45, 0.22) !important;
-}
-
-
-/* =========================================================
-   DISABLED CONTROLS
-========================================================= */
-
-.dialer-card .call-controls button:disabled {
-    opacity: .30 !important;
-
-    cursor:
-        not-allowed !important;
-
-    box-shadow:
-        none !important;
-}
-
-
-/* =========================================================
-   RIGHT PANEL — KEEP AS IS
-========================================================= */
-
-.right-panel {
-    grid-area: rightpanel !important;
-}
-
-
-/* =========================================================
-   RESPONSIVE
-========================================================= */
-
-@media (max-width: 1100px) {
-
-    .dialer-card {
-        width: min(590px, 90%) !important;
-
-        padding:
-            32px 35px !important;
+    .messages-window {
+        width: 96vw;
+        height: 92vh;
     }
 
-    .dialer-card .dialpad button {
-        width: 68px !important;
-        height: 68px !important;
+    .contacts-window {
+        width: 96vw;
     }
-}
-
-
-@media (max-width: 850px) {
-
-    .dialer-card {
-        width: min(650px, 94%) !important;
-
-        height: auto !important;
-
-        min-height: 650px !important;
-
-        margin:
-            20px auto !important;
-    }
-}
-
-
-@media (max-width: 520px) {
-
-    .dialer-card {
-        width: 96% !important;
-
-        padding:
-            25px 16px !important;
-
-        border-radius: 18px !important;
-    }
-
-    .dialer-card .dialpad {
-        gap: 9px !important;
-    }
-
-    .dialer-card .dialpad button {
-        width: 62px !important;
-        height: 62px !important;
-    }
-
-    .dialer-card .dialpad button span {
-        font-size: 17px !important;
-    }
-}
-
-/* =========================================================
-   DIALEAZE PREMIUM FINAL POLISH
-   WHITE PAGE + BOXED APP + PREMIUM RECENT CALLS
-========================================================= */
-
-
-/* =========================================================
-   WHITE BROWSER/PAGE BACKGROUND
-========================================================= */
-
-html,
-body {
-    background: #ffffff !important;
-}
-
-
-/* =========================================================
-   ENTIRE DIALEAZE APP = ONE BOX
-========================================================= */
-
-.app-shell {
-    width: calc(100vw - 32px) !important;
-    height: calc(100vh - 32px) !important;
-
-    min-height: 0 !important;
-
-    margin: 16px !important;
-
-    overflow: hidden !important;
-
-    border-radius: 20px !important;
-
-    border:
-        1px solid
-        rgba(15, 23, 42, 0.12) !important;
-
-    background:
-        #07111f !important;
-
-    box-shadow:
-        0 20px 60px
-        rgba(15, 23, 42, 0.18),
-
-        0 4px 16px
-        rgba(15, 23, 42, 0.08) !important;
-}
-
-
-/* =========================================================
-   MAIN CONTENT
-========================================================= */
-
-.main-content {
-    height: calc(100% - 0px) !important;
-
-    min-height: 0 !important;
-
-    overflow: hidden !important;
-
-    background:
-        #07111f !important;
-}
-
-
-/* =========================================================
-   LEFT SIDEBAR
-========================================================= */
-
-.dialeaze-sidebar {
-    background:
-        linear-gradient(
-            180deg,
-            #081321 0%,
-            #06101c 100%
-        ) !important;
-
-    border-right:
-        1px solid
-        rgba(148, 163, 184, 0.10) !important;
-}
-
-
-/* =========================================================
-   CENTER DIALER BOX
-========================================================= */
-
-.dialer-card {
-    width: min(650px, 86%) !important;
-
-    height: min(720px, 88%) !important;
-
-    justify-self: center !important;
-    align-self: center !important;
-
-    border-radius: 24px !important;
-
-    border:
-        1px solid
-        rgba(96, 165, 250, 0.18) !important;
-
-    background:
-        radial-gradient(
-            circle at 50% 8%,
-            rgba(37, 99, 235, 0.13),
-            transparent 38%
-        ),
-        linear-gradient(
-            145deg,
-            #0d1d32,
-            #081422
-        ) !important;
-
-    box-shadow:
-        0 25px 65px
-        rgba(0, 0, 0, 0.28),
-
-        inset 0 1px 0
-        rgba(255, 255, 255, 0.035) !important;
-}
-
-
-/* =========================================================
-   RIGHT PANEL
-========================================================= */
-
-.right-panel {
-    background:
-        linear-gradient(
-            180deg,
-            #081321 0%,
-            #06101c 100%
-        ) !important;
-
-    border-left:
-        1px solid
-        rgba(148, 163, 184, 0.09) !important;
-
-    padding:
-        14px !important;
-
-    gap:
-        10px !important;
-}
-
-
-/* =========================================================
-   RECENT CALLS MAIN CARD
-========================================================= */
-
-.right-panel .recent-card {
-    border-radius: 16px !important;
-
-    border:
-        1px solid
-        rgba(148, 163, 184, 0.12) !important;
-
-    background:
-        linear-gradient(
-            145deg,
-            rgba(18, 38, 64, 0.96),
-            rgba(10, 25, 42, 0.96)
-        ) !important;
-
-    box-shadow:
-        0 12px 30px
-        rgba(0, 0, 0, 0.18),
-
-        inset 0 1px 0
-        rgba(255, 255, 255, 0.025) !important;
-
-    padding:
-        15px !important;
-}
-
-
-/* =========================================================
-   RECENT CALL HEADER
-========================================================= */
-
-.right-panel .recent-header {
-    height: 28px !important;
-
-    display: flex !important;
-
-    align-items: center !important;
-
-    justify-content: space-between !important;
-
-    margin-bottom:
-        6px !important;
-}
-
-
-.right-panel .recent-header h2 {
-    margin: 0 !important;
-
-    color:
-        #f1f5f9 !important;
-
-    font-size:
-        14px !important;
-
-    font-weight:
-        700 !important;
-
-    letter-spacing:
-        -.15px !important;
-}
-
-
-.right-panel .recent-header span {
-    color:
-        #7187a3 !important;
-
-    font-size:
-        9px !important;
-}
-
-
-/* =========================================================
-   RECENT CALL LIST
-========================================================= */
-
-.right-panel .recent-calls-list {
-    display:
-        flex !important;
-
-    flex-direction:
-        column !important;
-
-    gap:
-        0 !important;
-
-    overflow-y:
-        auto !important;
-
-    padding-right:
-        2px !important;
-}
-
-
-/* =========================================================
-   INDIVIDUAL PREMIUM CALL ROW
-========================================================= */
-
-.right-panel .recent-call {
-    min-height:
-        67px !important;
-
-    width:
-        100% !important;
-
-    display:
-        flex !important;
-
-    align-items:
-        center !important;
-
-    justify-content:
-        space-between !important;
-
-    padding:
-        8px 4px !important;
-
-    border-bottom:
-        1px solid
-        rgba(148, 163, 184, 0.09) !important;
-
-    background:
-        transparent !important;
-
-    transition:
-        background .15s ease,
-        transform .15s ease !important;
-}
-
-
-.right-panel .recent-call:last-child {
-    border-bottom:
-        none !important;
-}
-
-
-.right-panel .recent-call:hover {
-    background:
-        rgba(59, 130, 246, 0.055) !important;
-
-    border-radius:
-        9px !important;
-
-    transform:
-        translateX(2px) !important;
-}
-
-
-/* =========================================================
-   LEFT SIDE OF CALL ROW
-========================================================= */
-
-.right-panel .recent-left {
-    min-width:
-        0 !important;
-
-    display:
-        flex !important;
-
-    align-items:
-        center !important;
-
-    gap:
-        10px !important;
-}
-
-
-/* =========================================================
-   CALL AVATAR / ICON
-========================================================= */
-
-.right-panel .recent-icon {
-    width:
-        34px !important;
-
-    height:
-        34px !important;
-
-    min-width:
-        34px !important;
-
-    display:
-        flex !important;
-
-    align-items:
-        center !important;
-
-    justify-content:
-        center !important;
-
-    border-radius:
-        50% !important;
-
-    background:
-        linear-gradient(
-            145deg,
-            #6b8fc4,
-            #3f6090
-        ) !important;
-
-    border:
-        1px solid
-        rgba(147, 197, 253, 0.22) !important;
-
-    color:
-        #f8fafc !important;
-
-    font-size:
-        14px !important;
-
-    font-weight:
-        700 !important;
-
-    box-shadow:
-        0 5px 15px
-        rgba(37, 99, 235, 0.18) !important;
-
-    flex-shrink:
-        0 !important;
-}
-
-
-/* =========================================================
-   CONTACT NAME
-========================================================= */
-
-.right-panel .recent-number {
-    color:
-        #f1f5f9 !important;
-
-    font-size:
-        12px !important;
-
-    font-weight:
-        650 !important;
-
-    line-height:
-        1.35 !important;
-
-    white-space:
-        nowrap !important;
-
-    overflow:
-        hidden !important;
-
-    text-overflow:
-        ellipsis !important;
-}
-
-
-/* =========================================================
-   PHONE NUMBER
-========================================================= */
-
-.right-panel .recent-contact-number {
-    margin-top:
-        1px !important;
-
-    color:
-        #7187a3 !important;
-
-    font-size:
-        9px !important;
-
-    line-height:
-        1.25 !important;
-}
-
-
-/* =========================================================
-   CALL TYPE / STATUS
-========================================================= */
-
-.right-panel .recent-details {
-    margin-top:
-        3px !important;
-
-    color:
-        #8298b1 !important;
-
-    font-size:
-        9px !important;
-
-    line-height:
-        1.25 !important;
-}
-
-
-/* =========================================================
-   CALL TIME
-========================================================= */
-
-.right-panel .recent-time {
-    flex-shrink:
-        0 !important;
-
-    margin-left:
-        8px !important;
-
-    color:
-        #8298b1 !important;
-
-    font-size:
-        9px !important;
-
-    white-space:
-        nowrap !important;
-}
-
-
-/* =========================================================
-   CALL HISTORY BUTTON
-========================================================= */
-
-.right-panel .history-button {
-    width:
-        100% !important;
-
-    height:
-        34px !important;
-
-    margin-top:
-        8px !important;
-
-    border-radius:
-        9px !important;
-
-    border:
-        1px solid
-        rgba(96, 165, 250, 0.18) !important;
-
-    background:
-        rgba(37, 99, 235, 0.08) !important;
-
-    color:
-        #60a5fa !important;
-
-    font-size:
-        8px !important;
-
-    font-weight:
-        750 !important;
-
-    letter-spacing:
-        .8px !important;
-
-    transition:
-        background .15s ease,
-        border-color .15s ease !important;
-}
-
-
-.right-panel .history-button:hover {
-    background:
-        rgba(37, 99, 235, 0.15) !important;
-
-    border-color:
-        rgba(96, 165, 250, 0.35) !important;
-}
-
-
-/* =========================================================
-   MESSAGES + CONTACTS
-========================================================= */
-
-.right-panel .messages-card,
-.right-panel .contacts-card {
-    border-radius:
-        14px !important;
-
-    border:
-        1px solid
-        rgba(148, 163, 184, 0.10) !important;
-
-    background:
-        linear-gradient(
-            145deg,
-            rgba(16, 34, 57, 0.96),
-            rgba(9, 23, 39, 0.96)
-        ) !important;
-
-    box-shadow:
-        0 8px 20px
-        rgba(0, 0, 0, 0.12),
-
-        inset 0 1px 0
-        rgba(255,255,255,.02) !important;
-
-    transition:
-        border-color .15s ease,
-        transform .15s ease !important;
-}
-
-
-.right-panel .messages-card:hover,
-.right-panel .contacts-card:hover {
-    border-color:
-        rgba(96, 165, 250, 0.20) !important;
-
-    transform:
-        translateY(-1px) !important;
-}
-
-
-/* =========================================================
-   KEEP RIGHT PANEL CLEAN
-========================================================= */
-
-.right-panel .messages-card {
-    height:
-        68px !important;
-
-    min-height:
-        68px !important;
-}
-
-
-.right-panel .contacts-card {
-    height:
-        68px !important;
-
-    min-height:
-        68px !important;
-}
-
-
-/* =========================================================
-   SCROLLBAR
-========================================================= */
-
-.right-panel .recent-calls-list::-webkit-scrollbar {
-    width:
-        4px !important;
-}
-
-.right-panel .recent-calls-list::-webkit-scrollbar-track {
-    background:
-        transparent !important;
-}
-
-.right-panel .recent-calls-list::-webkit-scrollbar-thumb {
-    background:
-        rgba(96, 165, 250, 0.25) !important;
-
-    border-radius:
-        10px !important;
-}
-
-
-/* =========================================================
-   DIALER BUTTONS — REFERENCE GLOW
-========================================================= */
-
-.dialer-card .dialpad button {
-    width:
-        72px !important;
-
-    height:
-        72px !important;
-
-    border-radius:
-        50% !important;
-
-    background:
-        radial-gradient(
-            circle at 50% 35%,
-            #1c416f 0%,
-            #123052 45%,
-            #0b1e34 100%
-        ) !important;
-
-    border:
-        1px solid
-        rgba(96, 165, 250, 0.78) !important;
-
-    box-shadow:
-        0 0 8px
-        rgba(59, 130, 246, 0.60),
-
-        0 0 20px
-        rgba(37, 99, 235, 0.32),
-
-        inset 0 0 12px
-        rgba(147, 197, 253, 0.08) !important;
-}
-
-
-.dialer-card .dialpad button:hover {
-    box-shadow:
-        0 0 12px
-        rgba(96, 165, 250, 0.95),
-
-        0 0 30px
-        rgba(37, 99, 235, 0.55),
-
-        0 0 45px
-        rgba(37, 99, 235, 0.18),
-
-        inset 0 0 16px
-        rgba(147, 197, 253, 0.12) !important;
-}
-
-
-/* =========================================================
-   MOBILE
-========================================================= */
-
-@media (max-width: 850px) {
-
-    html,
-    body {
-        background:
-            #ffffff !important;
-    }
-
-    .app-shell {
-        width:
-            calc(100vw - 16px) !important;
-
-        height:
-            calc(100vh - 16px) !important;
-
-        margin:
-            8px !important;
-
-        border-radius:
-            16px !important;
-    }
-
-    .dialer-card {
-        width:
-            min(650px, 94%) !important;
-
-        height:
-            auto !important;
-    }
-}
-
-/* =========================================================
-   DIALEAZE FINAL SIZE + CALL HISTORY POLISH
-========================================================= */
-
-
-/* =========================================================
-   SMALLER OUTER APPLICATION BOX
-========================================================= */
-
-.app-shell {
-    width: calc(100vw - 56px) !important;
-    height: calc(100vh - 56px) !important;
-
-    margin: 28px !important;
-
-    border-radius: 18px !important;
-
-    overflow: hidden !important;
-}
-
-
-/* =========================================================
-   MAIN CONTENT
-========================================================= */
-
-.main-content {
-    height: 100% !important;
-    min-height: 0 !important;
-}
-
-
-/* =========================================================
-   MAKE CENTER DIALER SLIGHTLY SMALLER
-========================================================= */
-
-.dialer-card {
-    width: min(590px, 82%) !important;
-    height: min(660px, 82%) !important;
-
-    border-radius: 22px !important;
-
-    padding:
-        28px 38px !important;
-}
-
-
-/* =========================================================
-   DIAL PAD SLIGHTLY MORE COMPACT
-========================================================= */
-
-.dialer-card .dialpad {
-    width: 370px !important;
-    max-width: 100% !important;
-
-    gap: 9px !important;
-}
-
-
-.dialer-card .dialpad button {
-    width: 64px !important;
-    height: 64px !important;
-}
-
-
-/* =========================================================
-   NUMBER DISPLAY
-========================================================= */
-
-.dialer-card .number-display {
-    width: 370px !important;
-    max-width: 100% !important;
-
-    height: 54px !important;
-
-    margin-bottom: 10px !important;
-}
-
-
-/* =========================================================
-   CALL CONTROL BUTTONS
-========================================================= */
-
-.dialer-card .call-controls {
-    width: 370px !important;
-    max-width: 100% !important;
-
-    margin-top: 14px !important;
-}
-
-
-/* =========================================================
-   RIGHT PANEL — MORE COMPACT
-========================================================= */
-
-.right-panel {
-    padding: 12px !important;
-
-    gap: 8px !important;
-}
-
-
-/* =========================================================
-   RECENT CALLS CARD
-========================================================= */
-
-.right-panel .recent-card {
-    padding: 13px !important;
-
-    border-radius: 15px !important;
-}
-
-
-/* =========================================================
-   RECENT CALL ROWS
-========================================================= */
-
-.right-panel .recent-call {
-    min-height: 61px !important;
-
-    padding: 7px 3px !important;
-}
-
-
-.right-panel .recent-icon {
-    width: 31px !important;
-    height: 31px !important;
-    min-width: 31px !important;
-
-    font-size: 12px !important;
-}
-
-
-/* =========================================================
-   ALL CALL HISTORY PANEL
-========================================================= */
-
-.right-panel .call-history-panel {
-    margin-top: 8px !important;
-
-    padding: 11px !important;
-
-    border-radius: 13px !important;
-
-    background:
-        linear-gradient(
-            145deg,
-            #0c1c30,
-            #081523
-        ) !important;
-
-    border:
-        1px solid
-        rgba(148, 163, 184, 0.10) !important;
-
-    box-shadow:
-        inset 0 1px 0
-        rgba(255,255,255,.025),
-
-        0 8px 22px
-        rgba(0,0,0,.15) !important;
-
-    max-height: 230px !important;
-
-    overflow-y: auto !important;
-}
-
-
-/* =========================================================
-   HISTORY TITLE
-========================================================= */
-
-.right-panel .history-title {
-    margin:
-        1px 2px 8px !important;
-
-    color:
-        #f1f5f9 !important;
-
-    font-size:
-        11px !important;
-
-    font-weight:
-        700 !important;
-
-    letter-spacing:
-        .1px !important;
-}
-
-
-/* =========================================================
-   EACH HISTORY ROW
-========================================================= */
-
-.right-panel .call-history-item {
-    display:
-        flex !important;
-
-    align-items:
-        center !important;
-
-    justify-content:
-        space-between !important;
-
-    gap:
-        8px !important;
-
-    min-height:
-        65px !important;
-
-    padding:
-        8px 3px !important;
-
-    margin:
-        0 !important;
-
-    border-bottom:
-        1px solid
-        rgba(148, 163, 184, 0.08) !important;
-
-    background:
-        transparent !important;
-
-    border-radius:
-        0 !important;
-}
-
-
-.right-panel .call-history-item:last-child {
-    border-bottom:
-        none !important;
-}
-
-
-/* =========================================================
-   HISTORY LEFT SIDE
-========================================================= */
-
-.right-panel .call-history-left {
-    min-width:
-        0 !important;
-
-    display:
-        flex !important;
-
-    align-items:
-        center !important;
-
-    gap:
-        9px !important;
-}
-
-
-/* =========================================================
-   HISTORY ICON
-========================================================= */
-
-.right-panel .call-icon {
-    width:
-        29px !important;
-
-    height:
-        29px !important;
-
-    min-width:
-        29px !important;
-
-    display:
-        flex !important;
-
-    align-items:
-        center !important;
-
-    justify-content:
-        center !important;
-
-    border-radius:
-        50% !important;
-
-    background:
-        linear-gradient(
-            145deg,
-            #557fb6,
-            #294d78
-        ) !important;
-
-    border:
-        1px solid
-        rgba(147,197,253,.18) !important;
-
-    color:
-        #dbeafe !important;
-
-    font-size:
-        11px !important;
-
-    box-shadow:
-        0 4px 12px
-        rgba(37,99,235,.15) !important;
-}
-
-
-/* =========================================================
-   HISTORY NAME
-========================================================= */
-
-.right-panel .call-history-number {
-    color:
-        #f1f5f9 !important;
-
-    font-size:
-        11px !important;
-
-    font-weight:
-        650 !important;
-
-    line-height:
-        1.3 !important;
-
-    white-space:
-        nowrap !important;
-
-    overflow:
-        hidden !important;
-
-    text-overflow:
-        ellipsis !important;
-}
-
-
-/* =========================================================
-   HISTORY PHONE NUMBER
-========================================================= */
-
-.right-panel .call-history-contact-number {
-    margin-top:
-        1px !important;
-
-    color:
-        #7187a3 !important;
-
-    font-size:
-        8px !important;
-
-    line-height:
-        1.2 !important;
-}
-
-
-/* =========================================================
-   HISTORY STATUS
-========================================================= */
-
-.right-panel .call-history-details {
-    margin-top:
-        2px !important;
-
-    color:
-        #8298b1 !important;
-
-    font-size:
-        8px !important;
-
-    line-height:
-        1.2 !important;
-}
-
-
-/* =========================================================
-   HISTORY RIGHT SIDE
-========================================================= */
-
-.right-panel .call-history-right {
-    flex-shrink:
-        0 !important;
-
-    display:
-        flex !important;
-
-    flex-direction:
-        column !important;
-
-    align-items:
-        flex-end !important;
-
-    gap:
-        2px !important;
-
-    text-align:
-        right !important;
-}
-
-
-.right-panel .call-history-duration {
-    color:
-        #94a3b8 !important;
-
-    font-size:
-        8px !important;
-}
-
-
-.right-panel .call-history-time {
-    color:
-        #64748b !important;
-
-    font-size:
-        8px !important;
-
-    white-space:
-        nowrap !important;
-}
-
-
-/* =========================================================
-   HISTORY ACTION BUTTONS
-   SMALL PREMIUM BUTTONS
-========================================================= */
-
-.right-panel .call-history-actions {
-    display:
-        flex !important;
-
-    gap:
-        5px !important;
-
-    margin-top:
-        5px !important;
-}
-
-
-.right-panel .history-call-button,
-.right-panel .history-message-button {
-    height:
-        23px !important;
-
-    padding:
-        0 7px !important;
-
-    border-radius:
-        6px !important;
-
-    border:
-        1px solid
-        rgba(96,165,250,.15) !important;
-
-    background:
-        rgba(37,99,235,.08) !important;
-
-    color:
-        #93c5fd !important;
-
-    font-family:
-        inherit !important;
-
-    font-size:
-        7px !important;
-
-    font-weight:
-        650 !important;
-
-    cursor:
-        pointer !important;
-
-    transition:
-        background .15s ease,
-        border-color .15s ease,
-        transform .15s ease !important;
-}
-
-
-.right-panel .history-call-button:hover,
-.right-panel .history-message-button:hover {
-    background:
-        rgba(37,99,235,.18) !important;
-
-    border-color:
-        rgba(96,165,250,.32) !important;
-
-    transform:
-        translateY(-1px) !important;
-}
-
-
-/* =========================================================
-   HISTORY SCROLLBAR
-========================================================= */
-
-.right-panel .call-history-panel::-webkit-scrollbar {
-    width:
-        4px !important;
-}
-
-
-.right-panel .call-history-panel::-webkit-scrollbar-track {
-    background:
-        transparent !important;
-}
-
-
-.right-panel .call-history-panel::-webkit-scrollbar-thumb {
-    background:
-        rgba(96,165,250,.22) !important;
-
-    border-radius:
-        10px !important;
-}
-
-
-/* =========================================================
-   REMOVE THE OLD "STICKY NOTE" LOOK
-========================================================= */
-
-.right-panel #callHistoryList {
-    background:
-        transparent !important;
-
-    padding:
-        0 !important;
-
-    margin:
-        0 !important;
-}
-
-
-.right-panel #callHistoryList > * {
-    box-sizing:
-        border-box !important;
-}
-
-
-/* =========================================================
-   COMPACT MESSAGES / CONTACTS
-========================================================= */
-
-.right-panel .messages-card,
-.right-panel .contacts-card {
-    height:
-        62px !important;
-
-    min-height:
-        62px !important;
-
-    border-radius:
-        13px !important;
-}
-
-
-/* =========================================================
-   DESKTOP — PREVENT HUGE EMPTY CENTER
-========================================================= */
-
-@media (min-width: 1100px) {
-
-    .dialer-card {
-        width:
-            590px !important;
-
-        height:
-            660px !important;
-    }
-
-}
-
-
-/* =========================================================
-   SMALLER SCREENS
-========================================================= */
-
-@media (max-width: 1100px) {
-
-    .app-shell {
-        width:
-            calc(100vw - 36px) !important;
-
-        height:
-            calc(100vh - 36px) !important;
-
-        margin:
-            18px !important;
-    }
-
-    .dialer-card {
-        width:
-            min(560px, 86%) !important;
-
-        height:
-            min(640px, 82%) !important;
-    }
-
-}
-
-
-@media (max-width: 850px) {
-
-    .app-shell {
-        width:
-            calc(100vw - 16px) !important;
-
-        height:
-            calc(100vh - 16px) !important;
-
-        margin:
-            8px !important;
-    }
-
-    .dialer-card {
-        width:
-            94% !important;
-
-        height:
-            auto !important;
-    }
-
-}
-
-/* =========================================================
-   DIALEAZE — FINAL COMPACT DIALER
-========================================================= */
-
-
-/* =========================================================
-   SMALLER CENTER DIALER
-========================================================= */
-
-.dialer-card {
-    width: 500px !important;
-    height: 540px !important;
-
-    max-width: 500px !important;
-    max-height: 540px !important;
-
-    padding: 24px 28px !important;
-
-    justify-self: center !important;
-    align-self: center !important;
-
-    border-radius: 20px !important;
-}
-
-
-/* =========================================================
-   NUMBER DISPLAY
-========================================================= */
-
-.dialer-card .number-display {
-    width: 320px !important;
-    max-width: 320px !important;
-
-    height: 48px !important;
-
-    margin:
-        0 auto 12px !important;
-}
-
-
-/* =========================================================
-   COMPACT DIALPAD
-========================================================= */
-
-.dialer-card .dialpad {
-    width: 320px !important;
-    max-width: 320px !important;
-
-    gap: 7px 11px !important;
-
-    margin: 0 auto !important;
-}
-
-
-/* =========================================================
-   SMALLER GLOWING BUTTONS
-========================================================= */
-
-.dialer-card .dialpad button {
-    width: 58px !important;
-    height: 58px !important;
-
-    border-radius: 50% !important;
-}
-
-
-/* =========================================================
-   BUTTON NUMBER
-========================================================= */
-
-.dialer-card .dialpad button span {
-    font-size: 17px !important;
-}
-
-
-/* =========================================================
-   BUTTON LETTERS
-========================================================= */
-
-.dialer-card .dialpad button small {
-    font-size: 5px !important;
-    margin-top: 3px !important;
-}
-
-
-/* =========================================================
-   CALL CONTROLS
-========================================================= */
-
-.dialer-card .call-controls {
-    width: 320px !important;
-    max-width: 320px !important;
-
-    margin:
-        13px auto 0 !important;
-
-    gap: 8px !important;
-}
-
-
-.dialer-card .call-controls button {
-    height: 40px !important;
-
-    border-radius: 11px !important;
-
-    font-size: 9px !important;
-}
-
-
-/* =========================================================
-   RIGHT PANEL SPACING
-========================================================= */
-
-.right-panel {
-    padding: 12px !important;
-
-    gap: 10px !important;
-}
-
-
-/* =========================================================
-   MESSAGES CARD
-========================================================= */
-
-.right-panel .messages-card {
-    margin-bottom: 4px !important;
-}
-
-
-/* =========================================================
-   BUSINESS CONTACTS CARD
-========================================================= */
-
-.right-panel .contacts-card {
-    margin-top: 4px !important;
-}
-
-
-/* =========================================================
-   EXTRA SPACE BETWEEN THE TWO CARDS
-========================================================= */
-
-.right-panel .messages-card,
-.right-panel .contacts-card {
-    flex-shrink: 0 !important;
-}
-
-
-/* =========================================================
-   KEEP RIGHT PANEL CARDS SEPARATED
-========================================================= */
-
-.right-panel .messages-card + .contacts-card {
-    margin-top: 6px !important;
-}
-
-
-/* =========================================================
-   DESKTOP CENTERING
-========================================================= */
-
-@media (min-width: 1100px) {
-
-    .dialer-card {
-        width: 500px !important;
-        height: 540px !important;
-
-        max-width: 500px !important;
-        max-height: 540px !important;
-    }
-
-}
-
-
-/* =========================================================
-   SMALLER SCREEN
-========================================================= */
-
-@media (max-width: 850px) {
-
-    .dialer-card {
-        width: 94% !important;
-        height: auto !important;
-
-        max-width: 500px !important;
-        max-height: none !important;
-    }
-
-}
-
-/* =========================================================
-   DIALEAZE — EXTRA COMPACT CENTER DIALER
-========================================================= */
-
-/* CENTER DIALER CARD */
-.dialer-card {
-    width: 410px !important;
-    height: 465px !important;
-
-    min-width: 410px !important;
-    min-height: 465px !important;
-
-    max-width: 410px !important;
-    max-height: 465px !important;
-
-    padding: 20px 24px !important;
-
-    margin: 0 auto !important;
-
-    justify-self: center !important;
-    align-self: center !important;
-
-    border-radius: 20px !important;
-}
-
-
-/* NUMBER DISPLAY */
-.dialer-card .number-display {
-    width: 280px !important;
-    max-width: 280px !important;
-
-    height: 43px !important;
-
-    margin: 0 auto 9px !important;
-}
-
-
-/* DIAL PAD */
-.dialer-card .dialpad {
-    width: 280px !important;
-    max-width: 280px !important;
-
-    gap: 6px 9px !important;
-
-    margin: 0 auto !important;
-}
-
-
-/* ROUND NUMBER BUTTONS */
-.dialer-card .dialpad button {
-    width: 50px !important;
-    height: 50px !important;
-
-    min-width: 50px !important;
-    min-height: 50px !important;
-
-    border-radius: 50% !important;
-}
-
-
-/* CALL CONTROLS */
-.dialer-card .call-controls {
-    width: 280px !important;
-    max-width: 280px !important;
-
-    margin: 10px auto 0 !important;
-
-    gap: 7px !important;
-}
-
-
-.dialer-card .call-controls button {
-    height: 36px !important;
-
-    min-height: 36px !important;
-
-    border-radius: 9px !important;
-
-    font-size: 8px !important;
-}
-
-
-/* =========================================================
-   RIGHT SIDE — CLEAR SPACE AFTER RECENT CALLS
-========================================================= */
-
-/* Recent Calls card */
-.right-panel .recent-card {
-    margin-bottom: 14px !important;
-}
-
-
-/* Messages card */
-.right-panel .messages-card {
-    margin-top: 0 !important;
-    margin-bottom: 10px !important;
-
-    flex-shrink: 0 !important;
-}
-
-
-/* Business Contacts */
-.right-panel .contacts-card {
-    margin-top: 0 !important;
-
-    flex-shrink: 0 !important;
-}
-
-
-/* EXTRA SAFETY: force visible separation */
-.right-panel .recent-card + .messages-card {
-    margin-top: 14px !important;
-}
-
-
-.right-panel .messages-card + .contacts-card {
-    margin-top: 10px !important;
-}
-
-
-/* =========================================================
-   KEEP THE DIALER CENTERED
-========================================================= */
-
-@media (min-width: 851px) {
-
-    .main-content {
-        align-items: center !important;
-    }
-
-    .dialer-card {
-        justify-self: center !important;
-        align-self: center !important;
-    }
-
-}
-
-
-/* =========================================================
-   MOBILE
-========================================================= */
-
-@media (max-width: 850px) {
-
-    .dialer-card {
-        width: 410px !important;
-        max-width: 94% !important;
-
-        height: 465px !important;
-        max-height: none !important;
-
-        min-width: 0 !important;
-    }
-
 }
