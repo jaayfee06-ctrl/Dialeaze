@@ -3743,3 +3743,1047 @@ border-radius: 22px;
     font-size: 12px;
     font-weight: 700;
 }
+
+/* =========================================================
+   DIALEAZE PREMIUM SAAS DARK UI — STAGE 1
+   Visual redesign only.
+   Do NOT remove existing CSS.
+========================================================= */
+
+:root {
+    --dz-bg: #050b16;
+    --dz-panel: #0b1424;
+    --dz-panel-2: #0f1b2e;
+    --dz-panel-3: #111f34;
+    --dz-border: rgba(148, 163, 184, 0.14);
+    --dz-border-bright: rgba(96, 165, 250, 0.22);
+
+    --dz-text: #f8fafc;
+    --dz-text-soft: #a8b4c7;
+    --dz-text-muted: #68778e;
+
+    --dz-blue: #3b82f6;
+    --dz-blue-bright: #60a5fa;
+    --dz-blue-soft: rgba(59, 130, 246, 0.14);
+
+    --dz-green: #22c55e;
+    --dz-red: #ef4444;
+
+    --dz-radius: 18px;
+}
+
+
+/* =========================================================
+   PAGE BACKGROUND
+========================================================= */
+
+html,
+body {
+    background:
+        radial-gradient(
+            circle at 18% 15%,
+            rgba(37, 99, 235, 0.14),
+            transparent 28%
+        ),
+        radial-gradient(
+            circle at 82% 80%,
+            rgba(14, 165, 233, 0.08),
+            transparent 30%
+        ),
+        linear-gradient(
+            135deg,
+            #040914 0%,
+            #07111f 45%,
+            #050b16 100%
+        ) !important;
+
+    color: var(--dz-text) !important;
+}
+
+
+/* =========================================================
+   MAIN APPLICATION SHELL
+========================================================= */
+
+.app-shell {
+    width: min(1440px, 96vw) !important;
+    max-width: 1440px !important;
+
+    min-height: 760px !important;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(11, 20, 36, 0.98),
+            rgba(6, 13, 25, 0.99)
+        ) !important;
+
+    border: 1px solid rgba(148, 163, 184, 0.14) !important;
+
+    border-radius: 24px !important;
+
+    box-shadow:
+        0 40px 100px rgba(0, 0, 0, 0.55),
+        0 0 0 1px rgba(255, 255, 255, 0.02),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+
+    overflow: hidden;
+}
+
+
+/* =========================================================
+   TOP BAR
+========================================================= */
+
+.topbar {
+    height: 72px !important;
+
+    padding: 0 28px !important;
+
+    background:
+        rgba(8, 16, 29, 0.92) !important;
+
+    border-bottom:
+        1px solid var(--dz-border) !important;
+
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+}
+
+
+/* Brand */
+
+.brand-area {
+    gap: 11px !important;
+}
+
+.brand-dot {
+    width: 9px !important;
+    height: 9px !important;
+
+    background: var(--dz-blue-bright) !important;
+
+    box-shadow:
+        0 0 12px rgba(96, 165, 250, 0.75) !important;
+}
+
+.brand-name {
+    color: #f8fafc !important;
+
+    font-size: 15px !important;
+
+    font-weight: 700 !important;
+
+    letter-spacing: 0.1px;
+}
+
+
+/* =========================================================
+   CONNECTION STATUS
+========================================================= */
+
+.connection-status {
+    background:
+        rgba(34, 197, 94, 0.08) !important;
+
+    border:
+        1px solid rgba(34, 197, 94, 0.14) !important;
+
+    color: #b9f6c9 !important;
+
+    padding: 7px 12px !important;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.status-dot {
+    background: #22c55e !important;
+
+    box-shadow:
+        0 0 8px rgba(34, 197, 94, 0.8);
+}
+
+
+/* =========================================================
+   USER
+========================================================= */
+
+.avatar {
+    width: 34px !important;
+    height: 34px !important;
+
+    background:
+        linear-gradient(
+            145deg,
+            #2563eb,
+            #172554
+        ) !important;
+
+    border:
+        1px solid rgba(96, 165, 250, 0.28) !important;
+
+    box-shadow:
+        0 5px 15px rgba(37, 99, 235, 0.2);
+}
+
+.user-name {
+    color: #cbd5e1 !important;
+
+    font-size: 13px !important;
+}
+
+
+/* =========================================================
+   MAIN AREA
+========================================================= */
+
+.main-content {
+    grid-template-columns:
+        minmax(360px, 0.92fr)
+        minmax(480px, 1.08fr) !important;
+
+    gap: 18px !important;
+
+    padding: 20px !important;
+
+    background:
+        transparent !important;
+}
+
+
+/* =========================================================
+   LEFT COLUMN
+========================================================= */
+
+.left-column {
+    gap: 14px !important;
+}
+
+
+/* =========================================================
+   BUSINESS NUMBER CARD
+========================================================= */
+
+.business-card {
+    min-height: 145px !important;
+
+    padding: 22px !important;
+
+    border-radius: var(--dz-radius) !important;
+
+    background:
+        radial-gradient(
+            circle at 85% 15%,
+            rgba(96, 165, 250, 0.18),
+            transparent 30%
+        ),
+        linear-gradient(
+            145deg,
+            #10264a,
+            #0b1830 70%
+        ) !important;
+
+    border:
+        1px solid rgba(96, 165, 250, 0.16) !important;
+
+    box-shadow:
+        0 18px 40px rgba(0, 0, 0, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+}
+
+.business-label {
+    color: #7db7ff !important;
+
+    font-size: 11px !important;
+
+    letter-spacing: 1.7px !important;
+}
+
+.business-number {
+    color: #ffffff !important;
+
+    font-size: 23px !important;
+
+    letter-spacing: 0.2px;
+}
+
+.on-call-status {
+    background:
+        rgba(34, 197, 94, 0.08) !important;
+
+    border:
+        1px solid rgba(34, 197, 94, 0.13) !important;
+
+    color: #b8f5c8 !important;
+}
+
+.small-green-dot {
+    box-shadow:
+        0 0 9px rgba(34, 197, 94, 0.8);
+}
+
+
+/* =========================================================
+   BUSINESS AUDIO BUTTONS
+========================================================= */
+
+.circle-button {
+    background:
+        rgba(255, 255, 255, 0.06) !important;
+
+    border:
+        1px solid rgba(255, 255, 255, 0.08) !important;
+
+    color: #cbd5e1 !important;
+
+    transition:
+        background 0.18s ease,
+        transform 0.18s ease,
+        border-color 0.18s ease;
+}
+
+.circle-button:hover {
+    background:
+        rgba(59, 130, 246, 0.16) !important;
+
+    border-color:
+        rgba(96, 165, 250, 0.25) !important;
+
+    transform: translateY(-1px);
+}
+
+
+/* =========================================================
+   RECENT CALLS
+========================================================= */
+
+.recent-card {
+    padding: 19px !important;
+
+    border:
+        1px solid var(--dz-border) !important;
+
+    border-radius: var(--dz-radius) !important;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(15, 27, 46, 0.98),
+            rgba(9, 18, 32, 0.98)
+        ) !important;
+
+    box-shadow:
+        0 15px 35px rgba(0, 0, 0, 0.20),
+        inset 0 1px 0 rgba(255, 255, 255, 0.025) !important;
+}
+
+.recent-header h2 {
+    color: #f1f5f9 !important;
+
+    font-size: 15px !important;
+}
+
+.recent-header span {
+    color: #64748b !important;
+}
+
+.recent-call {
+    border-bottom:
+        1px solid rgba(148, 163, 184, 0.08) !important;
+
+    transition:
+        background 0.18s ease,
+        padding-left 0.18s ease;
+}
+
+.recent-call:hover {
+    background:
+        rgba(255, 255, 255, 0.025);
+
+    padding-left: 5px;
+}
+
+.recent-icon {
+    background:
+        rgba(59, 130, 246, 0.12) !important;
+
+    border:
+        1px solid rgba(96, 165, 250, 0.10);
+
+    color:
+        #60a5fa !important;
+}
+
+.recent-number {
+    color: #e2e8f0 !important;
+}
+
+.recent-details,
+.recent-time {
+    color: #718096 !important;
+}
+
+.empty-recent {
+    color: #64748b !important;
+}
+
+
+/* =========================================================
+   CALL HISTORY BUTTON
+========================================================= */
+
+.history-button {
+    background:
+        linear-gradient(
+            135deg,
+            #17243a,
+            #101b2e
+        ) !important;
+
+    border:
+        1px solid rgba(96, 165, 250, 0.12) !important;
+
+    color: #cbd5e1 !important;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.history-button:hover {
+    background:
+        linear-gradient(
+            135deg,
+            #1d3152,
+            #14243d
+        ) !important;
+
+    color: white !important;
+}
+
+
+/* =========================================================
+   CALL HISTORY
+========================================================= */
+
+.call-history-panel {
+    border-top:
+        1px solid rgba(148, 163, 184, 0.10) !important;
+}
+
+.history-title {
+    color: #e2e8f0 !important;
+}
+
+.call-history-item {
+    background:
+        rgba(255, 255, 255, 0.025) !important;
+
+    border:
+        1px solid rgba(148, 163, 184, 0.06);
+}
+
+.call-icon {
+    background:
+        rgba(59, 130, 246, 0.12) !important;
+
+    color: #60a5fa !important;
+}
+
+.call-history-number {
+    color: #e2e8f0 !important;
+}
+
+.call-history-details,
+.call-history-time {
+    color: #718096 !important;
+}
+
+.call-history-duration {
+    color: #cbd5e1 !important;
+}
+
+.empty-history {
+    color: #64748b !important;
+}
+
+
+/* =========================================================
+   MESSAGES / CONTACTS CARDS
+========================================================= */
+
+.messages-card,
+.contacts-card {
+    border:
+        1px solid var(--dz-border) !important;
+
+    border-radius:
+        var(--dz-radius) !important;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(15, 27, 46, 0.96),
+            rgba(9, 18, 32, 0.96)
+        ) !important;
+
+    color: #e2e8f0 !important;
+
+    box-shadow:
+        0 12px 28px rgba(0, 0, 0, 0.15) !important;
+}
+
+.messages-card:hover {
+    background:
+        linear-gradient(
+            145deg,
+            rgba(20, 38, 65, 0.98),
+            rgba(11, 23, 41, 0.98)
+        ) !important;
+
+    transform: translateY(-2px);
+}
+
+.messages-card-icon,
+.contacts-icon {
+    background:
+        rgba(59, 130, 246, 0.12) !important;
+
+    color: #60a5fa !important;
+
+    border:
+        1px solid rgba(96, 165, 250, 0.10);
+}
+
+.messages-card-title,
+.contacts-title {
+    color: #e2e8f0 !important;
+}
+
+.messages-card-subtitle,
+.contacts-subtitle {
+    color: #64748b !important;
+}
+
+.messages-card-arrow {
+    color: #64748b !important;
+}
+
+
+/* =========================================================
+   MAIN DIALER PANEL
+========================================================= */
+
+.dialer-card {
+    min-height: 650px;
+
+    padding: 20px !important;
+
+    border:
+        1px solid var(--dz-border-bright) !important;
+
+    border-radius:
+        22px !important;
+
+    background:
+        radial-gradient(
+            circle at 50% 0%,
+            rgba(37, 99, 235, 0.10),
+            transparent 34%
+        ),
+        linear-gradient(
+            145deg,
+            #0d192c,
+            #091321 70%
+        ) !important;
+
+    box-shadow:
+        0 25px 55px rgba(0, 0, 0, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.035) !important;
+}
+
+
+/* =========================================================
+   NUMBER DISPLAY
+========================================================= */
+
+.number-display {
+    height: 58px !important;
+
+    padding:
+        0 17px !important;
+
+    background:
+        rgba(255, 255, 255, 0.045) !important;
+
+    border:
+        1px solid rgba(148, 163, 184, 0.12) !important;
+
+    border-radius:
+        15px !important;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.025),
+        0 8px 25px rgba(0, 0, 0, 0.12) !important;
+}
+
+.number-display input {
+    color:
+        #f8fafc !important;
+
+    font-size:
+        17px !important;
+}
+
+.number-display input::placeholder {
+    color:
+        #64748b !important;
+}
+
+.input-clear {
+    color:
+        #64748b !important;
+
+    transition:
+        color 0.15s ease;
+}
+
+.input-clear:hover {
+    color:
+        #60a5fa !important;
+}
+
+
+/* =========================================================
+   KEYPAD
+========================================================= */
+
+.dialpad {
+    margin-top: 18px !important;
+
+    gap: 10px !important;
+}
+
+.dialpad button {
+    height: 59px !important;
+
+    border-radius:
+        16px !important;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(21, 37, 61, 0.95),
+            rgba(12, 25, 43, 0.95)
+        ) !important;
+
+    border:
+        1px solid rgba(148, 163, 184, 0.11) !important;
+
+    color:
+        #f1f5f9 !important;
+
+    box-shadow:
+        0 7px 16px rgba(0, 0, 0, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.025) !important;
+
+    transition:
+        transform 0.12s ease,
+        background 0.15s ease,
+        border-color 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.dialpad button:hover {
+    background:
+        linear-gradient(
+            145deg,
+            rgba(28, 57, 94, 0.98),
+            rgba(14, 34, 59, 0.98)
+        ) !important;
+
+    border-color:
+        rgba(96, 165, 250, 0.28) !important;
+
+    box-shadow:
+        0 9px 24px rgba(37, 99, 235, 0.13),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+
+    transform:
+        translateY(-1px);
+}
+
+.dialpad button:active {
+    transform:
+        scale(0.95) !important;
+}
+
+.dialpad button span {
+    font-size:
+        18px !important;
+
+    color:
+        #f8fafc !important;
+}
+
+.dialpad button small {
+    color:
+        #718096 !important;
+}
+
+.dialpad .extra-key {
+    height: 47px !important;
+
+    background:
+        rgba(255, 255, 255, 0.025) !important;
+}
+
+
+/* =========================================================
+   CALL CONTROLS
+========================================================= */
+
+.call-controls {
+    gap: 10px !important;
+
+    margin-top: 18px !important;
+}
+
+.call-button,
+.hangup-button,
+.mute-button,
+.hold-button {
+    height: 48px !important;
+
+    border-radius:
+        15px !important;
+
+    border:
+        1px solid rgba(148, 163, 184, 0.10) !important;
+
+    font-size:
+        13px !important;
+
+    font-weight:
+        700 !important;
+}
+
+
+/* CALL */
+
+.call-button {
+    background:
+        linear-gradient(
+            135deg,
+            #2563eb,
+            #1683f7
+        ) !important;
+
+    color:
+        white !important;
+
+    box-shadow:
+        0 10px 25px rgba(37, 99, 235, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.16) !important;
+}
+
+.call-button:hover:not(:disabled) {
+    background:
+        linear-gradient(
+            135deg,
+            #3474f1,
+            #2492ff
+        ) !important;
+
+    box-shadow:
+        0 12px 30px rgba(37, 99, 235, 0.36) !important;
+}
+
+
+/* MUTE */
+
+.mute-button,
+.hold-button {
+    background:
+        rgba(255, 255, 255, 0.045) !important;
+
+    color:
+        #aebbd0 !important;
+}
+
+.mute-button:hover:not(:disabled),
+.hold-button:hover:not(:disabled) {
+    background:
+        rgba(59, 130, 246, 0.12) !important;
+
+    color:
+        #dbeafe !important;
+
+    border-color:
+        rgba(96, 165, 250, 0.20) !important;
+}
+
+
+/* HANG UP */
+
+.hangup-button {
+    background:
+        linear-gradient(
+            135deg,
+            #ef4444,
+            #dc2626
+        ) !important;
+
+    color:
+        white !important;
+
+    border:
+        none !important;
+
+    box-shadow:
+        0 10px 25px rgba(239, 68, 68, 0.20) !important;
+}
+
+.hangup-button:hover:not(:disabled) {
+    background:
+        linear-gradient(
+            135deg,
+            #f05252,
+            #e22c2c
+        ) !important;
+
+    box-shadow:
+        0 12px 30px rgba(239, 68, 68, 0.30) !important;
+}
+
+
+/* Disabled controls */
+
+.call-button:disabled,
+.hangup-button:disabled,
+.mute-button:disabled,
+.hold-button:disabled {
+    opacity:
+        0.38 !important;
+
+    box-shadow:
+        none !important;
+}
+
+
+/* =========================================================
+   SCROLLBARS
+========================================================= */
+
+* {
+    scrollbar-width:
+        thin;
+
+    scrollbar-color:
+        #263750 transparent;
+}
+
+*::-webkit-scrollbar {
+    width:
+        6px;
+}
+
+*::-webkit-scrollbar-track {
+    background:
+        transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    background:
+        #263750;
+
+    border-radius:
+        10px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background:
+        #365172;
+}
+
+
+/* =========================================================
+   INCOMING CALL OVERLAY — DARK VERSION
+========================================================= */
+
+.dialeaze-incoming-overlay {
+    background:
+        rgba(2, 6, 15, 0.78) !important;
+
+    backdrop-filter:
+        blur(14px) !important;
+
+    -webkit-backdrop-filter:
+        blur(14px) !important;
+}
+
+.dialeaze-incoming-card {
+    max-width:
+        430px !important;
+
+    background:
+        linear-gradient(
+            145deg,
+            #101d32,
+            #091321
+        ) !important;
+
+    border:
+        1px solid rgba(96, 165, 250, 0.20) !important;
+
+    box-shadow:
+        0 35px 100px rgba(0, 0, 0, 0.60),
+        0 0 50px rgba(37, 99, 235, 0.08) !important;
+}
+
+.dialeaze-incoming-top {
+    color:
+        #93a4bd !important;
+}
+
+.dialeaze-phone-ring {
+    background:
+        rgba(59, 130, 246, 0.10) !important;
+
+    box-shadow:
+        0 0 0 10px rgba(59, 130, 246, 0.06),
+        0 0 0 20px rgba(59, 130, 246, 0.025) !important;
+}
+
+.dialeaze-phone-ring span {
+    background:
+        linear-gradient(
+            145deg,
+            #3b82f6,
+            #2563eb
+        ) !important;
+
+    box-shadow:
+        0 10px 30px rgba(37, 99, 235, 0.30);
+}
+
+.dialeaze-incoming-title {
+    color:
+        #94a3b8 !important;
+}
+
+.dialeaze-caller-number {
+    color:
+        #f8fafc !important;
+}
+
+.dialeaze-caller-label {
+    color:
+        #64748b !important;
+}
+
+.dialeaze-decline {
+    background:
+        rgba(255, 255, 255, 0.045) !important;
+
+    color:
+        #fca5a5 !important;
+
+    border:
+        1px solid rgba(239, 68, 68, 0.16) !important;
+}
+
+.dialeaze-answer {
+    background:
+        linear-gradient(
+            135deg,
+            #22c55e,
+            #16a34a
+        ) !important;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1000px) {
+
+    .app-shell {
+        width:
+            98vw !important;
+    }
+
+    .main-content {
+        grid-template-columns:
+            1fr 1fr !important;
+
+        gap:
+            14px !important;
+    }
+
+}
+
+
+@media (max-width: 800px) {
+
+    body {
+        padding:
+            10px !important;
+    }
+
+    .app-shell {
+        width:
+            100% !important;
+
+        min-height:
+            auto !important;
+
+        border-radius:
+            18px !important;
+    }
+
+    .main-content {
+        grid-template-columns:
+            1fr !important;
+
+        padding:
+            14px !important;
+    }
+
+    .dialer-card {
+        min-height:
+            auto !important;
+    }
+
+}
+
+
+@media (max-width: 480px) {
+
+    .topbar {
+        padding:
+            0 16px !important;
+    }
+
+    .connection-status {
+        padding:
+            6px 9px !important;
+    }
+
+    .main-content {
+        padding:
+            10px !important;
+    }
+
+    .business-number {
+        font-size:
+            20px !important;
+    }
+
+    .dialpad button {
+        height:
+            54px !important;
+    }
+
+}
