@@ -4787,3 +4787,815 @@ body {
     }
 
 }
+/* =========================================================
+   DIALEAZE STAGE 2
+   PREMIUM SAAS SIDEBAR + THREE-PANEL LAYOUT
+========================================================= */
+
+
+/* =========================================================
+   APP LAYOUT
+========================================================= */
+
+.app-shell {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+
+/* =========================================================
+   MAIN GRID
+========================================================= */
+
+.main-content {
+    flex:
+        1 1 auto;
+
+    display:
+        grid !important;
+
+    grid-template-columns:
+        210px
+        minmax(330px, 0.85fr)
+        minmax(430px, 1.15fr) !important;
+
+    gap:
+        0 !important;
+
+    padding:
+        0 !important;
+
+    min-height:
+        688px;
+
+    align-items:
+        stretch;
+}
+
+
+/* =========================================================
+   SIDEBAR
+========================================================= */
+
+.dialeaze-sidebar {
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    width:
+        210px;
+
+    min-width:
+        210px;
+
+    padding:
+        24px 14px 16px;
+
+    background:
+        linear-gradient(
+            180deg,
+            #091321 0%,
+            #07101d 100%
+        );
+
+    border-right:
+        1px solid
+        rgba(148, 163, 184, 0.10);
+
+    color:
+        #cbd5e1;
+}
+
+
+/* =========================================================
+   SIDEBAR BRAND
+========================================================= */
+
+.dialeaze-sidebar-brand {
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        11px;
+
+    padding:
+        0 8px 24px;
+
+    border-bottom:
+        1px solid
+        rgba(148, 163, 184, 0.08);
+}
+
+
+.dialeaze-sidebar-logo {
+
+    width:
+        34px;
+
+    height:
+        34px;
+
+    flex:
+        0 0 34px;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    border-radius:
+        10px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #3b82f6,
+            #2563eb
+        );
+
+    color:
+        white;
+
+    font-size:
+        17px;
+
+    font-weight:
+        800;
+
+    box-shadow:
+        0 7px 20px
+        rgba(37, 99, 235, 0.30);
+}
+
+
+.dialeaze-sidebar-name {
+
+    color:
+        #f8fafc;
+
+    font-size:
+        15px;
+
+    font-weight:
+        750;
+}
+
+
+.dialeaze-sidebar-subtitle {
+
+    margin-top:
+        2px;
+
+    color:
+        #64748b;
+
+    font-size:
+        9px;
+
+    line-height:
+        1.3;
+}
+
+
+/* =========================================================
+   SIDEBAR SECTION
+========================================================= */
+
+.dialeaze-sidebar-section-title {
+
+    margin:
+        25px 8px 9px;
+
+    color:
+        #475569;
+
+    font-size:
+        9px;
+
+    font-weight:
+        800;
+
+    letter-spacing:
+        1.5px;
+}
+
+
+/* =========================================================
+   SIDEBAR NAV
+========================================================= */
+
+.dialeaze-sidebar-nav {
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    gap:
+        3px;
+}
+
+
+.dialeaze-sidebar-item {
+
+    width:
+        100%;
+
+    height:
+        42px;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        11px;
+
+    padding:
+        0 11px;
+
+    border:
+        1px solid
+        transparent;
+
+    border-radius:
+        10px;
+
+    background:
+        transparent;
+
+    color:
+        #7f8da3;
+
+    font-family:
+        inherit;
+
+    font-size:
+        12px;
+
+    font-weight:
+        600;
+
+    text-align:
+        left;
+
+    cursor:
+        pointer;
+
+    transition:
+        background 0.18s ease,
+        color 0.18s ease,
+        border-color 0.18s ease,
+        transform 0.18s ease;
+}
+
+
+.dialeaze-sidebar-item:hover {
+
+    background:
+        rgba(255, 255, 255, 0.045);
+
+    color:
+        #dbeafe;
+
+    transform:
+        translateX(2px);
+}
+
+
+.dialeaze-sidebar-item.active {
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(37, 99, 235, 0.20),
+            rgba(59, 130, 246, 0.08)
+        );
+
+    border-color:
+        rgba(96, 165, 250, 0.14);
+
+    color:
+        #eaf2ff;
+
+    box-shadow:
+        inset 3px 0 0 #3b82f6;
+}
+
+
+.dialeaze-sidebar-icon {
+
+    width:
+        20px;
+
+    display:
+        inline-flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    color:
+        #64748b;
+
+    font-size:
+        15px;
+}
+
+
+.dialeaze-sidebar-item.active
+.dialeaze-sidebar-icon {
+
+    color:
+        #60a5fa;
+}
+
+
+.dialeaze-sidebar-spacer {
+
+    flex:
+        1;
+}
+
+
+/* =========================================================
+   SIDEBAR USER
+========================================================= */
+
+.dialeaze-sidebar-user {
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        10px;
+
+    margin-top:
+        16px;
+
+    padding:
+        12px 8px 2px;
+
+    border-top:
+        1px solid
+        rgba(148, 163, 184, 0.08);
+}
+
+
+.dialeaze-sidebar-user-avatar {
+
+    width:
+        31px;
+
+    height:
+        31px;
+
+    flex:
+        0 0 31px;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    border-radius:
+        50%;
+
+    background:
+        linear-gradient(
+            145deg,
+            #2563eb,
+            #172554
+        );
+
+    border:
+        1px solid
+        rgba(96, 165, 250, 0.20);
+
+    color:
+        white;
+
+    font-size:
+        10px;
+
+    font-weight:
+        800;
+}
+
+
+.dialeaze-sidebar-user-info {
+
+    min-width:
+        0;
+
+    flex:
+        1;
+}
+
+
+.dialeaze-sidebar-user-name {
+
+    overflow:
+        hidden;
+
+    text-overflow:
+        ellipsis;
+
+    white-space:
+        nowrap;
+
+    color:
+        #cbd5e1;
+
+    font-size:
+        11px;
+
+    font-weight:
+        650;
+}
+
+
+.dialeaze-sidebar-user-status {
+
+    margin-top:
+        3px;
+
+    color:
+        #4ade80;
+
+    font-size:
+        9px;
+}
+
+
+/* =========================================================
+   LEFT WORKSPACE
+========================================================= */
+
+.left-column {
+
+    min-width:
+        0;
+
+    padding:
+        20px;
+
+    background:
+        #08111f;
+
+    border-right:
+        1px solid
+        rgba(148, 163, 184, 0.09);
+
+    overflow:
+        auto;
+}
+
+
+/* =========================================================
+   RIGHT DIALER
+========================================================= */
+
+.dialer-card {
+
+    width:
+        100%;
+
+    min-width:
+        0;
+
+    min-height:
+        100% !important;
+
+    border:
+        none !important;
+
+    border-radius:
+        0 !important;
+
+    padding:
+        34px 46px !important;
+
+    background:
+        radial-gradient(
+            circle at 50% 10%,
+            rgba(37, 99, 235, 0.10),
+            transparent 35%
+        ),
+        linear-gradient(
+            145deg,
+            #0c182b,
+            #07111f
+        ) !important;
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    justify-content:
+        center;
+}
+
+
+/* =========================================================
+   BUSINESS CARD — MORE COMPACT
+========================================================= */
+
+.business-card {
+
+    min-height:
+        125px !important;
+
+    padding:
+        19px !important;
+}
+
+
+/* =========================================================
+   RECENT CALLS — PREMIUM PANEL
+========================================================= */
+
+.recent-card {
+
+    flex:
+        0 0 auto;
+
+    padding:
+        17px !important;
+}
+
+
+/* =========================================================
+   MESSAGES / CONTACTS
+========================================================= */
+
+.messages-card,
+.contacts-card {
+
+    flex:
+        0 0 auto;
+}
+
+
+/* =========================================================
+   DIALER INPUT
+========================================================= */
+
+.number-display {
+
+    width:
+        min(100%, 500px);
+
+    margin:
+        0 auto;
+
+    height:
+        62px !important;
+}
+
+
+.number-display input {
+
+    text-align:
+        center;
+
+    font-size:
+        20px !important;
+
+    font-weight:
+        600;
+
+    letter-spacing:
+        0.4px;
+}
+
+
+/* =========================================================
+   DIAL PAD
+========================================================= */
+
+.dialpad {
+
+    width:
+        min(100%, 500px);
+
+    margin:
+        20px auto 0 !important;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+}
+
+
+.dialpad button {
+
+    height:
+        63px !important;
+
+    max-width:
+        none;
+}
+
+
+/* =========================================================
+   CALL BUTTON
+========================================================= */
+
+.call-controls {
+
+    width:
+        min(100%, 500px);
+
+    margin:
+        20px auto 0 !important;
+}
+
+
+/* =========================================================
+   MOBILE / TABLET
+========================================================= */
+
+@media (max-width: 1050px) {
+
+    .main-content {
+
+        grid-template-columns:
+            185px
+            minmax(280px, 0.85fr)
+            minmax(360px, 1.15fr) !important;
+    }
+
+
+    .dialeaze-sidebar {
+
+        width:
+            185px;
+
+        min-width:
+            185px;
+    }
+
+
+    .dialeaze-sidebar-subtitle {
+
+        display:
+            none;
+    }
+
+
+    .left-column {
+
+        padding:
+            15px;
+    }
+
+
+    .dialer-card {
+
+        padding:
+            28px 30px !important;
+    }
+
+}
+
+
+@media (max-width: 850px) {
+
+    .main-content {
+
+        grid-template-columns:
+            1fr !important;
+    }
+
+
+    .dialeaze-sidebar {
+
+        width:
+            100%;
+
+        min-width:
+            100%;
+
+        height:
+            auto;
+
+        border-right:
+            none;
+
+        border-bottom:
+            1px solid
+            rgba(148, 163, 184, 0.10);
+    }
+
+
+    .dialeaze-sidebar-brand {
+
+        padding-bottom:
+            14px;
+    }
+
+
+    .dialeaze-sidebar-nav {
+
+        flex-direction:
+            row;
+
+        overflow-x:
+            auto;
+    }
+
+
+    .dialeaze-sidebar-item {
+
+        width:
+            auto;
+
+        min-width:
+            max-content;
+    }
+
+
+    .dialeaze-sidebar-spacer,
+    .dialeaze-sidebar-user,
+    .dialeaze-sidebar-section-title {
+
+        display:
+            none;
+    }
+
+
+    .left-column {
+
+        border-right:
+            none;
+
+        border-bottom:
+            1px solid
+            rgba(148, 163, 184, 0.09);
+    }
+
+
+    .dialer-card {
+
+        min-height:
+            650px !important;
+    }
+
+}
+
+
+@media (max-width: 520px) {
+
+    .dialer-card {
+
+        padding:
+            22px 16px !important;
+    }
+
+
+    .dialpad button {
+
+        height:
+            56px !important;
+    }
+
+
+    .number-display {
+
+        height:
+            56px !important;
+    }
+
+
+    .number-display input {
+
+        font-size:
+            17px !important;
+    }
+
+}
