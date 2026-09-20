@@ -4571,3 +4571,159 @@ body {
     }
 
 }
+
+/* =========================================================
+   DIALEAZE — EXTRA COMPACT CENTER DIALER
+========================================================= */
+
+/* CENTER DIALER CARD */
+.dialer-card {
+    width: 410px !important;
+    height: 465px !important;
+
+    min-width: 410px !important;
+    min-height: 465px !important;
+
+    max-width: 410px !important;
+    max-height: 465px !important;
+
+    padding: 20px 24px !important;
+
+    margin: 0 auto !important;
+
+    justify-self: center !important;
+    align-self: center !important;
+
+    border-radius: 20px !important;
+}
+
+
+/* NUMBER DISPLAY */
+.dialer-card .number-display {
+    width: 280px !important;
+    max-width: 280px !important;
+
+    height: 43px !important;
+
+    margin: 0 auto 9px !important;
+}
+
+
+/* DIAL PAD */
+.dialer-card .dialpad {
+    width: 280px !important;
+    max-width: 280px !important;
+
+    gap: 6px 9px !important;
+
+    margin: 0 auto !important;
+}
+
+
+/* ROUND NUMBER BUTTONS */
+.dialer-card .dialpad button {
+    width: 50px !important;
+    height: 50px !important;
+
+    min-width: 50px !important;
+    min-height: 50px !important;
+
+    border-radius: 50% !important;
+}
+
+
+/* CALL CONTROLS */
+.dialer-card .call-controls {
+    width: 280px !important;
+    max-width: 280px !important;
+
+    margin: 10px auto 0 !important;
+
+    gap: 7px !important;
+}
+
+
+.dialer-card .call-controls button {
+    height: 36px !important;
+
+    min-height: 36px !important;
+
+    border-radius: 9px !important;
+
+    font-size: 8px !important;
+}
+
+
+/* =========================================================
+   RIGHT SIDE — CLEAR SPACE AFTER RECENT CALLS
+========================================================= */
+
+/* Recent Calls card */
+.right-panel .recent-card {
+    margin-bottom: 14px !important;
+}
+
+
+/* Messages card */
+.right-panel .messages-card {
+    margin-top: 0 !important;
+    margin-bottom: 10px !important;
+
+    flex-shrink: 0 !important;
+}
+
+
+/* Business Contacts */
+.right-panel .contacts-card {
+    margin-top: 0 !important;
+
+    flex-shrink: 0 !important;
+}
+
+
+/* EXTRA SAFETY: force visible separation */
+.right-panel .recent-card + .messages-card {
+    margin-top: 14px !important;
+}
+
+
+.right-panel .messages-card + .contacts-card {
+    margin-top: 10px !important;
+}
+
+
+/* =========================================================
+   KEEP THE DIALER CENTERED
+========================================================= */
+
+@media (min-width: 851px) {
+
+    .main-content {
+        align-items: center !important;
+    }
+
+    .dialer-card {
+        justify-self: center !important;
+        align-self: center !important;
+    }
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 850px) {
+
+    .dialer-card {
+        width: 410px !important;
+        max-width: 94% !important;
+
+        height: 465px !important;
+        max-height: none !important;
+
+        min-width: 0 !important;
+    }
+
+}
