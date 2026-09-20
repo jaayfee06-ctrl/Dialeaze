@@ -547,7 +547,138 @@ const businessNumber =
         "businessNumber"
     );
 
+// =========================================================
+// SIDEBAR USER INFORMATION
+// =========================================================
 
+const sidebarUserName =
+    document.getElementById(
+        "sidebarUserName"
+    );
+
+const sidebarUserInitials =
+    document.getElementById(
+        "sidebarUserInitials"
+    );
+
+const sidebarUserNumber =
+    document.getElementById(
+        "sidebarUserNumber"
+    );
+
+const sidebarUserCallStatus =
+    document.getElementById(
+        "sidebarUserCallStatus"
+    );
+
+function updateSidebarUserInfo() {
+
+    if (
+        !sidebarUserName ||
+        !sidebarUserNumber ||
+        !sidebarUserCallStatus
+    ) {
+        return;
+    }
+
+    if (customerAccount) {
+
+        sidebarUserName.textContent =
+            customerAccount.displayName ||
+            customerAccount.email ||
+            "User";
+
+        const assignedNumber =
+            customerAccount.assignedPhoneNumber ||
+            customerAccount.phoneNumber ||
+            "";
+
+        sidebarUserNumber.textContent =
+            assignedNumber
+                ? formatPhoneNumber(
+                    assignedNumber
+                )
+                : "No number assigned";
+    }
+
+    if (userInitials && sidebarUserInitials) {
+
+        sidebarUserInitials.textContent =
+            userInitials.textContent ||
+            "U";
+    }
+
+    if (status && sidebarUserCallStatus) {
+
+        const currentStatus =
+            status.textContent ||
+            "Connecting";
+
+        sidebarUserCallStatus.textContent =
+            "● " + currentStatus;
+    }
+}
+// Keep sidebar information synchronized
+// with the existing dialer status.
+
+if (status) {
+
+    const sidebarStatusObserver =
+        new MutationObserver(() => {
+
+            updateSidebarUserInfo();
+
+        });
+
+    sidebarStatusObserver.observe(
+        status,
+        {
+            childList: true,
+            characterData: true,
+            subtree: true
+        }
+    );
+}
+
+
+if (userName) {
+
+    const sidebarNameObserver =
+        new MutationObserver(() => {
+
+            updateSidebarUserInfo();
+
+        });
+
+    sidebarNameObserver.observe(
+        userName,
+        {
+            childList: true,
+            characterData: true,
+            subtree: true
+        }
+    );
+}
+
+
+if (businessNumber) {
+
+    const sidebarNumberObserver =
+        new MutationObserver(() => {
+
+            updateSidebarUserInfo();
+
+        });
+
+    sidebarNumberObserver.observe(
+        businessNumber,
+        {
+            childList: true,
+            characterData: true,
+            subtree: true
+        }
+    );
+}
 // =========================================================
 // MESSAGE DOM ELEMENTS
 // =========================================================
@@ -1630,7 +1761,7 @@ async function loadCustomerAccount() {
 
         }
 
-
+updateSidebarUserInfo();
         // =================================================
         // AVATAR
         // =================================================
