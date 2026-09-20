@@ -3081,3 +3081,688 @@ textarea:focus-visible {
         font-size: 17px !important;
     }
 }
+
+/* =========================================================
+   DIALEAZE PREMIUM FINAL POLISH
+   WHITE PAGE + BOXED APP + PREMIUM RECENT CALLS
+========================================================= */
+
+
+/* =========================================================
+   WHITE BROWSER/PAGE BACKGROUND
+========================================================= */
+
+html,
+body {
+    background: #ffffff !important;
+}
+
+
+/* =========================================================
+   ENTIRE DIALEAZE APP = ONE BOX
+========================================================= */
+
+.app-shell {
+    width: calc(100vw - 32px) !important;
+    height: calc(100vh - 32px) !important;
+
+    min-height: 0 !important;
+
+    margin: 16px !important;
+
+    overflow: hidden !important;
+
+    border-radius: 20px !important;
+
+    border:
+        1px solid
+        rgba(15, 23, 42, 0.12) !important;
+
+    background:
+        #07111f !important;
+
+    box-shadow:
+        0 20px 60px
+        rgba(15, 23, 42, 0.18),
+
+        0 4px 16px
+        rgba(15, 23, 42, 0.08) !important;
+}
+
+
+/* =========================================================
+   MAIN CONTENT
+========================================================= */
+
+.main-content {
+    height: calc(100% - 0px) !important;
+
+    min-height: 0 !important;
+
+    overflow: hidden !important;
+
+    background:
+        #07111f !important;
+}
+
+
+/* =========================================================
+   LEFT SIDEBAR
+========================================================= */
+
+.dialeaze-sidebar {
+    background:
+        linear-gradient(
+            180deg,
+            #081321 0%,
+            #06101c 100%
+        ) !important;
+
+    border-right:
+        1px solid
+        rgba(148, 163, 184, 0.10) !important;
+}
+
+
+/* =========================================================
+   CENTER DIALER BOX
+========================================================= */
+
+.dialer-card {
+    width: min(650px, 86%) !important;
+
+    height: min(720px, 88%) !important;
+
+    justify-self: center !important;
+    align-self: center !important;
+
+    border-radius: 24px !important;
+
+    border:
+        1px solid
+        rgba(96, 165, 250, 0.18) !important;
+
+    background:
+        radial-gradient(
+            circle at 50% 8%,
+            rgba(37, 99, 235, 0.13),
+            transparent 38%
+        ),
+        linear-gradient(
+            145deg,
+            #0d1d32,
+            #081422
+        ) !important;
+
+    box-shadow:
+        0 25px 65px
+        rgba(0, 0, 0, 0.28),
+
+        inset 0 1px 0
+        rgba(255, 255, 255, 0.035) !important;
+}
+
+
+/* =========================================================
+   RIGHT PANEL
+========================================================= */
+
+.right-panel {
+    background:
+        linear-gradient(
+            180deg,
+            #081321 0%,
+            #06101c 100%
+        ) !important;
+
+    border-left:
+        1px solid
+        rgba(148, 163, 184, 0.09) !important;
+
+    padding:
+        14px !important;
+
+    gap:
+        10px !important;
+}
+
+
+/* =========================================================
+   RECENT CALLS MAIN CARD
+========================================================= */
+
+.right-panel .recent-card {
+    border-radius: 16px !important;
+
+    border:
+        1px solid
+        rgba(148, 163, 184, 0.12) !important;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(18, 38, 64, 0.96),
+            rgba(10, 25, 42, 0.96)
+        ) !important;
+
+    box-shadow:
+        0 12px 30px
+        rgba(0, 0, 0, 0.18),
+
+        inset 0 1px 0
+        rgba(255, 255, 255, 0.025) !important;
+
+    padding:
+        15px !important;
+}
+
+
+/* =========================================================
+   RECENT CALL HEADER
+========================================================= */
+
+.right-panel .recent-header {
+    height: 28px !important;
+
+    display: flex !important;
+
+    align-items: center !important;
+
+    justify-content: space-between !important;
+
+    margin-bottom:
+        6px !important;
+}
+
+
+.right-panel .recent-header h2 {
+    margin: 0 !important;
+
+    color:
+        #f1f5f9 !important;
+
+    font-size:
+        14px !important;
+
+    font-weight:
+        700 !important;
+
+    letter-spacing:
+        -.15px !important;
+}
+
+
+.right-panel .recent-header span {
+    color:
+        #7187a3 !important;
+
+    font-size:
+        9px !important;
+}
+
+
+/* =========================================================
+   RECENT CALL LIST
+========================================================= */
+
+.right-panel .recent-calls-list {
+    display:
+        flex !important;
+
+    flex-direction:
+        column !important;
+
+    gap:
+        0 !important;
+
+    overflow-y:
+        auto !important;
+
+    padding-right:
+        2px !important;
+}
+
+
+/* =========================================================
+   INDIVIDUAL PREMIUM CALL ROW
+========================================================= */
+
+.right-panel .recent-call {
+    min-height:
+        67px !important;
+
+    width:
+        100% !important;
+
+    display:
+        flex !important;
+
+    align-items:
+        center !important;
+
+    justify-content:
+        space-between !important;
+
+    padding:
+        8px 4px !important;
+
+    border-bottom:
+        1px solid
+        rgba(148, 163, 184, 0.09) !important;
+
+    background:
+        transparent !important;
+
+    transition:
+        background .15s ease,
+        transform .15s ease !important;
+}
+
+
+.right-panel .recent-call:last-child {
+    border-bottom:
+        none !important;
+}
+
+
+.right-panel .recent-call:hover {
+    background:
+        rgba(59, 130, 246, 0.055) !important;
+
+    border-radius:
+        9px !important;
+
+    transform:
+        translateX(2px) !important;
+}
+
+
+/* =========================================================
+   LEFT SIDE OF CALL ROW
+========================================================= */
+
+.right-panel .recent-left {
+    min-width:
+        0 !important;
+
+    display:
+        flex !important;
+
+    align-items:
+        center !important;
+
+    gap:
+        10px !important;
+}
+
+
+/* =========================================================
+   CALL AVATAR / ICON
+========================================================= */
+
+.right-panel .recent-icon {
+    width:
+        34px !important;
+
+    height:
+        34px !important;
+
+    min-width:
+        34px !important;
+
+    display:
+        flex !important;
+
+    align-items:
+        center !important;
+
+    justify-content:
+        center !important;
+
+    border-radius:
+        50% !important;
+
+    background:
+        linear-gradient(
+            145deg,
+            #6b8fc4,
+            #3f6090
+        ) !important;
+
+    border:
+        1px solid
+        rgba(147, 197, 253, 0.22) !important;
+
+    color:
+        #f8fafc !important;
+
+    font-size:
+        14px !important;
+
+    font-weight:
+        700 !important;
+
+    box-shadow:
+        0 5px 15px
+        rgba(37, 99, 235, 0.18) !important;
+
+    flex-shrink:
+        0 !important;
+}
+
+
+/* =========================================================
+   CONTACT NAME
+========================================================= */
+
+.right-panel .recent-number {
+    color:
+        #f1f5f9 !important;
+
+    font-size:
+        12px !important;
+
+    font-weight:
+        650 !important;
+
+    line-height:
+        1.35 !important;
+
+    white-space:
+        nowrap !important;
+
+    overflow:
+        hidden !important;
+
+    text-overflow:
+        ellipsis !important;
+}
+
+
+/* =========================================================
+   PHONE NUMBER
+========================================================= */
+
+.right-panel .recent-contact-number {
+    margin-top:
+        1px !important;
+
+    color:
+        #7187a3 !important;
+
+    font-size:
+        9px !important;
+
+    line-height:
+        1.25 !important;
+}
+
+
+/* =========================================================
+   CALL TYPE / STATUS
+========================================================= */
+
+.right-panel .recent-details {
+    margin-top:
+        3px !important;
+
+    color:
+        #8298b1 !important;
+
+    font-size:
+        9px !important;
+
+    line-height:
+        1.25 !important;
+}
+
+
+/* =========================================================
+   CALL TIME
+========================================================= */
+
+.right-panel .recent-time {
+    flex-shrink:
+        0 !important;
+
+    margin-left:
+        8px !important;
+
+    color:
+        #8298b1 !important;
+
+    font-size:
+        9px !important;
+
+    white-space:
+        nowrap !important;
+}
+
+
+/* =========================================================
+   CALL HISTORY BUTTON
+========================================================= */
+
+.right-panel .history-button {
+    width:
+        100% !important;
+
+    height:
+        34px !important;
+
+    margin-top:
+        8px !important;
+
+    border-radius:
+        9px !important;
+
+    border:
+        1px solid
+        rgba(96, 165, 250, 0.18) !important;
+
+    background:
+        rgba(37, 99, 235, 0.08) !important;
+
+    color:
+        #60a5fa !important;
+
+    font-size:
+        8px !important;
+
+    font-weight:
+        750 !important;
+
+    letter-spacing:
+        .8px !important;
+
+    transition:
+        background .15s ease,
+        border-color .15s ease !important;
+}
+
+
+.right-panel .history-button:hover {
+    background:
+        rgba(37, 99, 235, 0.15) !important;
+
+    border-color:
+        rgba(96, 165, 250, 0.35) !important;
+}
+
+
+/* =========================================================
+   MESSAGES + CONTACTS
+========================================================= */
+
+.right-panel .messages-card,
+.right-panel .contacts-card {
+    border-radius:
+        14px !important;
+
+    border:
+        1px solid
+        rgba(148, 163, 184, 0.10) !important;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(16, 34, 57, 0.96),
+            rgba(9, 23, 39, 0.96)
+        ) !important;
+
+    box-shadow:
+        0 8px 20px
+        rgba(0, 0, 0, 0.12),
+
+        inset 0 1px 0
+        rgba(255,255,255,.02) !important;
+
+    transition:
+        border-color .15s ease,
+        transform .15s ease !important;
+}
+
+
+.right-panel .messages-card:hover,
+.right-panel .contacts-card:hover {
+    border-color:
+        rgba(96, 165, 250, 0.20) !important;
+
+    transform:
+        translateY(-1px) !important;
+}
+
+
+/* =========================================================
+   KEEP RIGHT PANEL CLEAN
+========================================================= */
+
+.right-panel .messages-card {
+    height:
+        68px !important;
+
+    min-height:
+        68px !important;
+}
+
+
+.right-panel .contacts-card {
+    height:
+        68px !important;
+
+    min-height:
+        68px !important;
+}
+
+
+/* =========================================================
+   SCROLLBAR
+========================================================= */
+
+.right-panel .recent-calls-list::-webkit-scrollbar {
+    width:
+        4px !important;
+}
+
+.right-panel .recent-calls-list::-webkit-scrollbar-track {
+    background:
+        transparent !important;
+}
+
+.right-panel .recent-calls-list::-webkit-scrollbar-thumb {
+    background:
+        rgba(96, 165, 250, 0.25) !important;
+
+    border-radius:
+        10px !important;
+}
+
+
+/* =========================================================
+   DIALER BUTTONS — REFERENCE GLOW
+========================================================= */
+
+.dialer-card .dialpad button {
+    width:
+        72px !important;
+
+    height:
+        72px !important;
+
+    border-radius:
+        50% !important;
+
+    background:
+        radial-gradient(
+            circle at 50% 35%,
+            #1c416f 0%,
+            #123052 45%,
+            #0b1e34 100%
+        ) !important;
+
+    border:
+        1px solid
+        rgba(96, 165, 250, 0.78) !important;
+
+    box-shadow:
+        0 0 8px
+        rgba(59, 130, 246, 0.60),
+
+        0 0 20px
+        rgba(37, 99, 235, 0.32),
+
+        inset 0 0 12px
+        rgba(147, 197, 253, 0.08) !important;
+}
+
+
+.dialer-card .dialpad button:hover {
+    box-shadow:
+        0 0 12px
+        rgba(96, 165, 250, 0.95),
+
+        0 0 30px
+        rgba(37, 99, 235, 0.55),
+
+        0 0 45px
+        rgba(37, 99, 235, 0.18),
+
+        inset 0 0 16px
+        rgba(147, 197, 253, 0.12) !important;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 850px) {
+
+    html,
+    body {
+        background:
+            #ffffff !important;
+    }
+
+    .app-shell {
+        width:
+            calc(100vw - 16px) !important;
+
+        height:
+            calc(100vh - 16px) !important;
+
+        margin:
+            8px !important;
+
+        border-radius:
+            16px !important;
+    }
+
+    .dialer-card {
+        width:
+            min(650px, 94%) !important;
+
+        height:
+            auto !important;
+    }
+}
