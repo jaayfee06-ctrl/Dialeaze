@@ -3766,3 +3766,618 @@ body {
             auto !important;
     }
 }
+
+/* =========================================================
+   DIALEAZE FINAL SIZE + CALL HISTORY POLISH
+========================================================= */
+
+
+/* =========================================================
+   SMALLER OUTER APPLICATION BOX
+========================================================= */
+
+.app-shell {
+    width: calc(100vw - 56px) !important;
+    height: calc(100vh - 56px) !important;
+
+    margin: 28px !important;
+
+    border-radius: 18px !important;
+
+    overflow: hidden !important;
+}
+
+
+/* =========================================================
+   MAIN CONTENT
+========================================================= */
+
+.main-content {
+    height: 100% !important;
+    min-height: 0 !important;
+}
+
+
+/* =========================================================
+   MAKE CENTER DIALER SLIGHTLY SMALLER
+========================================================= */
+
+.dialer-card {
+    width: min(590px, 82%) !important;
+    height: min(660px, 82%) !important;
+
+    border-radius: 22px !important;
+
+    padding:
+        28px 38px !important;
+}
+
+
+/* =========================================================
+   DIAL PAD SLIGHTLY MORE COMPACT
+========================================================= */
+
+.dialer-card .dialpad {
+    width: 370px !important;
+    max-width: 100% !important;
+
+    gap: 9px !important;
+}
+
+
+.dialer-card .dialpad button {
+    width: 64px !important;
+    height: 64px !important;
+}
+
+
+/* =========================================================
+   NUMBER DISPLAY
+========================================================= */
+
+.dialer-card .number-display {
+    width: 370px !important;
+    max-width: 100% !important;
+
+    height: 54px !important;
+
+    margin-bottom: 10px !important;
+}
+
+
+/* =========================================================
+   CALL CONTROL BUTTONS
+========================================================= */
+
+.dialer-card .call-controls {
+    width: 370px !important;
+    max-width: 100% !important;
+
+    margin-top: 14px !important;
+}
+
+
+/* =========================================================
+   RIGHT PANEL — MORE COMPACT
+========================================================= */
+
+.right-panel {
+    padding: 12px !important;
+
+    gap: 8px !important;
+}
+
+
+/* =========================================================
+   RECENT CALLS CARD
+========================================================= */
+
+.right-panel .recent-card {
+    padding: 13px !important;
+
+    border-radius: 15px !important;
+}
+
+
+/* =========================================================
+   RECENT CALL ROWS
+========================================================= */
+
+.right-panel .recent-call {
+    min-height: 61px !important;
+
+    padding: 7px 3px !important;
+}
+
+
+.right-panel .recent-icon {
+    width: 31px !important;
+    height: 31px !important;
+    min-width: 31px !important;
+
+    font-size: 12px !important;
+}
+
+
+/* =========================================================
+   ALL CALL HISTORY PANEL
+========================================================= */
+
+.right-panel .call-history-panel {
+    margin-top: 8px !important;
+
+    padding: 11px !important;
+
+    border-radius: 13px !important;
+
+    background:
+        linear-gradient(
+            145deg,
+            #0c1c30,
+            #081523
+        ) !important;
+
+    border:
+        1px solid
+        rgba(148, 163, 184, 0.10) !important;
+
+    box-shadow:
+        inset 0 1px 0
+        rgba(255,255,255,.025),
+
+        0 8px 22px
+        rgba(0,0,0,.15) !important;
+
+    max-height: 230px !important;
+
+    overflow-y: auto !important;
+}
+
+
+/* =========================================================
+   HISTORY TITLE
+========================================================= */
+
+.right-panel .history-title {
+    margin:
+        1px 2px 8px !important;
+
+    color:
+        #f1f5f9 !important;
+
+    font-size:
+        11px !important;
+
+    font-weight:
+        700 !important;
+
+    letter-spacing:
+        .1px !important;
+}
+
+
+/* =========================================================
+   EACH HISTORY ROW
+========================================================= */
+
+.right-panel .call-history-item {
+    display:
+        flex !important;
+
+    align-items:
+        center !important;
+
+    justify-content:
+        space-between !important;
+
+    gap:
+        8px !important;
+
+    min-height:
+        65px !important;
+
+    padding:
+        8px 3px !important;
+
+    margin:
+        0 !important;
+
+    border-bottom:
+        1px solid
+        rgba(148, 163, 184, 0.08) !important;
+
+    background:
+        transparent !important;
+
+    border-radius:
+        0 !important;
+}
+
+
+.right-panel .call-history-item:last-child {
+    border-bottom:
+        none !important;
+}
+
+
+/* =========================================================
+   HISTORY LEFT SIDE
+========================================================= */
+
+.right-panel .call-history-left {
+    min-width:
+        0 !important;
+
+    display:
+        flex !important;
+
+    align-items:
+        center !important;
+
+    gap:
+        9px !important;
+}
+
+
+/* =========================================================
+   HISTORY ICON
+========================================================= */
+
+.right-panel .call-icon {
+    width:
+        29px !important;
+
+    height:
+        29px !important;
+
+    min-width:
+        29px !important;
+
+    display:
+        flex !important;
+
+    align-items:
+        center !important;
+
+    justify-content:
+        center !important;
+
+    border-radius:
+        50% !important;
+
+    background:
+        linear-gradient(
+            145deg,
+            #557fb6,
+            #294d78
+        ) !important;
+
+    border:
+        1px solid
+        rgba(147,197,253,.18) !important;
+
+    color:
+        #dbeafe !important;
+
+    font-size:
+        11px !important;
+
+    box-shadow:
+        0 4px 12px
+        rgba(37,99,235,.15) !important;
+}
+
+
+/* =========================================================
+   HISTORY NAME
+========================================================= */
+
+.right-panel .call-history-number {
+    color:
+        #f1f5f9 !important;
+
+    font-size:
+        11px !important;
+
+    font-weight:
+        650 !important;
+
+    line-height:
+        1.3 !important;
+
+    white-space:
+        nowrap !important;
+
+    overflow:
+        hidden !important;
+
+    text-overflow:
+        ellipsis !important;
+}
+
+
+/* =========================================================
+   HISTORY PHONE NUMBER
+========================================================= */
+
+.right-panel .call-history-contact-number {
+    margin-top:
+        1px !important;
+
+    color:
+        #7187a3 !important;
+
+    font-size:
+        8px !important;
+
+    line-height:
+        1.2 !important;
+}
+
+
+/* =========================================================
+   HISTORY STATUS
+========================================================= */
+
+.right-panel .call-history-details {
+    margin-top:
+        2px !important;
+
+    color:
+        #8298b1 !important;
+
+    font-size:
+        8px !important;
+
+    line-height:
+        1.2 !important;
+}
+
+
+/* =========================================================
+   HISTORY RIGHT SIDE
+========================================================= */
+
+.right-panel .call-history-right {
+    flex-shrink:
+        0 !important;
+
+    display:
+        flex !important;
+
+    flex-direction:
+        column !important;
+
+    align-items:
+        flex-end !important;
+
+    gap:
+        2px !important;
+
+    text-align:
+        right !important;
+}
+
+
+.right-panel .call-history-duration {
+    color:
+        #94a3b8 !important;
+
+    font-size:
+        8px !important;
+}
+
+
+.right-panel .call-history-time {
+    color:
+        #64748b !important;
+
+    font-size:
+        8px !important;
+
+    white-space:
+        nowrap !important;
+}
+
+
+/* =========================================================
+   HISTORY ACTION BUTTONS
+   SMALL PREMIUM BUTTONS
+========================================================= */
+
+.right-panel .call-history-actions {
+    display:
+        flex !important;
+
+    gap:
+        5px !important;
+
+    margin-top:
+        5px !important;
+}
+
+
+.right-panel .history-call-button,
+.right-panel .history-message-button {
+    height:
+        23px !important;
+
+    padding:
+        0 7px !important;
+
+    border-radius:
+        6px !important;
+
+    border:
+        1px solid
+        rgba(96,165,250,.15) !important;
+
+    background:
+        rgba(37,99,235,.08) !important;
+
+    color:
+        #93c5fd !important;
+
+    font-family:
+        inherit !important;
+
+    font-size:
+        7px !important;
+
+    font-weight:
+        650 !important;
+
+    cursor:
+        pointer !important;
+
+    transition:
+        background .15s ease,
+        border-color .15s ease,
+        transform .15s ease !important;
+}
+
+
+.right-panel .history-call-button:hover,
+.right-panel .history-message-button:hover {
+    background:
+        rgba(37,99,235,.18) !important;
+
+    border-color:
+        rgba(96,165,250,.32) !important;
+
+    transform:
+        translateY(-1px) !important;
+}
+
+
+/* =========================================================
+   HISTORY SCROLLBAR
+========================================================= */
+
+.right-panel .call-history-panel::-webkit-scrollbar {
+    width:
+        4px !important;
+}
+
+
+.right-panel .call-history-panel::-webkit-scrollbar-track {
+    background:
+        transparent !important;
+}
+
+
+.right-panel .call-history-panel::-webkit-scrollbar-thumb {
+    background:
+        rgba(96,165,250,.22) !important;
+
+    border-radius:
+        10px !important;
+}
+
+
+/* =========================================================
+   REMOVE THE OLD "STICKY NOTE" LOOK
+========================================================= */
+
+.right-panel #callHistoryList {
+    background:
+        transparent !important;
+
+    padding:
+        0 !important;
+
+    margin:
+        0 !important;
+}
+
+
+.right-panel #callHistoryList > * {
+    box-sizing:
+        border-box !important;
+}
+
+
+/* =========================================================
+   COMPACT MESSAGES / CONTACTS
+========================================================= */
+
+.right-panel .messages-card,
+.right-panel .contacts-card {
+    height:
+        62px !important;
+
+    min-height:
+        62px !important;
+
+    border-radius:
+        13px !important;
+}
+
+
+/* =========================================================
+   DESKTOP — PREVENT HUGE EMPTY CENTER
+========================================================= */
+
+@media (min-width: 1100px) {
+
+    .dialer-card {
+        width:
+            590px !important;
+
+        height:
+            660px !important;
+    }
+
+}
+
+
+/* =========================================================
+   SMALLER SCREENS
+========================================================= */
+
+@media (max-width: 1100px) {
+
+    .app-shell {
+        width:
+            calc(100vw - 36px) !important;
+
+        height:
+            calc(100vh - 36px) !important;
+
+        margin:
+            18px !important;
+    }
+
+    .dialer-card {
+        width:
+            min(560px, 86%) !important;
+
+        height:
+            min(640px, 82%) !important;
+    }
+
+}
+
+
+@media (max-width: 850px) {
+
+    .app-shell {
+        width:
+            calc(100vw - 16px) !important;
+
+        height:
+            calc(100vh - 16px) !important;
+
+        margin:
+            8px !important;
+    }
+
+    .dialer-card {
+        width:
+            94% !important;
+
+        height:
+            auto !important;
+    }
+
+}
