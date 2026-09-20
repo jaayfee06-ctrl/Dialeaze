@@ -2336,52 +2336,165 @@ textarea:focus-visible {
 }
 
 /* =========================================================
-   FINAL 3-COLUMN SPACING / HEIGHT FIX
+   FINAL DIALER FRAME
+   Compact professional dashboard layout
    ========================================================= */
 
-.main-content {
-    display: grid !important;
-
-    /* Left | Dialer | Right */
-    grid-template-columns: 220px 470px 345px !important;
-
-    gap: 18px !important;
-
-    /* Keep the three sections together in the center */
-    justify-content: center !important;
-    align-items: center !important;
-
-    width: 100% !important;
-    height: 100% !important;
+.app-shell {
+    width: 1107px !important;
+    height: auto !important;
     min-height: 0 !important;
-}
 
-/* LEFT SIDEBAR */
-.dialeaze-sidebar {
-    width: 220px !important;
-    height: 570px !important;
+    margin: 32px auto !important;
+    padding: 18px !important;
 
-    align-self: center !important;
+    border-radius: 18px !important;
+
+    background:
+        linear-gradient(
+            145deg,
+            #07111f 0%,
+            #081321 50%,
+            #06101d 100%
+        ) !important;
+
+    box-shadow:
+        0 24px 70px rgba(3, 12, 24, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.035) !important;
 
     overflow: hidden !important;
 }
 
-/* CENTER DIALER */
+
+/* =========================================================
+   THREE COLUMN LAYOUT
+   ========================================================= */
+
+.main-content {
+    width: 100% !important;
+    height: 570px !important;
+    min-height: 570px !important;
+
+    display: grid !important;
+
+    grid-template-columns:
+        220px
+        470px
+        345px !important;
+
+    gap: 18px !important;
+
+    justify-content: center !important;
+    align-items: stretch !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+
+/* =========================================================
+   LEFT SIDEBAR
+   ========================================================= */
+
+.dialeaze-sidebar {
+    width: 220px !important;
+    height: 570px !important;
+
+    margin: 0 !important;
+
+    align-self: stretch !important;
+
+    border-radius: 14px !important;
+}
+
+
+/* =========================================================
+   CENTER DIALER
+   ========================================================= */
+
 .dialer-card {
     width: 470px !important;
     height: 570px !important;
 
     margin: 0 !important;
-    align-self: center !important;
+
+    align-self: stretch !important;
+
+    border-radius: 14px !important;
 }
 
-/* RIGHT SIDE */
+
+/* =========================================================
+   RIGHT PANEL
+   ========================================================= */
+
 .right-panel {
     width: 345px !important;
     height: 570px !important;
 
     margin: 0 !important;
-    align-self: center !important;
 
-    overflow: hidden !important;
+    align-self: stretch !important;
+
+    border-radius: 14px !important;
+}
+
+
+/* =========================================================
+   REMOVE THE OLD GIANT TOP SPACE
+   ========================================================= */
+
+.topbar {
+    display: none !important;
+}
+
+
+/* =========================================================
+   PAGE BACKGROUND
+   ========================================================= */
+
+html,
+body {
+    min-height: 100% !important;
+}
+
+body {
+    background:
+        radial-gradient(
+            circle at 50% 35%,
+            rgba(31, 92, 180, 0.06),
+            transparent 42%
+        ),
+        #f3f5f8 !important;
+}
+
+
+/* =========================================================
+   RESPONSIVE SAFETY
+   ========================================================= */
+
+@media (max-width: 1150px) {
+
+    .app-shell {
+        width: calc(100vw - 32px) !important;
+    }
+
+    .main-content {
+        grid-template-columns:
+            200px
+            minmax(400px, 1fr)
+            300px !important;
+    }
+
+    .dialeaze-sidebar {
+        width: 200px !important;
+    }
+
+    .dialer-card {
+        width: 100% !important;
+    }
+
+    .right-panel {
+        width: 300px !important;
+    }
 }
