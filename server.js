@@ -3117,6 +3117,405 @@ app.get("/api/phone-numbers", async (req, res) => {
         });
     }
 });
+
+// =========================================================
+// DIALEAZE PHONE NUMBER - RESERVE BEFORE PAYMENT
+// =========================================================
+
+app.post("/api/phone-numbers/claim", async (req, res) => {
+    try {
+
+        // ---------------------------------------------------------
+        // AUTHENTICATE CUSTOMER
+        // ---------------------------------------------------------
+
+        const auth = await authenticateRequest(req);
+
+        if (!auth.success) {
+            return res.status(auth.status).json({
+                success: false,
+                error: auth.error
+            });
+        }
+
+
+        // ---------------------------------------------------------
+        // GET REQUESTED PHONE NUMBER
+        // ---------------------------------------------------------
+
+        const phoneNumber =
+            String(
+                req.body?.phoneNumber ||
+                req.body?.phone_number ||
+                ""
+            ).trim();
+
+
+        if (!phoneNumber) {
+            return res.status(400).json({
+                success: false,
+                error: "Phone number is required."
+            });
+        }
+
+
+        // ---------------------------------------------------------
+        // BASIC E.164 VALIDATION
+        // ---------------------------------------------------------
+
+        if (!/^\+[1-9]\d{7,14}$/.test(phoneNumber)) {
+            return res.status(400).json({
+                success: false,
+                error: "Invalid phone number format."
+            });
+        }
+
+
+        // ---------------------------------------------------------
+        // CHECK WHETHER THIS CUSTOMER ALREADY HAS AN
+        // ASSIGNED NUMBER
+        // ---------------------------------------------------------
+
+        const assignedResponse = await fetch(
+            `${SUPABASE_URL}/rest/v1/phone_numbers` +
+            `?user_id=eq.${encodeURIComponent(auth.user.id)}` +
+            `&status=eq.assigned` +
+            `&select=id,phone_number` +
+            `&limit=1`,
+            {
+                method: "GET",
+                headers: {
+                    Authorization:
+                        `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                    apikey:
+                        SUPABASE_SECRET_KEY,
+
+                    Accept:
+                        "application/json"
+                }
+            }
+        );
+
+
+        const assignedData =
+            await assignedResponse.json();
+
+
+        if (!assignedResponse.ok) {
+            console.error(
+                "Assigned phone lookup failed:",
+                assignedData
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    "Unable to check your existing phone number."
+            });
+        }
+
+
+        if (
+            Array.isArray(assignedData) &&
+            assignedData.length > 0
+        ) {
+            return res.status(409).json({
+                success: false,
+                error:
+                    "Your Dialeaze account already has a phone number assigned."
+            });
+        }
+
+
+        // ---------------------------------------------------------
+        // CHECK THIS CUSTOMER'S EXISTING RESERVATION
+        // ---------------------------------------------------------
+
+        const ownReservationResponse =
+            await fetch(
+                `${SUPABASE_URL}/rest/v1/phone_numbers` +
+                `?user_id=eq.${encodeURIComponent(auth.user.id)}` +
+                `&status=eq.reserved` +
+                `&select=id,phone_number,reserved_until` +
+                `&order=created_at.desc`,
+                {
+                    method: "GET",
+                    headers: {
+                        Authorization:
+                            `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                        apikey:
+                            SUPABASE_SECRET_KEY,
+
+                        Accept:
+                            "application/json"
+                    }
+                }
+            );
+
+
+        const ownReservations =
+            await ownReservationResponse.json();
+
+
+        if (!ownReservationResponse.ok) {
+            console.error(
+                "Own reservation lookup failed:",
+                ownReservations
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    "Unable to check your current number reservation."
+            });
+        }
+
+
+        // ---------------------------------------------------------
+        // REUSE AN ACTIVE RESERVATION FOR THIS CUSTOMER
+        // ---------------------------------------------------------
+
+        if (Array.isArray(ownReservations)) {
+
+            const activeOwnReservation =
+                ownReservations.find(
+                    reservation =>
+                        reservation.phone_number === phoneNumber &&
+                        reservation.reserved_until &&
+                        new Date(
+                            reservation.reserved_until
+                        ).getTime() > Date.now()
+                );
+
+
+            if (activeOwnReservation) {
+
+                return res.json({
+                    success: true,
+                    message:
+                        "This number is already reserved for you.",
+
+                    phoneNumber:
+                        activeOwnReservation.phone_number,
+
+                    reservedUntil:
+                        activeOwnReservation.reserved_until
+                });
+            }
+        }
+
+
+        // ---------------------------------------------------------
+        // CHECK WHETHER SOMEONE ELSE ALREADY RESERVED THIS NUMBER
+        // ---------------------------------------------------------
+
+        const existingResponse =
+            await fetch(
+                `${SUPABASE_URL}/rest/v1/phone_numbers` +
+                `?phone_number=eq.${encodeURIComponent(phoneNumber)}` +
+                `&status=in.(reserved,assigned)` +
+                `&select=id,user_id,status,reserved_until`,
+                {
+                    method: "GET",
+                    headers: {
+                        Authorization:
+                            `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                        apikey:
+                            SUPABASE_SECRET_KEY,
+
+                        Accept:
+                            "application/json"
+                    }
+                }
+            );
+
+
+        const existingNumbers =
+            await existingResponse.json();
+
+
+        if (!existingResponse.ok) {
+            console.error(
+                "Phone reservation availability check failed:",
+                existingNumbers
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    "Unable to verify whether this number is available."
+            });
+        }
+
+
+        // ---------------------------------------------------------
+        // ACTIVE RESERVATION / ASSIGNMENT EXISTS
+        // ---------------------------------------------------------
+
+        if (
+            Array.isArray(existingNumbers) &&
+            existingNumbers.length > 0
+        ) {
+
+            const activeExisting =
+                existingNumbers.find(number => {
+
+                    if (
+                        number.status === "assigned"
+                    ) {
+                        return true;
+                    }
+
+                    if (
+                        number.status === "reserved" &&
+                        number.reserved_until
+                    ) {
+                        return (
+                            new Date(
+                                number.reserved_until
+                            ).getTime() > Date.now()
+                        );
+                    }
+
+                    return false;
+                });
+
+
+            if (activeExisting) {
+
+                return res.status(409).json({
+                    success: false,
+                    error:
+                        "This phone number has already been reserved or assigned. Please choose another number."
+                });
+            }
+        }
+
+
+        // ---------------------------------------------------------
+        // CREATE 30-MINUTE RESERVATION
+        // ---------------------------------------------------------
+
+        const reservedUntil =
+            new Date(
+                Date.now() +
+                (30 * 60 * 1000)
+            ).toISOString();
+
+
+        const reservationResponse =
+            await fetch(
+                `${SUPABASE_URL}/rest/v1/phone_numbers`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        Authorization:
+                            `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                        apikey:
+                            SUPABASE_SECRET_KEY,
+
+                        "Content-Type":
+                            "application/json",
+
+                        Prefer:
+                            "return=representation"
+                    },
+
+                    body:
+                        JSON.stringify({
+                            user_id:
+                                auth.user.id,
+
+                            phone_number:
+                                phoneNumber,
+
+                            status:
+                                "reserved",
+
+                            reserved_until:
+                                reservedUntil
+                        })
+                }
+            );
+
+
+        const reservationData =
+            await reservationResponse.json();
+
+
+        if (!reservationResponse.ok) {
+
+            console.error(
+                "Phone number reservation failed:",
+                reservationData
+            );
+
+            return res.status(
+                reservationResponse.status
+            ).json({
+                success: false,
+                error:
+                    reservationData?.message ||
+                    reservationData?.details ||
+                    "Unable to reserve this phone number."
+            });
+        }
+
+
+        // ---------------------------------------------------------
+        // SUCCESS
+        // ---------------------------------------------------------
+
+        console.log(
+            "📞 DIALEAZE PHONE NUMBER RESERVED:",
+            {
+                userId:
+                    auth.user.id,
+
+                phoneNumber,
+
+                reservedUntil
+            }
+        );
+
+
+        return res.json({
+            success: true,
+
+            message:
+                "Phone number reserved for 30 minutes.",
+
+            phoneNumber,
+
+            reservedUntil,
+
+            reservation:
+                Array.isArray(reservationData)
+                    ? reservationData[0]
+                    : reservationData
+        });
+
+
+    } catch (error) {
+
+        console.error(
+            "Phone number reservation error:",
+            error
+        );
+
+
+        return res.status(500).json({
+            success: false,
+            error:
+                "Unable to reserve the selected phone number."
+        });
+    }
+});
 // =========================================================
 // DIALEAZE BILLING - PROVISION ACCOUNT AFTER PAYMENT
 // =========================================================
