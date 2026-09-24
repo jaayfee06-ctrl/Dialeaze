@@ -3,6 +3,7 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const Safepay = require("@sfpy/node-core");
 const axios = require("axios");
+const { Safepay } = require("@sfpy/node-sdk");
 const path = require("path");
 
 
@@ -3542,6 +3543,19 @@ const SAFEPAY_ENV =
 const SAFEPAY_PLAN_ID =
     process.env.SAFEPAY_PLAN_ID;
 
+    const safepay = new Safepay({
+    environment: SAFEPAY_ENV,
+
+    apiKey:
+        process.env.SAFEPAY_PUBLIC_KEY,
+
+    v1Secret:
+        process.env.SAFEPAY_SECRET_KEY,
+
+    webhookSecret:
+        process.env.SAFEPAY_WEBHOOK_SECRET
+});
+
 
 // =========================================================
 // CREATE SAFEPAY SUBSCRIPTION CHECKOUT
@@ -3643,34 +3657,24 @@ app.post("/api/safepay/create-checkout", async (req, res) => {
         );
 
 // -----------------------------------------------------
-// STEP 1: CREATE SAFEPAY PASSPORT TOKEN
+// STEP 1: CREATE SAFEPAY AUTH TOKEN
 // -----------------------------------------------------
 
-let passportResponse;
-console.log("SAFEPAy AUTH CHECK:", {
-  host: process.env.SAFEPAY_HOST,
-  secretExists: !!process.env.SAFEPAY_SECRET_KEY,
-  secretLength: process.env.SAFEPAY_SECRET_KEY?.length,
-  webhookExists: !!process.env.SAFEPAY_WEBHOOK_SECRET,
-  webhookLength: process.env.SAFEPAY_WEBHOOK_SECRET?.length
-});
+let safepayAuthToken;
+
 try {
 
-    passportResponse = await axios.post(
-    `${SAFEPAY_HOST}/client/passport/v1/token`,
-    {},
-    {
-        headers: {
-            Authorization:
-                `Bearer ${process.env.SAFEPAY_SECRET_KEY}`
-        }
-    }
-);
+    safepayAuthToken =
+        await safepay.authorization.create();
+
+    console.log(
+        "Safepay authentication token created successfully."
+    );
 
 } catch (safepayError) {
 
     console.error(
-        "Safepay passport token error:",
+        "Safepay authorization error:",
         safepayError?.response?.data ||
         safepayError?.message ||
         safepayError
@@ -3683,28 +3687,6 @@ try {
     });
 
 }
-
-
-const safepayAuthToken =
-    passportResponse?.data?.token ||
-    passportResponse?.data?.data;
-
-
-if (!safepayAuthToken) {
-
-    console.error(
-        "Safepay did not return an authentication token:",
-        passportResponse?.data
-    );
-
-    return res.status(500).json({
-        success: false,
-        error:
-            "Safepay authentication token was not returned."
-    });
-
-}
-
 
 console.log(
     "Safepay authentication token created successfully."
@@ -3724,29 +3706,48 @@ console.log(
         // STEP 3: BUILD SAFEPAY CHECKOUT URL
         // -----------------------------------------------------
 
-        const checkoutParams =
-            new URLSearchParams({
+       // -----------------------------------------------------
+// STEP 3: CREATE SAFEPAY SUBSCRIPTION CHECKOUT
+// -----------------------------------------------------
 
-                plan_id:
-                    SAFEPAY_PLAN_ID,
+let checkoutUrl;
 
-                auth_token:
-                    safepayAuthToken,
+try {
 
-                env:
-                    SAFEPAY_ENV,
+    checkoutUrl =
+        await safepay.checkout.createSubscription({
+            cancelUrl:
+                "https://dialeaze.com/checkout/?payment=cancelled",
 
-                redirect_url:
-                    "https://dialeaze.com/checkout/?payment=success",
+            redirectUrl:
+                "https://dialeaze.com/checkout/?payment=success",
 
-                cancel_url:
-                    "https://dialeaze.com/checkout/?payment=cancelled"
+            planId:
+                SAFEPAY_PLAN_ID,
 
-            });
+            reference
+        });
 
+    console.log(
+        "Safepay subscription checkout URL created successfully."
+    );
 
-        const checkoutUrl =
-            `${SAFEPAY_CHECKOUT_HOST}/checkout/auth/login?${checkoutParams.toString()}`;
+} catch (safepayError) {
+
+    console.error(
+        "Safepay subscription checkout error:",
+        safepayError?.response?.data ||
+        safepayError?.message ||
+        safepayError
+    );
+
+    return res.status(500).json({
+        success: false,
+        error:
+            "Unable to create Safepay subscription checkout."
+    });
+
+}
 
 
         console.log(
