@@ -14206,17 +14206,50 @@ const rawBody =
 
             if (!validSignature) {
 
-                console.warn(
-                    "❌ Invalid Safepay webhook signature."
-                );
+    console.warn(
+        "❌ Invalid Safepay webhook signature."
+    );
 
-                return res
-                    .status(401)
-                    .send(
-                        "Invalid signature"
-                    );
-            }
+    console.warn(
+        "SAFEPAy WEBHOOK DEBUG:",
+        {
+            hasSignature: Boolean(signature),
+            signatureLength:
+                String(signature || "").length,
 
+            signaturePrefix:
+                String(signature || "").substring(0, 12),
+
+            hasTimestamp: Boolean(timestamp),
+            timestampLength:
+                String(timestamp || "").length,
+
+            rawBodyIsBuffer:
+                Buffer.isBuffer(rawBody),
+
+            rawBodyLength:
+                Buffer.isBuffer(rawBody)
+                    ? rawBody.length
+                    : 0,
+
+            webhookSecretConfigured:
+                Boolean(
+                    process.env.SAFEPAY_WEBHOOK_SECRET
+                ),
+
+            webhookSecretLength:
+                String(
+                    process.env.SAFEPAY_WEBHOOK_SECRET || ""
+                ).length
+        }
+    );
+
+    return res
+        .status(401)
+        .send(
+            "Invalid signature"
+        );
+}
 
             // =================================================
             // 2. PARSE EVENT
