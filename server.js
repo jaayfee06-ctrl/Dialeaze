@@ -1,7 +1,6 @@
 ﻿const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
-const Safepay = require("@sfpy/node-core");
 const axios = require("axios");
 const { Safepay } = require("@sfpy/node-sdk");
 const path = require("path");
