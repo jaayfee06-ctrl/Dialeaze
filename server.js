@@ -3576,7 +3576,7 @@ const SAFEPAY_PLAN_ID =
         process.env.SAFEPAY_WEBHOOK_SECRET
 });
 
-/// =========================================================
+// =========================================================
 // SAFEPAY WEBHOOK HMAC VERIFICATION
 // =========================================================
 
@@ -14178,17 +14178,18 @@ app.post(
 
         try {
 
-            const signature =
-                req.headers[
-                    "x-sfpy-signature"
-                ];
-                const timestamp =
+           const signature =
+    req.headers[
+        "x-sfpy-signature"
+    ];
+
+const timestamp =
     req.headers[
         "x-sfpy-timestamp"
     ];
 
-            const rawBody =
-                req.body;
+const rawBody =
+    req.body;
 
 
             // =================================================
