@@ -3519,6 +3519,277 @@ app.post("/api/phone-numbers/claim", async (req, res) => {
 // =========================================================
 // DIALEAZE BILLING - PROVISION ACCOUNT AFTER PAYMENT
 // =========================================================
+// =========================================================
+// SAFEPAY SUBSCRIPTION CHECKOUT
+// =========================================================
+
+const SAFEPAY_HOST =
+    process.env.SAFEPAY_HOST ||
+    "https://sandbox.api.getsafepay.com";
+
+const SAFEPAY_CHECKOUT_HOST =
+    process.env.SAFEPAY_CHECKOUT_HOST ||
+    "https://sandbox.api.getsafepay.com";
+
+const SAFEPAY_ENV =
+    process.env.SAFEPAY_ENV ||
+    "sandbox";
+
+const SAFEPAY_PLAN_ID =
+    process.env.SAFEPAY_PLAN_ID;
+
+
+// =========================================================
+// CREATE SAFEPAY SUBSCRIPTION CHECKOUT
+// =========================================================
+
+app.post("/api/safepay/create-checkout", async (req, res) => {
+
+    try {
+
+        // -----------------------------------------------------
+        // AUTHENTICATE Dialeaze USER
+        // -----------------------------------------------------
+
+        const auth =
+            await authenticateRequest(req);
+
+        if (!auth.success) {
+
+            return res.status(auth.status).json({
+                success: false,
+                error: auth.error
+            });
+
+        }
+
+
+        // -----------------------------------------------------
+        // CHECK SAFEPAY CONFIGURATION
+        // -----------------------------------------------------
+
+        if (
+            !process.env.SAFEPAY_SECRET_KEY ||
+            !SAFEPAY_PLAN_ID
+        ) {
+
+            console.error(
+                "Safepay configuration is missing."
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    "Safepay configuration is missing on the server."
+            });
+
+        }
+
+
+        // -----------------------------------------------------
+        // GET CUSTOMER INFORMATION
+        // -----------------------------------------------------
+
+        const customerEmail =
+            String(
+                auth.user?.email || ""
+            ).trim();
+
+
+        if (!customerEmail) {
+
+            return res.status(400).json({
+                success: false,
+                error:
+                    "Your Dialeaze account does not have an email address."
+            });
+
+        }
+
+
+        // -----------------------------------------------------
+        // GET SELECTED PHONE NUMBER
+        // -----------------------------------------------------
+
+        const phoneNumber =
+            String(
+                req.body?.phoneNumber || ""
+            ).trim();
+
+
+        if (!phoneNumber) {
+
+            return res.status(400).json({
+                success: false,
+                error:
+                    "A Dialeaze phone number is required."
+            });
+
+        }
+
+
+        console.log(
+            "Creating Safepay subscription checkout:",
+            {
+                userId: auth.user.id,
+                email: customerEmail,
+                phoneNumber,
+                planId: SAFEPAY_PLAN_ID
+            }
+        );
+
+
+        // -----------------------------------------------------
+        // STEP 1: GET SAFEPAY AUTH TOKEN
+        // -----------------------------------------------------
+
+        const tokenResponse =
+            await fetch(
+                `${SAFEPAY_HOST}/client/passport/v1/token`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Authorization":
+                            `Bearer ${process.env.SAFEPAY_SECRET_KEY}`,
+
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({})
+                }
+            );
+
+
+        const tokenData =
+            await tokenResponse.json();
+
+
+        if (!tokenResponse.ok) {
+
+            console.error(
+                "Safepay authentication token error:",
+                tokenData
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    tokenData?.message ||
+                    tokenData?.error ||
+                    "Unable to create Safepay authentication token."
+            });
+
+        }
+
+
+        const safepayAuthToken =
+            tokenData?.token;
+
+
+        if (!safepayAuthToken) {
+
+            console.error(
+                "Safepay did not return an authentication token:",
+                tokenData
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    "Safepay authentication token was not returned."
+            });
+
+        }
+
+
+        // -----------------------------------------------------
+        // STEP 2: CREATE INTERNAL REFERENCE
+        // -----------------------------------------------------
+
+        const reference =
+            "DLZ-" +
+            auth.user.id +
+            "-" +
+            Date.now();
+
+
+        // -----------------------------------------------------
+        // STEP 3: BUILD SAFEPAY CHECKOUT URL
+        // -----------------------------------------------------
+
+        const checkoutParams =
+            new URLSearchParams({
+
+                plan_id:
+                    SAFEPAY_PLAN_ID,
+
+                auth_token:
+                    safepayAuthToken,
+
+                env:
+                    SAFEPAY_ENV,
+
+                redirect_url:
+                    "https://dialeaze.com/checkout/?payment=success",
+
+                cancel_url:
+                    "https://dialeaze.com/checkout/?payment=cancelled"
+
+            });
+
+
+        const checkoutUrl =
+            `${SAFEPAY_CHECKOUT_HOST}/checkout/auth/login?${checkoutParams.toString()}`;
+
+
+        console.log(
+            "Safepay checkout URL created successfully.",
+            {
+                reference,
+                userId: auth.user.id,
+                planId: SAFEPAY_PLAN_ID
+            }
+        );
+
+
+        // -----------------------------------------------------
+        // RETURN CHECKOUT URL TO FRONTEND
+        // -----------------------------------------------------
+
+        return res.json({
+
+            success: true,
+
+            checkoutUrl,
+
+            reference,
+
+            planId:
+                SAFEPAY_PLAN_ID,
+
+            phoneNumber
+
+        });
+
+
+    } catch (error) {
+
+        console.error(
+            "Safepay checkout creation error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            error:
+                "Unable to create Safepay checkout."
+        });
+
+    }
+
+});
 
 app.post("/api/billing/provision", async (req, res) => {
     let paymentCode = null;
