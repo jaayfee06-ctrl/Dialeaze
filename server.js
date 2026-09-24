@@ -3580,17 +3580,19 @@ const SAFEPAY_PLAN_ID =
 // SAFEPAY WEBHOOK HMAC VERIFICATION
 // =========================================================
 
+// =========================================================
+// SAFEPAY WEBHOOK HMAC VERIFICATION
+// =========================================================
+
 function verahJ91ZuNL8Y2px8iYciYeHN8sfSh5eXH8(
-    secretBase64,
+    secret,
     rawBody,
-    receivedSignature,
-    timestamp
+    receivedSignature
 ) {
 
     if (
-        !secretBase64 ||
+        !secret ||
         !receivedSignature ||
-        !timestamp ||
         !Buffer.isBuffer(rawBody)
     ) {
         return false;
@@ -3598,47 +3600,47 @@ function verahJ91ZuNL8Y2px8iYciYeHN8sfSh5eXH8(
 
     try {
 
-        const secret =
-            Buffer.from(
-                secretBase64,
-                "base64"
+        const event =
+            JSON.parse(
+                rawBody.toString("utf8")
             );
 
-        const signingPayload =
-            Buffer.concat([
-                Buffer.from(
-                    String(timestamp),
-                    "utf8"
-                ),
+        const hookData =
+            event?.data;
 
-                Buffer.from(
-                    ".",
-                    "utf8"
-                ),
+        if (!hookData) {
+            return false;
+        }
 
-                rawBody
-            ]);
+        const payload =
+            JSON.stringify(
+                hookData
+            );
 
         const expectedSignature =
-            "sha256=" +
             crypto
                 .createHmac(
-                    "sha256",
+                    "sha512",
                     secret
                 )
-                .update(signingPayload)
+                .update(
+                    payload,
+                    "utf8"
+                )
                 .digest("hex");
 
         const expectedBuffer =
             Buffer.from(
                 expectedSignature,
-                "utf8"
+                "hex"
             );
 
         const receivedBuffer =
             Buffer.from(
-                String(receivedSignature).trim(),
-                "utf8"
+                String(
+                    receivedSignature
+                ).trim(),
+                "hex"
             );
 
         if (
@@ -14196,12 +14198,11 @@ const rawBody =
             // 1. VERIFY HMAC
             // =================================================
 
-            const validSignature =
+           const validSignature =
     verahJ91ZuNL8Y2px8iYciYeHN8sfSh5eXH8(
         process.env.SAFEPAY_WEBHOOK_SECRET,
         rawBody,
-        signature,
-        timestamp
+        signature
     );
 
             if (!validSignature) {
