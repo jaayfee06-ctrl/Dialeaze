@@ -3595,7 +3595,21 @@ function verahJ91ZuNL8Y2px8iYciYeHN8sfSh5eXH8(
 
         const received =
             String(receivedSignature).trim();
+console.log(
+    "SAFEPAy SECRET DIAGNOSTIC:",
+    {
+        secretLength: secret.length,
 
+        secretLooksHex64:
+            /^[0-9a-fA-F]{64}$/.test(secret),
+
+        secretFirst4:
+            secret.slice(0, 4),
+
+        secretLast4:
+            secret.slice(-4)
+    }
+);
         // ---------------------------------------------
         // Candidate 1:
         // HMAC-SHA512 of event.data
