@@ -3576,9 +3576,6 @@ const SAFEPAY_PLAN_ID =
         process.env.SAFEPAY_WEBHOOK_SECRET
 });
 
-// =========================================================
-// SAFEPAY WEBHOOK HMAC VERIFICATION
-// =========================================================
 function verahJ91ZuNL8Y2px8iYciYeHN8sfSh5eXH8(
     secret,
     rawBody,
@@ -3593,51 +3590,100 @@ function verahJ91ZuNL8Y2px8iYciYeHN8sfSh5eXH8(
     }
 
     try {
-        const event = JSON.parse(
-            rawBody.toString("utf8")
-        );
+        const event =
+            JSON.parse(rawBody.toString("utf8"));
 
-        const hookData = event?.data;
+        const received =
+            String(receivedSignature).trim();
 
-        if (!hookData) {
-            return false;
-        }
+        // ---------------------------------------------
+        // Candidate 1:
+        // HMAC-SHA512 of event.data
+        // ---------------------------------------------
+        const dataPayload =
+            JSON.stringify(event?.data);
 
-        const payload = JSON.stringify(hookData);
-
-        const expectedSignature =
+        const candidateData =
             crypto
                 .createHmac("sha512", secret)
-                .update(payload, "utf8")
+                .update(dataPayload, "utf8")
                 .digest("hex");
 
-        const expectedBuffer =
-            Buffer.from(
-                expectedSignature,
-                "hex"
-            );
+        // ---------------------------------------------
+        // Candidate 2:
+        // HMAC-SHA512 of complete raw body
+        // ---------------------------------------------
+        const candidateRaw =
+            crypto
+                .createHmac("sha512", secret)
+                .update(rawBody)
+                .digest("hex");
 
-        const receivedBuffer =
-            Buffer.from(
-                String(receivedSignature).trim(),
-                "hex"
-            );
+        // ---------------------------------------------
+        // Candidate 3:
+        // HMAC-SHA512 of complete parsed event
+        // ---------------------------------------------
+        const candidateEvent =
+            crypto
+                .createHmac("sha512", secret)
+                .update(
+                    JSON.stringify(event),
+                    "utf8"
+                )
+                .digest("hex");
 
-        if (
-            expectedBuffer.length !==
-            receivedBuffer.length
-        ) {
-            return false;
-        }
+        // ---------------------------------------------
+        // Candidate 4:
+        // HMAC-SHA256 of raw body
+        // ---------------------------------------------
+        const candidateRaw256 =
+            crypto
+                .createHmac("sha256", secret)
+                .update(rawBody)
+                .digest("hex");
 
-        return crypto.timingSafeEqual(
-            expectedBuffer,
-            receivedBuffer
+        console.log(
+            "========== SAFEPAY SIGNATURE DIAGNOSTIC =========="
         );
 
+        console.log({
+            receivedLength: received.length,
+
+            dataSha512Match:
+                received === candidateData,
+
+            rawSha512Match:
+                received === candidateRaw,
+
+            eventSha512Match:
+                received === candidateEvent,
+
+            rawSha256Match:
+                received === candidateRaw256,
+
+            dataLength:
+                dataPayload.length,
+
+            rawBodyLength:
+                rawBody.length,
+
+            eventKeys:
+                Object.keys(event || {}),
+
+            dataKeys:
+                Object.keys(event?.data || {})
+        });
+
+        console.log(
+            "=================================================="
+        );
+
+        return received === candidateData;
+
     } catch (error) {
+
         console.error(
-            "Safepay HMAC verification error:",
+            "Safepay diagnostic error:",
             error
         );
 
