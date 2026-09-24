@@ -3654,12 +3654,15 @@ try {
         {},
         {
             headers: {
-                Authorization:
-                    `Bearer ${process.env.SAFEPAY_SECRET_KEY}`,
+    Authorization:
+        `Bearer ${process.env.SAFEPAY_SECRET_KEY}`,
 
-                "Content-Type":
-                    "application/json"
-            }
+    "x-sfpy-api-key":
+        process.env.SAFEPAY_SECRET_KEY,
+
+    "Content-Type":
+        "application/json"
+}
         }
     );
 
