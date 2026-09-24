@@ -3579,17 +3579,11 @@ const SAFEPAY_PLAN_ID =
 // =========================================================
 // SAFEPAY WEBHOOK HMAC VERIFICATION
 // =========================================================
-
-// =========================================================
-// SAFEPAY WEBHOOK HMAC VERIFICATION
-// =========================================================
-
 function verahJ91ZuNL8Y2px8iYciYeHN8sfSh5eXH8(
     secret,
     rawBody,
     receivedSignature
 ) {
-
     if (
         !secret ||
         !receivedSignature ||
@@ -3599,34 +3593,22 @@ function verahJ91ZuNL8Y2px8iYciYeHN8sfSh5eXH8(
     }
 
     try {
+        const event = JSON.parse(
+            rawBody.toString("utf8")
+        );
 
-        const event =
-            JSON.parse(
-                rawBody.toString("utf8")
-            );
-
-        const hookData =
-            event?.data;
+        const hookData = event?.data;
 
         if (!hookData) {
             return false;
         }
 
-        const payload =
-            JSON.stringify(
-                hookData
-            );
+        const payload = JSON.stringify(hookData);
 
         const expectedSignature =
             crypto
-                .createHmac(
-                    "sha512",
-                    secret
-                )
-                .update(
-                    payload,
-                    "utf8"
-                )
+                .createHmac("sha512", secret)
+                .update(payload, "utf8")
                 .digest("hex");
 
         const expectedBuffer =
@@ -3637,9 +3619,7 @@ function verahJ91ZuNL8Y2px8iYciYeHN8sfSh5eXH8(
 
         const receivedBuffer =
             Buffer.from(
-                String(
-                    receivedSignature
-                ).trim(),
+                String(receivedSignature).trim(),
                 "hex"
             );
 
@@ -3656,7 +3636,6 @@ function verahJ91ZuNL8Y2px8iYciYeHN8sfSh5eXH8(
         );
 
     } catch (error) {
-
         console.error(
             "Safepay HMAC verification error:",
             error
@@ -14204,7 +14183,6 @@ const rawBody =
         rawBody,
         signature
     );
-
             if (!validSignature) {
 
     console.warn(
