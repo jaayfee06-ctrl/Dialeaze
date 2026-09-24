@@ -3021,17 +3021,15 @@ app.get("/api/phone-numbers", async (req, res) => {
             ).toString("base64");
 
        const response = await fetch(
-  `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/relay/rest/phone_numbers/search?max_results=100`,
-            {
-                method: "GET",
-                headers: {
-                    Authorization:
-                        `Basic ${signalWireAuth}`,
-                    Accept:
-                        "application/json"
-                }
-            }
-        );
+  `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/laml/2010-04-01/Accounts/${SIGNALWIRE_PROJECT_ID}/AvailablePhoneNumbers/US/Local?AreaCode=${areaCode}`,
+  {
+    method: "GET",
+    headers: {
+      Authorization: `Basic ${signalWireAuth}`,
+      Accept: "application/json"
+    }
+  }
+);
 
         const data =
             await response.json();
@@ -3059,12 +3057,9 @@ console.log("========================================");
             });
         }
 
-        const signalWireNumbers =
-            Array.isArray(data)
-                ? data
-                : Array.isArray(data?.data)
-                    ? data.data
-                    : [];
+       const signalWireNumbers = Array.isArray(data?.available_phone_numbers)
+  ? data.available_phone_numbers
+  : [];
 
         const availableNumbers =
             signalWireNumbers
