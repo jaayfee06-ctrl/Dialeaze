@@ -3657,18 +3657,15 @@ console.log("SAFEPAy AUTH CHECK:", {
 try {
 
     passportResponse = await axios.post(
-        `${SAFEPAY_HOST}/client/passport/v1/token`,
-        {},
-        {
-            headers: {
-                Authorization:
-                    `Bearer ${process.env.SAFEPAY_SECRET_KEY}`,
-
-                "Content-Type":
-                    "application/json"
-            }
+    `${SAFEPAY_HOST}/client/passport/v1/token`,
+    {},
+    {
+        headers: {
+            Authorization:
+                `Bearer ${process.env.SAFEPAY_SECRET_KEY}`
         }
-    );
+    }
+);
 
 } catch (safepayError) {
 
