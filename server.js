@@ -3640,31 +3640,48 @@ app.post("/api/safepay/create-checkout", async (req, res) => {
             }
         );
 
+// -----------------------------------------------------
+// STEP 1: INITIALIZE SAFEPAY SDK
+// -----------------------------------------------------
+
+let safepay;
+
+try {
+
+    safepay = new Safepay(
+        process.env.SAFEPAY_SECRET_KEY,
+        {
+            authType: "secret",
+            host: SAFEPAY_HOST
+        }
+    );
+
+} catch (safepayInitError) {
+
+    console.error(
+        "Safepay initialization error:",
+        safepayInitError?.message ||
+        safepayInitError
+    );
+
+    return res.status(500).json({
+        success: false,
+        error: "Unable to initialize Safepay."
+    });
+
+}
+
 
 // -----------------------------------------------------
-// STEP 1: CREATE SAFEPAY PASSPORT TOKEN
+// STEP 2: CREATE SAFEPAY PASSPORT TOKEN
 // -----------------------------------------------------
 
 let passportResponse;
 
 try {
 
-    passportResponse = await axios.post(
-        `${SAFEPAY_HOST}/client/passport/v1/token`,
-        {},
-        {
-            headers: {
-    Authorization:
-        `Bearer ${process.env.SAFEPAY_SECRET_KEY}`,
-
-    "x-sfpy-api-key":
-        process.env.SAFEPAY_SECRET_KEY,
-
-    "Content-Type":
-        "application/json"
-}
-        }
-    );
+    passportResponse =
+        await safepay.auth.passport.create();
 
 } catch (safepayError) {
 
@@ -3685,15 +3702,15 @@ try {
 
 
 const safepayAuthToken =
-    passportResponse?.data?.token ||
-    passportResponse?.data?.data;
+    passportResponse?.data ||
+    passportResponse?.token;
 
 
 if (!safepayAuthToken) {
 
     console.error(
         "Safepay did not return an authentication token:",
-        passportResponse?.data
+        passportResponse
     );
 
     return res.status(500).json({
@@ -3708,7 +3725,6 @@ if (!safepayAuthToken) {
 console.log(
     "Safepay authentication token created successfully."
 );
-
         // -----------------------------------------------------
         // STEP 2: CREATE INTERNAL REFERENCE
         // -----------------------------------------------------
