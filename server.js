@@ -3020,8 +3020,8 @@ app.get("/api/phone-numbers", async (req, res) => {
                 `${SIGNALWIRE_PROJECT_ID}:${SIGNALWIRE_API_TOKEN}`
             ).toString("base64");
 
-        const response = await fetch(
-            `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/relay/rest/phone_numbers/search?max_results=100${areaCode ? `&areacode=${areaCode}` : ""}`,
+       const response = await fetch(
+  `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/relay/rest/phone_numbers/search?max_results=100`,
             {
                 method: "GET",
                 headers: {
