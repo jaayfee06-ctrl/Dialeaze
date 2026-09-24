@@ -3580,47 +3580,50 @@ const SAFEPAY_PLAN_ID =
 // SAFEPAY WEBHOOK HMAC VERIFICATION
 // =========================================================
 
-function ver9yMnTm4NSzvG9rrwjM2ec8xZgh1cafXH8(
-    secret,
-    rawBody,
-    receivedSignature
-) {
+const signature = req.headers["x-sfpy-signature"];
+const timestamp = req.headers["x-sfpy-timestamp"];
 
+if (!verahJ91ZuNL8Y2px8iYciYeHN8sfSh5eXH8(
+    SAFEPAY_WEBHOOK_SECRET,
+    req.body,
+    signature,
+    timestamp
+)) {
     if (
-        !secret ||
+        !secretBase64 ||
         !receivedSignature ||
+        !timestamp ||
         !Buffer.isBuffer(rawBody)
     ) {
         return false;
     }
 
     try {
+        // Safepay webhook secret is Base64 encoded.
+        const secret = Buffer.from(secretBase64, "base64");
+
+        // Safepay signs:
+        // timestamp + "." + raw request body
+        const signingPayload = Buffer.concat([
+            Buffer.from(String(timestamp), "utf8"),
+            Buffer.from(".", "utf8"),
+            rawBody
+        ]);
 
         const expectedSignature =
+            "sha256=" +
             crypto
-                .createHmac(
-                    "sha256",
-                    secret
-                )
-                .update(rawBody)
+                .createHmac("sha256", secret)
+                .update(signingPayload)
                 .digest("hex");
 
-        const expectedBuffer =
-            Buffer.from(
-                expectedSignature,
-                "hex"
-            );
+        const expectedBuffer = Buffer.from(expectedSignature, "utf8");
+        const receivedBuffer = Buffer.from(
+            String(receivedSignature).trim(),
+            "utf8"
+        );
 
-        const receivedBuffer =
-            Buffer.from(
-                String(receivedSignature).trim(),
-                "hex"
-            );
-
-        if (
-            expectedBuffer.length !==
-            receivedBuffer.length
-        ) {
+        if (expectedBuffer.length !== receivedBuffer.length) {
             return false;
         }
 
@@ -3628,9 +3631,7 @@ function ver9yMnTm4NSzvG9rrwjM2ec8xZgh1cafXH8(
             expectedBuffer,
             receivedBuffer
         );
-
     } catch (error) {
-
         console.error(
             "Safepay HMAC verification error:",
             error
