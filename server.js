@@ -3645,7 +3645,7 @@ app.post("/api/safepay/create-checkout", async (req, res) => {
 // -----------------------------------------------------
 
 const safepay =
-    new Safepay(
+    Safepay(
         process.env.SAFEPAY_SECRET_KEY,
         {
             authType: "secret",
