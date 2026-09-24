@@ -3642,47 +3642,26 @@ app.post("/api/safepay/create-checkout", async (req, res) => {
 
 
 // -----------------------------------------------------
-// STEP 1: INITIALIZE SAFEPAY
-// -----------------------------------------------------
-
-let safepay;
-
-try {
-
-    safepay = Safepay(
-        process.env.SAFEPAY_SECRET_KEY,
-        {
-            authType: "secret",
-            host: SAFEPAY_HOST
-        }
-    );
-
-} catch (safepayInitError) {
-
-    console.error(
-        "Safepay initialization error:",
-        safepayInitError
-    );
-
-    return res.status(500).json({
-        success: false,
-        error:
-            "Unable to initialize Safepay."
-    });
-
-}
-
-
-// -----------------------------------------------------
-// STEP 2: CREATE SAFEPAY PASSPORT TOKEN
+// STEP 1: CREATE SAFEPAY PASSPORT TOKEN
 // -----------------------------------------------------
 
 let passportResponse;
 
 try {
 
-    passportResponse =
-        await safepay.auth.passport.create();
+    passportResponse = await axios.post(
+        `${SAFEPAY_HOST}/client/passport/v1/token`,
+        {},
+        {
+            headers: {
+                Authorization:
+                    `Bearer ${process.env.SAFEPAY_SECRET_KEY}`,
+
+                "Content-Type":
+                    "application/json"
+            }
+        }
+    );
 
 } catch (safepayError) {
 
@@ -3703,15 +3682,15 @@ try {
 
 
 const safepayAuthToken =
-    passportResponse?.data ||
-    passportResponse?.token;
+    passportResponse?.data?.token ||
+    passportResponse?.data?.data;
 
 
 if (!safepayAuthToken) {
 
     console.error(
         "Safepay did not return an authentication token:",
-        passportResponse
+        passportResponse?.data
     );
 
     return res.status(500).json({
@@ -3726,23 +3705,6 @@ if (!safepayAuthToken) {
 console.log(
     "Safepay authentication token created successfully."
 );
-
-
-        if (!safepayAuthToken) {
-
-            console.error(
-                "Safepay did not return an authentication token:",
-                tokenData
-            );
-
-            return res.status(500).json({
-                success: false,
-                error:
-                    "Safepay authentication token was not returned."
-            });
-
-        }
-
 
         // -----------------------------------------------------
         // STEP 2: CREATE INTERNAL REFERENCE
