@@ -3647,7 +3647,13 @@ app.post("/api/safepay/create-checkout", async (req, res) => {
 // -----------------------------------------------------
 
 let passportResponse;
-
+console.log("SAFEPAy AUTH CHECK:", {
+  host: process.env.SAFEPAY_HOST,
+  secretExists: !!process.env.SAFEPAY_SECRET_KEY,
+  secretLength: process.env.SAFEPAY_SECRET_KEY?.length,
+  webhookExists: !!process.env.SAFEPAY_WEBHOOK_SECRET,
+  webhookLength: process.env.SAFEPAY_WEBHOOK_SECRET?.length
+});
 try {
 
     passportResponse = await axios.post(
