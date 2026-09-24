@@ -3685,7 +3685,12 @@ app.post("/api/safepay/create-checkout", async (req, res) => {
 
 
         const safepayAuthToken =
-            tokenData?.token;
+    tokenData?.token ||
+    tokenData?.data?.token ||
+    tokenData?.data;
+    console.log(
+    "Safepay authentication token received successfully."
+);
 
 
         if (!safepayAuthToken) {
