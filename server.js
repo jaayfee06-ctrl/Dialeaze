@@ -3575,7 +3575,6 @@ const SAFEPAY_PLAN_ID =
     webhookSecret:
         process.env.SAFEPAY_WEBHOOK_SECRET
 });
-
 function verahJ91ZuNL8Y2px8iYciYeHN8sfSh5eXH8(
     secret,
     rawBody,
@@ -3590,114 +3589,134 @@ function verahJ91ZuNL8Y2px8iYciYeHN8sfSh5eXH8(
     }
 
     try {
+
         const event =
-            JSON.parse(rawBody.toString("utf8"));
+            JSON.parse(
+                rawBody.toString("utf8")
+            );
 
         const received =
             String(receivedSignature).trim();
-console.log(
-    "SAFEPAy SECRET DIAGNOSTIC:",
-    {
-        secretLength: secret.length,
 
-        secretLooksHex64:
-            /^[0-9a-fA-F]{64}$/.test(secret),
-
-        secretFirst4:
-            secret.slice(0, 4),
-
-        secretLast4:
-            secret.slice(-4)
-    }
-);
-        // ---------------------------------------------
-        // Candidate 1:
-        // HMAC-SHA512 of event.data
-        // ---------------------------------------------
         const dataPayload =
             JSON.stringify(event?.data);
 
-        const candidateData =
+        const eventPayload =
+            JSON.stringify(event);
+
+        // KEY A — secret exactly as stored
+        const keyA =
+            Buffer.from(secret, "utf8");
+
+        // KEY B — Base64-decoded secret
+        let keyB = null;
+
+        try {
+            keyB =
+                Buffer.from(secret, "base64");
+        } catch (e) {
+            keyB = null;
+        }
+
+        // NORMAL SECRET
+        const aData =
             crypto
-                .createHmac("sha512", secret)
+                .createHmac("sha512", keyA)
                 .update(dataPayload, "utf8")
                 .digest("hex");
 
-        // ---------------------------------------------
-        // Candidate 2:
-        // HMAC-SHA512 of complete raw body
-        // ---------------------------------------------
-        const candidateRaw =
+        const aRaw =
             crypto
-                .createHmac("sha512", secret)
+                .createHmac("sha512", keyA)
                 .update(rawBody)
                 .digest("hex");
 
-        // ---------------------------------------------
-        // Candidate 3:
-        // HMAC-SHA512 of complete parsed event
-        // ---------------------------------------------
-        const candidateEvent =
+        const aEvent =
             crypto
-                .createHmac("sha512", secret)
-                .update(
-                    JSON.stringify(event),
-                    "utf8"
-                )
+                .createHmac("sha512", keyA)
+                .update(eventPayload, "utf8")
                 .digest("hex");
 
-        // ---------------------------------------------
-        // Candidate 4:
-        // HMAC-SHA256 of raw body
-        // ---------------------------------------------
-        const candidateRaw256 =
-            crypto
-                .createHmac("sha256", secret)
-                .update(rawBody)
-                .digest("hex");
+        // DECODED SECRET
+        let bData = "";
+        let bRaw = "";
+        let bEvent = "";
+
+        if (keyB && keyB.length > 0) {
+
+            bData =
+                crypto
+                    .createHmac("sha512", keyB)
+                    .update(dataPayload, "utf8")
+                    .digest("hex");
+
+            bRaw =
+                crypto
+                    .createHmac("sha512", keyB)
+                    .update(rawBody)
+                    .digest("hex");
+
+            bEvent =
+                crypto
+                    .createHmac("sha512", keyB)
+                    .update(eventPayload, "utf8")
+                    .digest("hex");
+        }
 
         console.log(
-            "========== SAFEPAY SIGNATURE DIAGNOSTIC =========="
+            "========== SAFEPAY HMAC TEST =========="
         );
 
         console.log({
-            receivedLength: received.length,
 
-            dataSha512Match:
-                received === candidateData,
+            receivedLength:
+                received.length,
 
-            rawSha512Match:
-                received === candidateRaw,
+            secretLength:
+                secret.length,
 
-            eventSha512Match:
-                received === candidateEvent,
+            base64DecodedKeyLength:
+                keyB
+                    ? keyB.length
+                    : 0,
 
-            rawSha256Match:
-                received === candidateRaw256,
+            normalSecret_data:
+                received === aData,
 
-            dataLength:
-                dataPayload.length,
+            normalSecret_raw:
+                received === aRaw,
 
-            rawBodyLength:
-                rawBody.length,
+            normalSecret_event:
+                received === aEvent,
 
-            eventKeys:
-                Object.keys(event || {}),
+            decodedSecret_data:
+                received === bData,
 
-            dataKeys:
-                Object.keys(event?.data || {})
+            decodedSecret_raw:
+                received === bRaw,
+
+            decodedSecret_event:
+                received === bEvent
+
         });
 
         console.log(
-            "=================================================="
+            "========================================"
         );
 
-        return received === candidateData;
+        return (
+            received === aData ||
+            received === aRaw ||
+            received === aEvent ||
+            received === bData ||
+            received === bRaw ||
+            received === bEvent
+        );
 
     } catch (error) {
 
         console.error(
-            "Safepay diagnostic error:",
+            "Safepay HMAC diagnostic error:",
             error
         );
 
