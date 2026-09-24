@@ -3036,6 +3036,13 @@ app.get("/api/phone-numbers", async (req, res) => {
         const data =
             await response.json();
 
+            console.log("========================================");
+console.log("DIALEAZE SIGNALWIRE NUMBER SEARCH");
+console.log("Area Code:", areaCode);
+console.log("SignalWire HTTP Status:", response.status);
+console.log("SignalWire Response:", JSON.stringify(data, null, 2));
+console.log("========================================");
+
         if (!response.ok) {
             console.error(
                 "Phone numbers fetch error:",
@@ -4361,12 +4368,7 @@ app.post("/api/billing/redeem-code", async (req, res) => {
         );
 
         const data = await response.json();
-console.log("========================================");
-console.log("DIALEAZE SIGNALWIRE NUMBER SEARCH");
-console.log("Area Code:", areaCode);
-console.log("SignalWire HTTP Status:", response.status);
-console.log("SignalWire Response:", JSON.stringify(data, null, 2));
-console.log("========================================");
+
         if (!response.ok) {
             console.error(
                 "âŒ Payment code RPC error:",
