@@ -3870,19 +3870,22 @@ let checkoutUrl;
 
 try {
 
-    checkoutUrl =
-        await safepay.checkout.createSubscription({
-            cancelUrl:
-                "https://dialeaze.com/checkout/?payment=cancelled",
+   checkoutUrl =
+    await safepay.checkout.cr9yMnTm4NSzvG9rrwjM2ec8xZgh1cafXH8({
+        cancelUrl:
+            "https://dialeaze.com/checkout/?payment=cancelled",
 
-            redirectUrl:
-                "https://dialeaze.com/checkout/?payment=success",
+        redirectUrl:
+            "https://dialeaze.com/checkout/?payment=success",
 
-            planId:
-                SAFEPAY_PLAN_ID,
+        planId:
+            SAFEPAY_PLAN_ID,
 
-            reference
-        });
+        reference,
+
+        authToken:
+            safepayAuthToken
+    });
 
     console.log(
         "Safepay subscription checkout URL created successfully."
