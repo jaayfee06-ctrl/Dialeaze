@@ -1,6 +1,7 @@
 ﻿const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
+const Safepay = require("@sfpy/node-core");
 const path = require("path");
 
 
@@ -3639,59 +3640,66 @@ app.post("/api/safepay/create-checkout", async (req, res) => {
         );
 
 
-        // -----------------------------------------------------
-        // STEP 1: GET SAFEPAY AUTH TOKEN
-        // -----------------------------------------------------
+       // -----------------------------------------------------
+// STEP 1: GET SAFEPAY AUTH TOKEN
+// -----------------------------------------------------
 
-        const tokenResponse =
-            await fetch(
-                `${SAFEPAY_HOST}/client/passport/v1/token`,
-                {
-                    method: "POST",
-
-                    headers: {
-                        "Authorization":
-                            `Bearer ${process.env.SAFEPAY_SECRET_KEY}`,
-
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body: JSON.stringify({})
-                }
-            );
-
-
-        const tokenData =
-            await tokenResponse.json();
-
-
-        if (!tokenResponse.ok) {
-
-            console.error(
-                "Safepay authentication token error:",
-                tokenData
-            );
-
-            return res.status(500).json({
-                success: false,
-                error:
-                    tokenData?.message ||
-                    tokenData?.error ||
-                    "Unable to create Safepay authentication token."
-            });
-
+const safepay =
+    new Safepay(
+        process.env.SAFEPAY_SECRET_KEY,
+        {
+            authType: "secret",
+            host: SAFEPAY_HOST
         }
+    );
 
 
-        const safepayAuthToken =
-    tokenData?.token ||
-    tokenData?.data?.token ||
-    tokenData?.data;
-    console.log(
-    "Safepay authentication token received successfully."
+let passportResponse;
+
+try {
+
+    passportResponse =
+        await safepay.auth.passport.create();
+
+} catch (safepayError) {
+
+    console.error(
+        "Safepay authentication token error:",
+        safepayError?.message ||
+        safepayError
+    );
+
+    return res.status(500).json({
+        success: false,
+        error:
+            "Unable to create Safepay authentication token."
+    });
+
+}
+
+
+const safepayAuthToken =
+    passportResponse?.data;
+
+
+if (!safepayAuthToken) {
+
+    console.error(
+        "Safepay did not return an authentication token."
+    );
+
+    return res.status(500).json({
+        success: false,
+        error:
+            "Safepay authentication token was not returned."
+    });
+
+}
+
+
+console.log(
+    "Safepay authentication token created successfully."
 );
-
 
         if (!safepayAuthToken) {
 
