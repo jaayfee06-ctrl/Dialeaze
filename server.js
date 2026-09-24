@@ -14142,25 +14142,7 @@ async function processSafepayWebhookEvent(event) {
 
     }
 }
-// =========================================================
-// FRONTEND FALLBACK
-// =========================================================
-//
-// Keep this AFTER all API routes.
-// Otherwise it can catch /api/* requests before
-// their intended API handlers.
-// =========================================================
-app.use((req, res) => {
 
-    res.sendFile(
-        path.join(
-            __dirname,
-            "public",
-            "index.html"
-        )
-    );
-
-});
 
 
 app.post(
@@ -14414,6 +14396,23 @@ app.post(
 
     }
 );
+
+// =========================================================
+// FRONTEND FALLBACK
+// =========================================================
+
+app.use((req, res) => {
+    res.sendFile(
+        path.join(
+            __dirname,
+            "public",
+            "index.html"
+        )
+    );
+});
+// =========================================================
+// START SERVER
+// =========================================================
   app.listen(PORT, () => {
 
     console.log("");
