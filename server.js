@@ -13799,30 +13799,8 @@ app.get(
 
     }
 );
+
 // =========================================================
-// FRONTEND FALLBACK
-// =========================================================
-//
-// Keep this AFTER all API routes.
-// Otherwise it can catch /api/* requests before
-// their intended API handlers.
-// =========================================================
-
-app.use((req, res) => {
-
-    res.sendFile(
-        path.join(
-            __dirname,
-            "public",
-            "index.html"
-        )
-    );
-
-});
-
-app.listen(PORT, () => {
-
-    // =========================================================
 // SAFEPAY SUBSCRIPTION WEBHOOK
 // =========================================================
 
@@ -14164,6 +14142,25 @@ async function processSafepayWebhookEvent(event) {
 
     }
 }
+// =========================================================
+// FRONTEND FALLBACK
+// =========================================================
+//
+// Keep this AFTER all API routes.
+// Otherwise it can catch /api/* requests before
+// their intended API handlers.
+// =========================================================
+app.use((req, res) => {
+
+    res.sendFile(
+        path.join(
+            __dirname,
+            "public",
+            "index.html"
+        )
+    );
+
+});
 
 
 app.post(
@@ -14417,6 +14414,8 @@ app.post(
 
     }
 );
+  app.listen(PORT, () => {
+
     console.log("");
     console.log("==========================================");
     console.log("       DIALEAZE DIALER SERVER");
@@ -14424,4 +14423,5 @@ app.post(
     console.log(`Server running on port ${PORT}`);
     console.log(`Local URL: http://localhost:${PORT}`);
     console.log("");
+
 });
