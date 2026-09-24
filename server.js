@@ -2,6 +2,7 @@
 const cors = require("cors");
 const dotenv = require("dotenv");
 const axios = require("axios");
+const crypto = require("crypto");
 const { Safepay } = require("@sfpy/node-sdk");
 const path = require("path");
 
@@ -45,7 +46,27 @@ if (!SUPABASE_PUBLISHABLE_KEY) {
 
 app.use(cors());
 
-app.use(express.json());
+// =========================================================
+// JSON BODY PARSER
+// SAFEPAY WEBHOOK MUST KEEP RAW BODY FOR HMAC VERIFICATION
+// =========================================================
+
+app.use((req, res, next) => {
+
+    const requestPath =
+        String(req.path || "").split("?")[0];
+
+    if (requestPath === "/webhook/safepay") {
+
+        return express.raw({
+            type: "application/json"
+        })(req, res, next);
+
+    }
+
+    return express.json()(req, res, next);
+
+});
 
 app.use(express.urlencoded({ extended: true }));
 
@@ -3555,7 +3576,69 @@ const SAFEPAY_PLAN_ID =
         process.env.SAFEPAY_WEBHOOK_SECRET
 });
 
+// =========================================================
+// SAFEPAY WEBHOOK HMAC VERIFICATION
+// =========================================================
 
+function ver9yMnTm4NSzvG9rrwjM2ec8xZgh1cafXH8(
+    secret,
+    rawBody,
+    receivedSignature
+) {
+
+    if (
+        !secret ||
+        !receivedSignature ||
+        !Buffer.isBuffer(rawBody)
+    ) {
+        return false;
+    }
+
+    try {
+
+        const expectedSignature =
+            crypto
+                .createHmac(
+                    "sha256",
+                    secret
+                )
+                .update(rawBody)
+                .digest("hex");
+
+        const expectedBuffer =
+            Buffer.from(
+                expectedSignature,
+                "hex"
+            );
+
+        const receivedBuffer =
+            Buffer.from(
+                String(receivedSignature).trim(),
+                "hex"
+            );
+
+        if (
+            expectedBuffer.length !==
+            receivedBuffer.length
+        ) {
+            return false;
+        }
+
+        return crypto.timingSafeEqual(
+            expectedBuffer,
+            receivedBuffer
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Safepay HMAC verification error:",
+            error
+        );
+
+        return false;
+    }
+}
 // =========================================================
 // CREATE SAFEPAY SUBSCRIPTION CHECKOUT
 // =========================================================
@@ -3700,7 +3783,81 @@ console.log(
             "-" +
             Date.now();
 
+// -----------------------------------------------------
+// SAVE CHECKOUT SESSION BEFORE REDIRECTING TO SAFEPAY
+// -----------------------------------------------------
 
+const checkoutSessionResponse =
+    await fetch(
+        `${SUPABASE_URL}/rest/v1/safepay_checkout_sessions`,
+        {
+            method: "POST",
+
+            headers: {
+                Authorization:
+                    `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                apikey:
+                    SUPABASE_SECRET_KEY,
+
+                "Content-Type":
+                    "application/json",
+
+                Prefer:
+                    "return=minimal"
+            },
+
+            body:
+                JSON.stringify({
+                    reference,
+
+                    user_id:
+                        auth.user.id,
+
+                    phone_number:
+                        phoneNumber,
+
+                    plan:
+                        "solo",
+
+                    plan_id:
+                        SAFEPAY_PLAN_ID,
+
+                    status:
+                        "pending"
+                })
+        }
+    );
+
+const checkoutSessionText =
+    await checkoutSessionResponse.text();
+
+if (!checkoutSessionResponse.ok) {
+
+    console.error(
+        "Safepay checkout session could not be saved:",
+        checkoutSessionResponse.status,
+        checkoutSessionText
+    );
+
+    return res.status(500).json({
+        success: false,
+        error:
+            "Unable to prepare your Safepay subscription."
+    });
+}
+
+console.log(
+    "Safepay checkout session saved:",
+    {
+        reference,
+        userId:
+            auth.user.id,
+        phoneNumber,
+        plan:
+            "solo"
+    }
+);
         // -----------------------------------------------------
         // STEP 3: BUILD SAFEPAY CHECKOUT URL
         // -----------------------------------------------------
@@ -13664,6 +13821,602 @@ app.use((req, res) => {
 });
 
 app.listen(PORT, () => {
+
+    // =========================================================
+// SAFEPAY SUBSCRIPTION WEBHOOK
+// =========================================================
+
+async function processSafepayWebhookEvent(event) {
+
+    try {
+
+        const eventType =
+            String(
+                event?.type || ""
+            ).trim();
+
+        const data =
+            event?.data || {};
+
+        const reference =
+            String(
+                data?.reference || ""
+            ).trim();
+
+        const subscriptionId =
+            String(
+                data?.subscription_id ||
+                data?.sub_id ||
+                ""
+            ).trim();
+
+        const transactionId =
+            String(
+                data?.transaction_id ||
+                ""
+            ).trim();
+
+        if (!reference) {
+
+            console.warn(
+                "Safepay webhook has no reference:",
+                event
+            );
+
+            return;
+        }
+
+        console.log(
+            "Processing Safepay subscription event:",
+            {
+                eventType,
+                reference,
+                subscriptionId,
+                transactionId
+            }
+        );
+
+
+        // =====================================================
+        // SUBSCRIPTION CREATED
+        // =====================================================
+
+        if (
+            eventType ===
+            "subscription.created"
+        ) {
+
+            const response =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/safepay_checkout_sessions` +
+                    `?reference=eq.${encodeURIComponent(reference)}`,
+                    {
+                        method: "PATCH",
+
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+
+                            "Content-Type":
+                                "application/json",
+
+                            Prefer:
+                                "return=minimal"
+                        },
+
+                        body:
+                            JSON.stringify({
+                                status:
+                                    "pending",
+
+                                safepay_subscription_id:
+                                    subscriptionId,
+
+                                last_event_type:
+                                    eventType,
+
+                                updated_at:
+                                    new Date().toISOString()
+                            })
+                    }
+                );
+
+            if (!response.ok) {
+
+                console.error(
+                    "Failed to save Safepay subscription.created:",
+                    await response.text()
+                );
+
+                return;
+            }
+
+            console.log(
+                "Safepay subscription created:",
+                reference
+            );
+
+            return;
+        }
+
+
+        // =====================================================
+        // FIRST PAYMENT SUCCESS
+        // =====================================================
+
+        if (
+            eventType ===
+            "subscription.payment.succeeded"
+        ) {
+
+            const response =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/safepay_checkout_sessions` +
+                    `?reference=eq.${encodeURIComponent(reference)}`,
+                    {
+                        method: "PATCH",
+
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+
+                            "Content-Type":
+                                "application/json",
+
+                            Prefer:
+                                "return=minimal"
+                        },
+
+                        body:
+                            JSON.stringify({
+                                status:
+                                    "active",
+
+                                safepay_subscription_id:
+                                    subscriptionId ||
+                                    undefined,
+
+                                safepay_transaction_id:
+                                    transactionId ||
+                                    undefined,
+
+                                last_event_type:
+                                    eventType,
+
+                                updated_at:
+                                    new Date().toISOString()
+                            })
+                    }
+                );
+
+            if (!response.ok) {
+
+                console.error(
+                    "Failed to activate Safepay session:",
+                    await response.text()
+                );
+
+                return;
+            }
+
+            console.log(
+                "✅ Safepay payment succeeded:",
+                {
+                    reference,
+                    subscriptionId,
+                    transactionId
+                }
+            );
+
+            // -------------------------------------------------
+            // IMPORTANT:
+            // Dialeaze phone provisioning will be connected
+            // here in the NEXT STEP.
+            // -------------------------------------------------
+
+            return;
+        }
+
+
+        // =====================================================
+        // PAYMENT FAILED
+        // =====================================================
+
+        if (
+            eventType ===
+            "subscription.payment.failed"
+        ) {
+
+            const response =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/safepay_checkout_sessions` +
+                    `?reference=eq.${encodeURIComponent(reference)}`,
+                    {
+                        method: "PATCH",
+
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+
+                            "Content-Type":
+                                "application/json",
+
+                            Prefer:
+                                "return=minimal"
+                        },
+
+                        body:
+                            JSON.stringify({
+                                status:
+                                    "payment_failed",
+
+                                last_event_type:
+                                    eventType,
+
+                                updated_at:
+                                    new Date().toISOString()
+                            })
+                    }
+                );
+
+            if (!response.ok) {
+
+                console.error(
+                    "Failed to save Safepay payment failure:",
+                    await response.text()
+                );
+
+                return;
+            }
+
+            console.log(
+                "⚠️ Safepay subscription payment failed:",
+                reference
+            );
+
+            return;
+        }
+
+
+        // =====================================================
+        // SUBSCRIPTION CANCELLED
+        // =====================================================
+
+        if (
+            eventType ===
+            "subscription.cancelled"
+        ) {
+
+            const response =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/safepay_checkout_sessions` +
+                    `?reference=eq.${encodeURIComponent(reference)}`,
+                    {
+                        method: "PATCH",
+
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+
+                            "Content-Type":
+                                "application/json",
+
+                            Prefer:
+                                "return=minimal"
+                        },
+
+                        body:
+                            JSON.stringify({
+                                status:
+                                    "cancelled",
+
+                                last_event_type:
+                                    eventType,
+
+                                updated_at:
+                                    new Date().toISOString()
+                            })
+                    }
+                );
+
+            if (!response.ok) {
+
+                console.error(
+                    "Failed to save Safepay cancellation:",
+                    await response.text()
+                );
+
+                return;
+            }
+
+            console.log(
+                "Safepay subscription cancelled:",
+                reference
+            );
+
+            return;
+        }
+
+
+        console.log(
+            "Unhandled Safepay event:",
+            eventType
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Safepay webhook processing error:",
+            error
+        );
+
+    }
+}
+
+
+app.post(
+    "/webhook/safepay",
+    async (req, res) => {
+
+        try {
+
+            const signature =
+                req.headers[
+                    "x-sfpy-signature"
+                ];
+
+            const rawBody =
+                req.body;
+
+
+            // =================================================
+            // 1. VERIFY HMAC
+            // =================================================
+
+            const validSignature =
+                ver9yMnTm4NSzvG9rrwjM2ec8xZgh1cafXH8(
+                    process.env.SAFEPAY_WEBHOOK_SECRET,
+                    rawBody,
+                    signature
+                );
+
+            if (!validSignature) {
+
+                console.warn(
+                    "❌ Invalid Safepay webhook signature."
+                );
+
+                return res
+                    .status(401)
+                    .send(
+                        "Invalid signature"
+                    );
+            }
+
+
+            // =================================================
+            // 2. PARSE EVENT
+            // =================================================
+
+            let event;
+
+            try {
+
+                event =
+                    JSON.parse(
+                        rawBody.toString("utf8")
+                    );
+
+            } catch (parseError) {
+
+                console.error(
+                    "❌ Invalid Safepay webhook JSON:",
+                    parseError
+                );
+
+                return res
+                    .status(400)
+                    .send(
+                        "Invalid JSON"
+                    );
+            }
+
+
+            const eventId =
+                String(
+                    event?.id || ""
+                ).trim();
+
+            const eventType =
+                String(
+                    event?.type || ""
+                ).trim();
+
+
+            if (!eventId) {
+
+                return res
+                    .status(400)
+                    .send(
+                        "Missing event ID"
+                    );
+            }
+
+
+            // =================================================
+            // 3. DEDUPLICATE + STORE RAW EVENT
+            // =================================================
+
+            const eventInsertResponse =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/safepay_webhook_events`,
+                    {
+                        method: "POST",
+
+                        headers: {
+                            Authorization:
+                                `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                            apikey:
+                                SUPABASE_SECRET_KEY,
+
+                            "Content-Type":
+                                "application/json",
+
+                            Prefer:
+                                "return=minimal"
+                        },
+
+                        body:
+                            JSON.stringify({
+                                event_id:
+                                    eventId,
+
+                                event_type:
+                                    eventType,
+
+                                payload:
+                                    event,
+
+                                processed:
+                                    false
+                            })
+                    }
+                );
+
+
+            // Duplicate webhook event.
+            if (
+                eventInsertResponse.status ===
+                409
+            ) {
+
+                console.log(
+                    "Safepay duplicate webhook ignored:",
+                    eventId
+                );
+
+                return res
+                    .status(200)
+                    .send("Duplicate");
+            }
+
+
+            if (
+                !eventInsertResponse.ok
+            ) {
+
+                console.error(
+                    "❌ Could not store Safepay webhook:",
+                    eventInsertResponse.status,
+                    await eventInsertResponse.text()
+                );
+
+                return res
+                    .status(500)
+                    .send(
+                        "Webhook storage failed"
+                    );
+            }
+
+
+            // =================================================
+            // 4. ACK SAFEPAY IMMEDIATELY
+            // =================================================
+
+            res
+                .status(200)
+                .send("OK");
+
+
+            // =================================================
+            // 5. PROCESS AFTER ACK
+            // =================================================
+
+            setImmediate(
+                async () => {
+
+                    await processSafepayWebhookEvent(
+                        event
+                    );
+
+                    try {
+
+                        await fetch(
+                            `${SUPABASE_URL}/rest/v1/safepay_webhook_events` +
+                            `?event_id=eq.${encodeURIComponent(eventId)}`,
+                            {
+                                method: "PATCH",
+
+                                headers: {
+                                    Authorization:
+                                        `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                                    apikey:
+                                        SUPABASE_SECRET_KEY,
+
+                                    "Content-Type":
+                                        "application/json",
+
+                                    Prefer:
+                                        "return=minimal"
+                                },
+
+                                body:
+                                    JSON.stringify({
+                                        processed:
+                                            true,
+
+                                        processed_at:
+                                            new Date().toISOString()
+                                    })
+                            }
+                        );
+
+                    } catch (error) {
+
+                        console.error(
+                            "Could not mark Safepay webhook processed:",
+                            error
+                        );
+
+                    }
+
+                }
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Safepay webhook endpoint error:",
+                error
+            );
+
+            if (!res.headersSent) {
+
+                return res
+                    .status(500)
+                    .send(
+                        "Webhook error"
+                    );
+            }
+
+        }
+
+    }
+);
     console.log("");
     console.log("==========================================");
     console.log("       DIALEAZE DIALER SERVER");
