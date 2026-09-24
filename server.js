@@ -3871,7 +3871,7 @@ let checkoutUrl;
 try {
 
    checkoutUrl =
-    await safepay.checkout.cr9yMnTm4NSzvG9rrwjM2ec8xZgh1cafXH8({
+    await safepay.checkout.createSubscription({
         cancelUrl:
             "https://dialeaze.com/checkout/?payment=cancelled",
 
