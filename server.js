@@ -3576,19 +3576,17 @@ const SAFEPAY_PLAN_ID =
         process.env.SAFEPAY_WEBHOOK_SECRET
 });
 
-// =========================================================
+/// =========================================================
 // SAFEPAY WEBHOOK HMAC VERIFICATION
 // =========================================================
 
-const signature = req.headers["x-sfpy-signature"];
-const timestamp = req.headers["x-sfpy-timestamp"];
-
-if (!verahJ91ZuNL8Y2px8iYciYeHN8sfSh5eXH8(
-    SAFEPAY_WEBHOOK_SECRET,
-    req.body,
-    signature,
+function verahJ91ZuNL8Y2px8iYciYeHN8sfSh5eXH8(
+    secretBase64,
+    rawBody,
+    receivedSignature,
     timestamp
-)) {
+) {
+
     if (
         !secretBase64 ||
         !receivedSignature ||
@@ -3599,31 +3597,54 @@ if (!verahJ91ZuNL8Y2px8iYciYeHN8sfSh5eXH8(
     }
 
     try {
-        // Safepay webhook secret is Base64 encoded.
-        const secret = Buffer.from(secretBase64, "base64");
 
-        // Safepay signs:
-        // timestamp + "." + raw request body
-        const signingPayload = Buffer.concat([
-            Buffer.from(String(timestamp), "utf8"),
-            Buffer.from(".", "utf8"),
-            rawBody
-        ]);
+        const secret =
+            Buffer.from(
+                secretBase64,
+                "base64"
+            );
+
+        const signingPayload =
+            Buffer.concat([
+                Buffer.from(
+                    String(timestamp),
+                    "utf8"
+                ),
+
+                Buffer.from(
+                    ".",
+                    "utf8"
+                ),
+
+                rawBody
+            ]);
 
         const expectedSignature =
             "sha256=" +
             crypto
-                .createHmac("sha256", secret)
+                .createHmac(
+                    "sha256",
+                    secret
+                )
                 .update(signingPayload)
                 .digest("hex");
 
-        const expectedBuffer = Buffer.from(expectedSignature, "utf8");
-        const receivedBuffer = Buffer.from(
-            String(receivedSignature).trim(),
-            "utf8"
-        );
+        const expectedBuffer =
+            Buffer.from(
+                expectedSignature,
+                "utf8"
+            );
 
-        if (expectedBuffer.length !== receivedBuffer.length) {
+        const receivedBuffer =
+            Buffer.from(
+                String(receivedSignature).trim(),
+                "utf8"
+            );
+
+        if (
+            expectedBuffer.length !==
+            receivedBuffer.length
+        ) {
             return false;
         }
 
@@ -3631,7 +3652,9 @@ if (!verahJ91ZuNL8Y2px8iYciYeHN8sfSh5eXH8(
             expectedBuffer,
             receivedBuffer
         );
+
     } catch (error) {
+
         console.error(
             "Safepay HMAC verification error:",
             error
@@ -14159,6 +14182,10 @@ app.post(
                 req.headers[
                     "x-sfpy-signature"
                 ];
+                const timestamp =
+    req.headers[
+        "x-sfpy-timestamp"
+    ];
 
             const rawBody =
                 req.body;
@@ -14169,11 +14196,12 @@ app.post(
             // =================================================
 
             const validSignature =
-                ver9yMnTm4NSzvG9rrwjM2ec8xZgh1cafXH8(
-                    process.env.SAFEPAY_WEBHOOK_SECRET,
-                    rawBody,
-                    signature
-                );
+    verahJ91ZuNL8Y2px8iYciYeHN8sfSh5eXH8(
+        process.env.SAFEPAY_WEBHOOK_SECRET,
+        rawBody,
+        signature,
+        timestamp
+    );
 
             if (!validSignature) {
 
