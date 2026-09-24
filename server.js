@@ -2,6 +2,7 @@
 const cors = require("cors");
 const dotenv = require("dotenv");
 const Safepay = require("@sfpy/node-core");
+const axios = require("axios");
 const path = require("path");
 
 
@@ -3644,27 +3645,33 @@ app.post("/api/safepay/create-checkout", async (req, res) => {
 // STEP 1: GET SAFEPAY AUTH TOKEN
 // -----------------------------------------------------
 
-const safepay =
-    Safepay(
-        process.env.SAFEPAY_SECRET_KEY,
-        {
-            authType: "secret",
-            host: SAFEPAY_HOST
-        }
-    );
-
+// -----------------------------------------------------
+// STEP 1: GET SAFEPAY AUTH TOKEN
+// -----------------------------------------------------
 
 let passportResponse;
 
 try {
 
-    passportResponse =
-        await safepay.auth.passport.create();
+    passportResponse = await axios.post(
+        `${SAFEPAY_HOST}/client/passport/v1/token`,
+        {},
+        {
+            headers: {
+                "Authorization":
+                    `Bearer ${process.env.SAFEPAY_SECRET_KEY}`,
+
+                "Content-Type":
+                    "application/json"
+            }
+        }
+    );
 
 } catch (safepayError) {
 
     console.error(
         "Safepay authentication token error:",
+        safepayError?.response?.data ||
         safepayError?.message ||
         safepayError
     );
@@ -3679,13 +3686,15 @@ try {
 
 
 const safepayAuthToken =
-    passportResponse?.data;
+    passportResponse?.data?.token ||
+    passportResponse?.data?.data;
 
 
 if (!safepayAuthToken) {
 
     console.error(
-        "Safepay did not return an authentication token."
+        "Safepay did not return an authentication token:",
+        passportResponse?.data
     );
 
     return res.status(500).json({
