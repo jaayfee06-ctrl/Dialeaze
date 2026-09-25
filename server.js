@@ -14451,7 +14451,75 @@ async function processSafepayWebhookEvent(event) {
             }
         );
 
+// =====================================================
+// STEP 4B: AUTOMATICALLY ASSIGN INBOUND CALL HANDLER
+// =====================================================
 
+console.log(
+    "📞 Assigning Dialeaze inbound call handler:",
+    purchasedSignalWireNumberId
+);
+
+const inboundHandlerResponse = await fetch(
+    `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/relay/rest/phone_numbers/${encodeURIComponent(
+        purchasedSignalWireNumberId
+    )}`,
+    {
+        method: "PUT",
+
+        headers: {
+            Authorization:
+                `Basic ${signalWireAuth}`,
+
+            "Content-Type":
+                "application/json",
+
+            Accept:
+                "application/json"
+        },
+
+        body:
+            JSON.stringify({
+                call_handler:
+                    "relay_script",
+
+                call_relay_script_url:
+                    "https://dialeaze.onrender.com/api/signalwire/inbound-swml"
+            })
+    }
+);
+
+const inboundHandlerData =
+    await inboundHandlerResponse.json();
+
+if (!inboundHandlerResponse.ok) {
+
+    console.error(
+        "❌ Failed to assign Dialeaze inbound call handler:",
+        inboundHandlerData
+    );
+
+    throw new Error(
+        inboundHandlerData?.message ||
+        inboundHandlerData?.error ||
+        "SignalWire could not assign the Dialeaze inbound call handler."
+    );
+}
+
+console.log(
+    "✅ Dialeaze inbound call handler assigned automatically:",
+    {
+        phoneNumber:
+            purchaseData?.number ||
+            reservedPhoneNumber,
+
+        phoneNumberId:
+            purchasedSignalWireNumberId,
+
+        handler:
+            "https://dialeaze.onrender.com/api/signalwire/inbound-swml"
+    }
+);
         // =================================================
         // STEP 5: CREATE SIGNALWIRE SUBSCRIBER
         // =================================================
