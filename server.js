@@ -1807,124 +1807,117 @@ let reference = null;
         // No token is requested here.
         // ---------------------------------------------------------
 
-        let nextUrl =
-            `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/fabric/resources/subscribers`;
+        // ---------------------------------------------------------
+// VERIFY THE EXACT EXISTING SIGNALWIRE SUBSCRIBER
+// ---------------------------------------------------------
+//
+// We already have the exact Subscriber ID stored in the
+// Dialeaze profile, so do NOT list/search all subscribers.
+//
+// Ask SignalWire directly for this Subscriber.
+// ---------------------------------------------------------
 
-        let existingSubscriber = null;
-
-        while (nextUrl) {
-
-            const listResponse = await fetch(
-                nextUrl,
-                {
-                    method: "GET",
-                    headers: {
-                        Authorization: `Basic ${basicAuth}`,
-                        Accept: "application/json"
-                    }
-                }
-            );
-
-            const listText =
-                await listResponse.text();
-
-            let listData = null;
-
-            try {
-                listData = listText
-                    ? JSON.parse(listText)
-                    : null;
-            } catch (parseError) {
-
-                console.error(
-                    "SignalWire Subscriber list returned non-JSON:",
-                    listResponse.status,
-                    listText
-                );
-
-                return res.status(502).json({
-                    success: false,
-                    error:
-                        "SignalWire Subscriber verification failed. No token was requested."
-                });
-            }
-
-            if (!listResponse.ok) {
-
-                console.error(
-                    "SignalWire Subscriber list failed:",
-                    listResponse.status,
-                    listData
-                );
-
-                return res.status(502).json({
-                    success: false,
-                    error:
-                        "Unable to verify the existing SignalWire Subscriber. No token was requested."
-                });
-            }
-
-            const subscribers =
-                Array.isArray(listData?.data)
-                    ? listData.data
-                    : [];
-console.log(
-    "SignalWire Subscriber verification:",
+const subscriberResponse = await fetch(
+    `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/fabric/resources/subscribers/${encodeURIComponent(
+        expectedSubscriberId
+    )}`,
     {
-        status: listResponse.status,
-        subscriberCount: subscribers.length,
-        expectedSubscriberId,
-        subscribers: subscribers.map((subscriber) => ({
-            id: subscriber?.id,
-            email: subscriber?.email,
-            nestedId: subscriber?.subscriber?.id,
-            nestedEmail: subscriber?.subscriber?.email
-        }))
+        method: "GET",
+        headers: {
+            Authorization:
+                `Basic ${basicAuth}`,
+
+            Accept:
+                "application/json"
+        }
     }
 );
-            existingSubscriber =
-    subscribers.find((subscriber) => {
 
-        const subscriberId =
-            subscriber?.id ||
-            subscriber?.subscriber?.id;
+const subscriberText =
+    await subscriberResponse.text();
 
-        return subscriberId === expectedSubscriberId;
+let existingSubscriber = null;
+
+try {
+
+    existingSubscriber =
+        subscriberText
+            ? JSON.parse(subscriberText)
+            : null;
+
+} catch (parseError) {
+
+    console.error(
+        "SignalWire Subscriber lookup returned non-JSON:",
+        subscriberResponse.status,
+        subscriberText
+    );
+
+    return res.status(502).json({
+        success: false,
+        error:
+            "SignalWire Subscriber verification failed. No token was requested."
     });
 
-            if (existingSubscriber) {
-                break;
-            }
+}
 
-            // SignalWire provides the next page through links.next.
-            nextUrl =
-                listData?.links?.next ||
-                null;
+if (!subscriberResponse.ok) {
+
+    console.error(
+        "SignalWire exact Subscriber lookup failed:",
+        subscriberResponse.status,
+        existingSubscriber
+    );
+
+    return res.status(409).json({
+        success: false,
+        error:
+            "Your SignalWire Subscriber could not be verified. No token was requested."
+    });
+
+}
+
+// ---------------------------------------------------------
+// VERIFY THE RETURNED ID MATCHES THE Dialeaze PROFILE
+// ---------------------------------------------------------
+
+const returnedSubscriberId =
+    existingSubscriber?.subscriber?.id ||
+    existingSubscriber?.id ||
+    null;
+
+if (
+    returnedSubscriberId !==
+    expectedSubscriberId
+) {
+
+    console.error(
+        "SIGNALWIRE SAFETY STOP: Subscriber ID mismatch:",
+        {
+            expectedSubscriberId,
+            returnedSubscriberId
         }
+    );
 
-        // ---------------------------------------------------------
-        // HARD STOP
-        //
-        // If the EXACT existing Subscriber was not found,
-        // DO NOT call the token endpoint.
-        // ---------------------------------------------------------
+    return res.status(409).json({
+        success: false,
+        error:
+            "SignalWire returned a different Subscriber identity. No token was requested."
+    });
 
-        if (!existingSubscriber) {
+}
 
-            console.error(
-                "SIGNALWIRE SAFETY STOP: Exact existing Subscriber not found:",
-                {
-                    expectedSubscriberId,
-                    reference
-                }
-            );
-
-            return res.status(409).json({
-                success: false,
-                error:
-                    "Your existing SignalWire Subscriber could not be verified. No token was requested and no new Subscriber was created."
-            });
-        }
+console.log(
+    "SignalWire exact Subscriber verified:",
+    {
+        subscriberId:
+            returnedSubscriberId,
+        email:
+            existingSubscriber?.subscriber?.email ||
+            existingSubscriber?.email ||
+            null
+    }
+);
 // ---------------------------------------------------------
 // USE THE ACTUAL SIGNALWIRE SUBSCRIBER REFERENCE
 // FROM THE VERIFIED EXISTING RESOURCE.
