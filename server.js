@@ -13950,9 +13950,9 @@ async function processSafepayWebhookEvent(event) {
         // =====================================================
 
         if (
-            eventType ===
-            "subscription.created"
-        ) {
+    eventType ===
+    "subscription.payment.succeeded"
+) {
 
             
 
@@ -13971,7 +13971,7 @@ async function processSafepayWebhookEvent(event) {
         await fetch(
             `${SUPABASE_URL}/rest/v1/safepay_checkout_sessions` +
             `?reference=eq.${encodeURIComponent(reference)}` +
-            `&status=eq.active`,
+            `&status=eq.pending`,
             {
                 method: "PATCH",
 
