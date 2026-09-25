@@ -14015,83 +14015,808 @@ async function processSafepayWebhookEvent(event) {
         // FIRST PAYMENT SUCCESS
         // =====================================================
 
-        if (
-            eventType ===
-            "subscription.payment.succeeded"
-        ) {
+      // =====================================================
+// FIRST PAYMENT SUCCESS + SIGNALWIRE PROVISIONING
+// =====================================================
 
-            const response =
-                await fetch(
-                    `${SUPABASE_URL}/rest/v1/safepay_checkout_sessions` +
-                    `?reference=eq.${encodeURIComponent(reference)}`,
-                    {
-                        method: "PATCH",
+if (
+    eventType ===
+    "subscription.payment.succeeded"
+) {
 
-                        headers: {
-                            Authorization:
-                                `Bearer ${SUPABASE_SECRET_KEY}`,
+    console.log(
+        "💳 Safepay payment succeeded. Starting Dialeaze provisioning:",
+        {
+            reference,
+            subscriptionId,
+            transactionId
+        }
+    );
 
-                            apikey:
-                                SUPABASE_SECRET_KEY,
 
-                            "Content-Type":
-                                "application/json",
+    // -------------------------------------------------
+    // STEP 1: CLAIM THE CHECKOUT SESSION
+    // -------------------------------------------------
+    //
+    // Only a session currently marked "active" can
+    // enter provisioning.
+    //
+    // This prevents duplicate Safepay webhooks from
+    // purchasing the SignalWire number twice.
+    // -------------------------------------------------
 
-                            Prefer:
-                                "return=minimal"
-                        },
+    const claimResponse =
+        await fetch(
+            `${SUPABASE_URL}/rest/v1/safepay_checkout_sessions` +
+            `?reference=eq.${encodeURIComponent(reference)}` +
+            `&status=eq.active`,
+            {
+                method: "PATCH",
 
-                        body:
-                            JSON.stringify({
-                                status:
-                                    "active",
+                headers: {
+                    Authorization:
+                        `Bearer ${SUPABASE_SECRET_KEY}`,
 
-                                safepay_subscription_id:
-                                    subscriptionId ||
-                                    undefined,
+                    apikey:
+                        SUPABASE_SECRET_KEY,
 
-                                safepay_transaction_id:
-                                    transactionId ||
-                                    undefined,
+                    "Content-Type":
+                        "application/json",
 
-                                last_event_type:
-                                    eventType,
+                    Prefer:
+                        "return=representation"
+                },
 
-                                updated_at:
-                                    new Date().toISOString()
-                            })
-                    }
-                );
+                body:
+                    JSON.stringify({
+                        status:
+                            "provisioning",
 
-            if (!response.ok) {
+                        safepay_subscription_id:
+                            subscriptionId ||
+                            undefined,
 
-                console.error(
-                    "Failed to activate Safepay session:",
-                    await response.text()
-                );
+                        safepay_transaction_id:
+                            transactionId ||
+                            undefined,
 
-                return;
+                        last_event_type:
+                            eventType,
+
+                        updated_at:
+                            new Date().toISOString()
+                    })
             }
+        );
 
-            console.log(
-                "✅ Safepay payment succeeded:",
+
+    const claimedSessions =
+        await claimResponse.json();
+
+
+    if (!claimResponse.ok) {
+
+        console.error(
+            "❌ Could not claim Safepay checkout session:",
+            claimedSessions
+        );
+
+        return;
+    }
+
+
+    // -------------------------------------------------
+    // DUPLICATE WEBHOOK PROTECTION
+    // -------------------------------------------------
+
+    if (
+        !Array.isArray(claimedSessions) ||
+        claimedSessions.length === 0
+    ) {
+
+        console.log(
+            "ℹ️ Safepay session was not claimable. It may already be provisioning or provisioned:",
+            reference
+        );
+
+        return;
+    }
+
+
+    const checkoutSession =
+        claimedSessions[0];
+
+
+    const userId =
+        String(
+            checkoutSession?.user_id ||
+            ""
+        ).trim();
+
+
+    const reservedPhoneNumber =
+        String(
+            checkoutSession?.phone_number ||
+            ""
+        ).trim();
+
+
+    const plan =
+        String(
+            checkoutSession?.plan ||
+            "solo"
+        ).trim();
+
+
+    if (
+        !userId ||
+        !reservedPhoneNumber
+    ) {
+
+        console.error(
+            "❌ Safepay checkout session is missing provisioning data:",
+            {
+                reference,
+                userId,
+                reservedPhoneNumber
+            }
+        );
+
+        return;
+    }
+
+
+    console.log(
+        "✅ Safepay checkout session claimed for provisioning:",
+        {
+            reference,
+            userId,
+            reservedPhoneNumber,
+            plan
+        }
+    );
+
+
+    // -------------------------------------------------
+    // STEP 2: GET CUSTOMER EMAIL
+    // -------------------------------------------------
+
+    let customerEmail = "";
+
+    try {
+
+        const userResponse =
+            await fetch(
+                `${SUPABASE_URL}/auth/v1/admin/users/${encodeURIComponent(
+                    userId
+                )}`,
                 {
-                    reference,
-                    subscriptionId,
-                    transactionId
+                    method: "GET",
+
+                    headers: {
+                        Authorization:
+                            `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                        apikey:
+                            SUPABASE_SECRET_KEY
+                    }
                 }
             );
 
-            // -------------------------------------------------
-            // IMPORTANT:
-            // Dialeaze phone provisioning will be connected
-            // here in the NEXT STEP.
-            // -------------------------------------------------
 
-            return;
+        const userData =
+            await userResponse.json();
+
+
+        if (
+            !userResponse.ok
+        ) {
+
+            console.error(
+                "❌ Could not retrieve Dialeaze customer:",
+                userData
+            );
+
+            throw new Error(
+                "Unable to retrieve the customer's account."
+            );
         }
 
 
+        customerEmail =
+            String(
+                userData?.email ||
+                ""
+            ).trim();
+
+
+        if (!customerEmail) {
+
+            throw new Error(
+                "Customer account does not contain an email address."
+            );
+        }
+
+    } catch (emailError) {
+
+        console.error(
+            "❌ Customer email lookup failed:",
+            emailError
+        );
+
+        return;
+    }
+
+
+    console.log(
+        "📧 Dialeaze customer email found:",
+        customerEmail
+    );
+
+
+    // -------------------------------------------------
+    // STEP 3: VERIFY THE RESERVED NUMBER
+    // -------------------------------------------------
+
+    let reservedPhoneRow = null;
+
+    try {
+
+        const phoneResponse =
+            await fetch(
+                `${SUPABASE_URL}/rest/v1/phone_numbers` +
+                `?user_id=eq.${encodeURIComponent(userId)}` +
+                `&phone_number=eq.${encodeURIComponent(
+                    reservedPhoneNumber
+                )}` +
+                `&status=eq.reserved` +
+                `&select=id,phone_number,status,reserved_until`,
+                {
+                    method: "GET",
+
+                    headers: {
+                        Authorization:
+                            `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                        apikey:
+                            SUPABASE_SECRET_KEY
+                    }
+                }
+            );
+
+
+        const phoneRows =
+            await phoneResponse.json();
+
+
+        if (
+            !phoneResponse.ok
+        ) {
+
+            console.error(
+                "❌ Reserved phone lookup failed:",
+                phoneRows
+            );
+
+            throw new Error(
+                "Unable to verify the reserved phone number."
+            );
+        }
+
+
+        if (
+            !Array.isArray(phoneRows) ||
+            phoneRows.length === 0
+        ) {
+
+            throw new Error(
+                "The reserved Dialeaze phone number could not be found."
+            );
+        }
+
+
+        reservedPhoneRow =
+            phoneRows[0];
+
+
+    } catch (phoneError) {
+
+        console.error(
+            "❌ Reserved phone verification failed:",
+            phoneError
+        );
+
+
+        await fetch(
+            `${SUPABASE_URL}/rest/v1/safepay_checkout_sessions` +
+            `?reference=eq.${encodeURIComponent(reference)}`,
+            {
+                method: "PATCH",
+
+                headers: {
+                    Authorization:
+                        `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                    apikey:
+                        SUPABASE_SECRET_KEY,
+
+                    "Content-Type":
+                        "application/json"
+                },
+
+                body:
+                    JSON.stringify({
+                        status:
+                            "provisioning_failed",
+
+                        last_event_type:
+                            eventType,
+
+                        updated_at:
+                            new Date().toISOString()
+                    })
+            }
+        );
+
+        return;
+    }
+
+
+    // -------------------------------------------------
+    // SIGNALWIRE VARIABLES
+    // -------------------------------------------------
+
+    const signalWireAuth =
+        Buffer.from(
+            `${SIGNALWIRE_PROJECT_ID}:${SIGNALWIRE_API_TOKEN}`
+        ).toString("base64");
+
+
+    let purchasedSignalWireNumberId =
+        null;
+
+    let createdSignalWireSubscriberId =
+        null;
+
+
+    try {
+
+        // =================================================
+        // STEP 4: PURCHASE SIGNALWIRE PHONE NUMBER
+        // =================================================
+
+        console.log(
+            "📞 Purchasing SignalWire phone number:",
+            reservedPhoneNumber
+        );
+
+
+        const purchaseResponse =
+            await fetch(
+                `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/relay/rest/phone_numbers`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        Authorization:
+                            `Basic ${signalWireAuth}`,
+
+                        "Content-Type":
+                            "application/json",
+
+                        Accept:
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+                            number:
+                                reservedPhoneNumber
+                        })
+                }
+            );
+
+
+        const purchaseData =
+            await purchaseResponse.json();
+
+
+        if (
+            !purchaseResponse.ok
+        ) {
+
+            console.error(
+                "❌ SignalWire phone number purchase failed:",
+                purchaseData
+            );
+
+            throw new Error(
+                purchaseData?.message ||
+                purchaseData?.error ||
+                "SignalWire could not purchase the reserved phone number."
+            );
+        }
+
+
+        purchasedSignalWireNumberId =
+            purchaseData?.id ||
+            null;
+
+
+        if (
+            !purchasedSignalWireNumberId
+        ) {
+
+            throw new Error(
+                "SignalWire purchased the number but did not return a phone number ID."
+            );
+        }
+
+
+        console.log(
+            "✅ SignalWire phone number purchased:",
+            {
+                id:
+                    purchasedSignalWireNumberId,
+
+                number:
+                    purchaseData?.number ||
+                    reservedPhoneNumber
+            }
+        );
+
+
+        // =================================================
+        // STEP 5: CREATE SIGNALWIRE SUBSCRIBER
+        // =================================================
+
+        console.log(
+            "👤 Creating SignalWire Subscriber:",
+            customerEmail
+        );
+
+
+        const subscriberResponse =
+            await fetch(
+                `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/fabric/resources/subscribers`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        Authorization:
+                            `Basic ${signalWireAuth}`,
+
+                        "Content-Type":
+                            "application/json",
+
+                        Accept:
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+                            email:
+                                customerEmail
+                        })
+                }
+            );
+
+
+        const subscriberData =
+            await subscriberResponse.json();
+
+
+        if (
+            !subscriberResponse.ok
+        ) {
+
+            console.error(
+                "❌ SignalWire Subscriber creation failed:",
+                subscriberData
+            );
+
+            throw new Error(
+                subscriberData?.message ||
+                subscriberData?.error ||
+                "SignalWire could not create the Subscriber."
+            );
+        }
+
+
+        createdSignalWireSubscriberId =
+            subscriberData?.subscriber?.id ||
+            subscriberData?.subscriber_id ||
+            subscriberData?.id ||
+            null;
+
+
+        if (
+            !createdSignalWireSubscriberId
+        ) {
+
+            throw new Error(
+                "SignalWire created the Subscriber but did not return its ID."
+            );
+        }
+
+
+        console.log(
+            "✅ SignalWire Subscriber created:",
+            {
+                subscriberId:
+                    createdSignalWireSubscriberId
+            }
+        );
+
+
+        // =================================================
+        // STEP 6: FINALIZE SAFEPAY PROVISIONING
+        // =================================================
+
+        const finalizeResponse =
+            await fetch(
+                `${SUPABASE_URL}/rest/v1/rpc/finalize_safepay_dialeaze_provisioning`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json",
+
+                        apikey:
+                            SUPABASE_SECRET_KEY,
+
+                        Authorization:
+                            `Bearer ${SUPABASE_SECRET_KEY}`
+                    },
+
+                    body:
+                        JSON.stringify({
+                            p_reference:
+                                reference,
+
+                            p_signalwire_number_id:
+                                purchasedSignalWireNumberId,
+
+                            p_signalwire_subscriber_id:
+                                createdSignalWireSubscriberId
+                        })
+                }
+            );
+
+
+        const finalizeData =
+            await finalizeResponse.json();
+
+
+        if (
+            !finalizeResponse.ok
+        ) {
+
+            console.error(
+                "❌ Safepay provisioning RPC error:",
+                finalizeData
+            );
+
+            throw new Error(
+                finalizeData?.message ||
+                finalizeData?.error ||
+                "Unable to finalize Dialeaze provisioning."
+            );
+        }
+
+
+        if (
+            !finalizeData?.success
+        ) {
+
+            throw new Error(
+                finalizeData?.error ||
+                "Dialeaze provisioning could not be finalized."
+            );
+        }
+
+
+        // =================================================
+        // SUCCESS
+        // =================================================
+
+        console.log(
+            "🎉 DIALEAZE SAFEPAY PROVISIONING COMPLETE:",
+            {
+                reference,
+                userId,
+                phoneNumber:
+                    reservedPhoneNumber,
+
+                subscriberId:
+                    createdSignalWireSubscriberId,
+
+                signalWireNumberId:
+                    purchasedSignalWireNumberId
+            }
+        );
+
+
+        return;
+
+
+    } catch (provisioningError) {
+
+        console.error(
+            "❌ Dialeaze Safepay provisioning failed:",
+            provisioningError
+        );
+
+
+        // =================================================
+        // ROLLBACK SIGNALWIRE SUBSCRIBER
+        // =================================================
+
+        if (
+            createdSignalWireSubscriberId
+        ) {
+
+            try {
+
+                const deleteSubscriberResponse =
+                    await fetch(
+                        `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/fabric/resources/subscribers/${encodeURIComponent(
+                            createdSignalWireSubscriberId
+                        )}`,
+                        {
+                            method: "DELETE",
+
+                            headers: {
+                                Authorization:
+                                    `Basic ${signalWireAuth}`,
+
+                                Accept:
+                                    "application/json"
+                            }
+                        }
+                    );
+
+
+                if (
+                    deleteSubscriberResponse.ok ||
+                    deleteSubscriberResponse.status === 204
+                ) {
+
+                    console.log(
+                        "↩️ SignalWire Subscriber rolled back:",
+                        createdSignalWireSubscriberId
+                    );
+
+                } else {
+
+                    const rollbackData =
+                        await deleteSubscriberResponse.text();
+
+                    console.error(
+                        "❌ Failed to roll back SignalWire Subscriber:",
+                        rollbackData
+                    );
+                }
+
+            } catch (rollbackError) {
+
+                console.error(
+                    "❌ Subscriber rollback exception:",
+                    rollbackError
+                );
+            }
+        }
+
+
+        // =================================================
+        // ROLLBACK SIGNALWIRE PHONE NUMBER
+        // =================================================
+
+        if (
+            purchasedSignalWireNumberId
+        ) {
+
+            try {
+
+                const releaseNumberResponse =
+                    await fetch(
+                        `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/relay/rest/phone_numbers/${encodeURIComponent(
+                            purchasedSignalWireNumberId
+                        )}`,
+                        {
+                            method: "DELETE",
+
+                            headers: {
+                                Authorization:
+                                    `Basic ${signalWireAuth}`,
+
+                                Accept:
+                                    "application/json"
+                            }
+                        }
+                    );
+
+
+                if (
+                    releaseNumberResponse.ok ||
+                    releaseNumberResponse.status === 204
+                ) {
+
+                    console.log(
+                        "↩️ SignalWire phone number rolled back:",
+                        purchasedSignalWireNumberId
+                    );
+
+                } else {
+
+                    const rollbackData =
+                        await releaseNumberResponse.text();
+
+                    console.error(
+                        "❌ Failed to release SignalWire phone number:",
+                        rollbackData
+                    );
+                }
+
+            } catch (rollbackError) {
+
+                console.error(
+                    "❌ Phone number rollback exception:",
+                    rollbackError
+                );
+            }
+        }
+
+
+        // -------------------------------------------------
+        // MARK THE SAFEPAY SESSION AS FAILED
+        // -------------------------------------------------
+
+        try {
+
+            await fetch(
+                `${SUPABASE_URL}/rest/v1/safepay_checkout_sessions` +
+                `?reference=eq.${encodeURIComponent(reference)}`,
+                {
+                    method: "PATCH",
+
+                    headers: {
+                        Authorization:
+                            `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                        apikey:
+                            SUPABASE_SECRET_KEY,
+
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+                            status:
+                                "provisioning_failed",
+
+                            last_event_type:
+                                eventType,
+
+                            updated_at:
+                                new Date().toISOString()
+                        })
+                }
+            );
+
+        } catch (stateError) {
+
+            console.error(
+                "❌ Failed to save provisioning failure state:",
+                stateError
+            );
+        }
+
+        return;
+    }
+}
         // =====================================================
         // PAYMENT FAILED
         // =====================================================
