@@ -3723,6 +3723,8 @@ function verahJ91ZuNL8Y2px8iYciYeHN8sfSh5eXH8(
         return false;
     }
 }
+
+
 // =========================================================
 // CREATE SAFEPAY SUBSCRIPTION CHECKOUT
 // =========================================================
@@ -14308,7 +14310,60 @@ const rawBody =
             "Invalid signature"
         );
 }
+console.log("========== SAFEPAY WEBHOOK PASSED SIGNATURE ==========");
+console.log("Safepay signature verification passed.");
+console.log("Raw body is Buffer:", Buffer.isBuffer(req.body));
+console.log(
+    "Raw body length:",
+    Buffer.isBuffer(req.body) ? req.body.length : "N/A"
+);
 
+let safepayEvent;
+
+try {
+    safepayEvent = JSON.parse(
+        req.body.toString("utf8")
+    );
+
+    console.log(
+        "Safepay webhook JSON parsed successfully."
+    );
+
+    console.log(
+        "Safepay Event ID:",
+        safepayEvent?.id
+    );
+
+    console.log(
+        "Safepay Event Type:",
+        safepayEvent?.type
+    );
+
+} catch (parseError) {
+
+    console.error(
+        "❌ SAFEPAY WEBHOOK JSON PARSE ERROR:",
+        parseError?.message || parseError
+    );
+
+    return res.status(400).json({
+        success: false,
+        error: "Invalid Safepay webhook JSON."
+    });
+}
+
+console.log(
+    "Safepay webhook event received:",
+    JSON.stringify(
+        safepayEvent,
+        null,
+        2
+    )
+);
+
+console.log(
+    "========== SAFEPAY WEBHOOK CONTINUING =========="
+);
             // =================================================
             // 2. PARSE EVENT
             // =================================================
