@@ -1784,37 +1784,17 @@ let reference = null;
         ).toString("base64");
 
         // ---------------------------------------------------------
-        // SAFETY CHECK #1
-        //
-        // LIST EXISTING SIGNALWIRE SUBSCRIBERS.
-        //
-        // This is a READ operation.
-        // We do NOT request a token yet.
-        // We do NOT create a Subscriber.
-        // ---------------------------------------------------------
-
-                // ---------------------------------------------------------
-        // SAFETY CHECK #1
-        //
-        // READ EXISTING SIGNALWIRE SUBSCRIBERS.
-        //
-        // We follow SignalWire's pagination links until we either
-        // find the exact existing Subscriber or run out of pages.
-        //
-        // IMPORTANT:
-        // This is READ ONLY.
-        // No Subscriber is created here.
-        // No token is requested here.
-        // ---------------------------------------------------------
-
-        // ---------------------------------------------------------
-// VERIFY THE EXACT EXISTING SIGNALWIRE SUBSCRIBER
-// ---------------------------------------------------------
+// SAFETY CHECK #1
 //
-// We already have the exact Subscriber ID stored in the
-// Dialeaze profile, so do NOT list/search all subscribers.
+// VERIFY THE EXACT EXISTING SIGNALWIRE SUBSCRIBER.
 //
-// Ask SignalWire directly for this Subscriber.
+// This is READ ONLY.
+// We do NOT create a Subscriber.
+// We do NOT purchase a phone number.
+// We do NOT request a token yet.
+//
+// We already have the exact Subscriber ID stored in
+// Dialeaze, so ask SignalWire for that exact resource.
 // ---------------------------------------------------------
 
 const subscriberResponse = await fetch(
@@ -1826,7 +1806,6 @@ const subscriberResponse = await fetch(
         headers: {
             Authorization:
                 `Basic ${basicAuth}`,
-
             Accept:
                 "application/json"
         }
@@ -1836,13 +1815,15 @@ const subscriberResponse = await fetch(
 const subscriberText =
     await subscriberResponse.text();
 
-let existingSubscriber = null;
+let subscriberData = null;
 
 try {
 
-    existingSubscriber =
+    subscriberData =
         subscriberText
-            ? JSON.parse(subscriberText)
+            ? JSON.parse(
+                subscriberText
+            )
             : null;
 
 } catch (parseError) {
@@ -1861,33 +1842,40 @@ try {
 
 }
 
+
+// ---------------------------------------------------------
+// HARD SAFETY STOP
+//
+// SignalWire MUST confirm the existing Subscriber.
+// ---------------------------------------------------------
+
 if (!subscriberResponse.ok) {
 
     console.error(
-        "SignalWire exact Subscriber lookup failed:",
+        "SignalWire Subscriber lookup failed:",
         subscriberResponse.status,
-        existingSubscriber
+        subscriberData
     );
 
-    return res.status(409).json({
+    return res.status(502).json({
         success: false,
         error:
-            "Your SignalWire Subscriber could not be verified. No token was requested."
+            "Your existing SignalWire Subscriber could not be verified. No new Subscriber was created and no token was requested."
     });
 
 }
 
+
 // ---------------------------------------------------------
-// VERIFY THE RETURNED ID MATCHES THE Dialeaze PROFILE
+// VERIFY THE EXACT SUBSCRIBER ID
 // ---------------------------------------------------------
 
-const returnedSubscriberId =
-    existingSubscriber?.subscriber?.id ||
-    existingSubscriber?.id ||
-    null;
+const confirmedSubscriberId =
+    subscriberData?.id ||
+    subscriberData?.subscriber?.id;
 
 if (
-    returnedSubscriberId !==
+    confirmedSubscriberId !==
     expectedSubscriberId
 ) {
 
@@ -1895,38 +1883,26 @@ if (
         "SIGNALWIRE SAFETY STOP: Subscriber ID mismatch:",
         {
             expectedSubscriberId,
-            returnedSubscriberId
+            confirmedSubscriberId
         }
     );
 
     return res.status(409).json({
         success: false,
         error:
-            "SignalWire returned a different Subscriber identity. No token was requested."
+            "SignalWire Subscriber identity could not be safely verified. No token was requested."
     });
 
 }
 
-console.log(
-    "SignalWire exact Subscriber verified:",
-    {
-        subscriberId:
-            returnedSubscriberId,
-        email:
-            existingSubscriber?.subscriber?.email ||
-            existingSubscriber?.email ||
-            null
-    }
-);
+
 // ---------------------------------------------------------
-// USE THE ACTUAL SIGNALWIRE SUBSCRIBER REFERENCE
-// FROM THE VERIFIED EXISTING RESOURCE.
-// Never assume it equals the Dialeaze login email.
+// GET THE VERIFIED SUBSCRIBER REFERENCE
 // ---------------------------------------------------------
 
 reference =
-    existingSubscriber?.subscriber?.email ||
-    existingSubscriber?.email ||
+    subscriberData?.subscriber?.email ||
+    subscriberData?.email ||
     null;
 
 if (!reference) {
@@ -1943,24 +1919,18 @@ if (!reference) {
         error:
             "The existing SignalWire Subscriber has no valid reference. No token was requested."
     });
+
 }
 
+
 console.log(
-    "SignalWire reference resolved from verified Resource:",
+    "SignalWire EXISTING Subscriber verified:",
     {
-        resourceId:
-            expectedSubscriberId,
+        subscriberId:
+            confirmedSubscriberId,
         reference
     }
 );
-        console.log(
-            "SignalWire existing Subscriber verified BEFORE token request:",
-            {
-                subscriberId: expectedSubscriberId,
-                reference
-            }
-        );
-
         // ---------------------------------------------------------
         // SAFETY CHECK #2
         //
