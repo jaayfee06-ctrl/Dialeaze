@@ -1998,7 +1998,7 @@ console.log(
         // ---------------------------------------------------------
 
        const expectedTokenSubscriberId =
-    existingSubscriber?.subscriber?.id;
+    confirmedSubscriberId;
 
 if (
     !expectedTokenSubscriberId ||
