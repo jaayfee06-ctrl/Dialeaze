@@ -222,7 +222,7 @@ async function getUserOrganization(userId) {
             await fetch(
                 `${SUPABASE_URL}/rest/v1/organization_members` +
                 `?user_id=eq.${encodeURIComponent(userId)}` +
-                `&status=eq.active` +
+                `&status=eq.pending` +
                 `&select=id,organization_id,user_id,email,role,status,joined_at` +
                 `&order=created_at.asc` +
                 `&limit=1`,
