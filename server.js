@@ -14393,10 +14393,11 @@ console.log(
 
 
             const eventId =
-                String(
-                    event?.id || ""
-                ).trim();
-
+    String(
+        event?.token ||
+        event?.id ||
+        ""
+    ).trim();
             const eventType =
                 String(
                     event?.type || ""
