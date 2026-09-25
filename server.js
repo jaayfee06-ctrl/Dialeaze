@@ -10012,9 +10012,7 @@ app.post("/api/signalwire/outbound-swml", async (req, res) => {
             profileData.length
         ) {
 
-            callerNumber =
-                profileData[0]?.phone_number ||
-                "";
+            callerNumber = "";
 
         }
 
