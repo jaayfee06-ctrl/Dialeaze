@@ -1783,114 +1783,184 @@ let reference = null;
             `${SIGNALWIRE_PROJECT_ID}:${SIGNALWIRE_API_TOKEN}`
         ).toString("base64");
 
-        // ---------------------------------------------------------
+     // ---------------------------------------------------------
 // SAFETY CHECK #1
 //
-// VERIFY THE EXACT EXISTING SIGNALWIRE SUBSCRIBER.
+// FIND THE EXACT EXISTING SIGNALWIRE SUBSCRIBER.
 //
-// This is READ ONLY.
-// We do NOT create a Subscriber.
-// We do NOT purchase a phone number.
-// We do NOT request a token yet.
-//
-// We already have the exact Subscriber ID stored in
-// Dialeaze, so ask SignalWire for that exact resource.
+// READ ONLY.
+// NO SUBSCRIBER CREATION.
+// NO PHONE PURCHASE.
+// NO CALL.
+// NO TOKEN REQUEST YET.
 // ---------------------------------------------------------
 
-const subscriberResponse = await fetch(
-    `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/fabric/resources/subscribers/${encodeURIComponent(
-        expectedSubscriberId
-    )}`,
-    {
-        method: "GET",
-        headers: {
-            Authorization:
-                `Basic ${basicAuth}`,
-            Accept:
-                "application/json"
-        }
+let nextUrl =
+    `https://${SIGNALWIRE_SPACE_NAME}.signalwire.com/api/fabric/resources/subscribers`;
+
+let existingSubscriber = null;
+
+while (nextUrl) {
+
+    const listResponse =
+        await fetch(
+            nextUrl,
+            {
+                method: "GET",
+
+                headers: {
+                    Authorization:
+                        `Basic ${basicAuth}`,
+
+                    Accept:
+                        "application/json"
+                }
+            }
+        );
+
+    const listText =
+        await listResponse.text();
+
+    let listData = null;
+
+    try {
+
+        listData =
+            listText
+                ? JSON.parse(listText)
+                : null;
+
+    } catch (parseError) {
+
+        console.error(
+            "SignalWire Subscriber list returned non-JSON:",
+            listResponse.status,
+            listText
+        );
+
+        return res.status(502).json({
+            success: false,
+            error:
+                "SignalWire Subscriber verification failed. No token was requested."
+        });
+
     }
-);
-
-const subscriberText =
-    await subscriberResponse.text();
-
-let subscriberData = null;
-
-try {
-
-    subscriberData =
-        subscriberText
-            ? JSON.parse(
-                subscriberText
-            )
-            : null;
-
-} catch (parseError) {
-
-    console.error(
-        "SignalWire Subscriber lookup returned non-JSON:",
-        subscriberResponse.status,
-        subscriberText
-    );
-
-    return res.status(502).json({
-        success: false,
-        error:
-            "SignalWire Subscriber verification failed. No token was requested."
-    });
-
-}
 
 
-// ---------------------------------------------------------
-// HARD SAFETY STOP
-//
-// SignalWire MUST confirm the existing Subscriber.
-// ---------------------------------------------------------
+    if (!listResponse.ok) {
 
-if (!subscriberResponse.ok) {
+        console.error(
+            "SignalWire Subscriber list failed:",
+            listResponse.status,
+            listData
+        );
 
-    console.error(
-        "SignalWire Subscriber lookup failed:",
-        subscriberResponse.status,
-        subscriberData
-    );
+        return res.status(502).json({
+            success: false,
+            error:
+                "Unable to verify the existing SignalWire Subscriber. No token was requested."
+        });
 
-    return res.status(502).json({
-        success: false,
-        error:
-            "Your existing SignalWire Subscriber could not be verified. No new Subscriber was created and no token was requested."
-    });
-
-}
+    }
 
 
-// ---------------------------------------------------------
-// VERIFY THE EXACT SUBSCRIBER ID
-// ---------------------------------------------------------
+    const subscribers =
+        Array.isArray(listData?.data)
+            ? listData.data
+            : [];
 
-const confirmedSubscriberId =
-    subscriberData?.id ||
-    subscriberData?.subscriber?.id;
 
-if (
-    confirmedSubscriberId !==
-    expectedSubscriberId
-) {
-
-    console.error(
-        "SIGNALWIRE SAFETY STOP: Subscriber ID mismatch:",
+    console.log(
+        "SignalWire Subscriber verification:",
         {
+            status:
+                listResponse.status,
+
+            subscriberCount:
+                subscribers.length,
+
             expectedSubscriberId,
-            confirmedSubscriberId
+
+            subscribers:
+                subscribers.map(
+                    (subscriber) => ({
+                        resourceId:
+                            subscriber?.id || null,
+
+                        subscriberId:
+                            subscriber?.subscriber?.id ||
+                            subscriber?.subscriber_id ||
+                            null,
+
+                        email:
+                            subscriber?.email ||
+                            subscriber?.subscriber?.email ||
+                            null
+                    })
+                )
+        }
+    );
+
+
+    existingSubscriber =
+        subscribers.find(
+            (subscriber) => {
+
+                const resourceId =
+                    subscriber?.id ||
+                    null;
+
+                const subscriberId =
+                    subscriber?.subscriber?.id ||
+                    subscriber?.subscriber_id ||
+                    null;
+
+
+                return (
+                    resourceId ===
+                        expectedSubscriberId ||
+
+                    subscriberId ===
+                        expectedSubscriberId
+                );
+
+            }
+        );
+
+
+    if (existingSubscriber) {
+        break;
+    }
+
+
+    // SignalWire pagination
+    nextUrl =
+        listData?.links?.next ||
+        null;
+
+}
+
+
+// ---------------------------------------------------------
+// HARD STOP
+//
+// If the exact existing Subscriber was not found,
+// DO NOT request a token.
+// ---------------------------------------------------------
+
+if (!existingSubscriber) {
+
+    console.error(
+        "SIGNALWIRE SAFETY STOP: Exact existing Subscriber not found:",
+        {
+            expectedSubscriberId
         }
     );
 
     return res.status(409).json({
         success: false,
         error:
-            "SignalWire Subscriber identity could not be safely verified. No token was requested."
+            "Your existing SignalWire Subscriber could not be verified. No token was requested and no new Subscriber was created."
     });
 
 }
@@ -1901,9 +1971,10 @@ if (
 // ---------------------------------------------------------
 
 reference =
-    subscriberData?.subscriber?.email ||
-    subscriberData?.email ||
+    existingSubscriber?.subscriber?.email ||
+    existingSubscriber?.email ||
     null;
+
 
 if (!reference) {
 
@@ -1926,8 +1997,17 @@ if (!reference) {
 console.log(
     "SignalWire EXISTING Subscriber verified:",
     {
+        expectedSubscriberId,
+
+        resourceId:
+            existingSubscriber?.id ||
+            null,
+
         subscriberId:
-            confirmedSubscriberId,
+            existingSubscriber?.subscriber?.id ||
+            existingSubscriber?.subscriber_id ||
+            null,
+
         reference
     }
 );
@@ -1997,30 +2077,53 @@ console.log(
         // SignalWire MUST return the SAME Subscriber ID.
         // ---------------------------------------------------------
 
-       const expectedTokenSubscriberId =
-    confirmedSubscriberId;
+       const verifiedResourceId =
+    existingSubscriber?.id ||
+    null;
+
+const verifiedSubscriberId =
+    existingSubscriber?.subscriber?.id ||
+    existingSubscriber?.subscriber_id ||
+    null;
+
+const returnedSubscriberId =
+    tokenData?.subscriber_id ||
+    null;
+
 
 if (
-    !expectedTokenSubscriberId ||
-    tokenData?.subscriber_id !==
-        expectedTokenSubscriberId
+    !returnedSubscriberId ||
+    (
+        returnedSubscriberId !==
+            expectedSubscriberId &&
+
+        returnedSubscriberId !==
+            verifiedResourceId &&
+
+        returnedSubscriberId !==
+            verifiedSubscriberId
+    )
 ) {
+
     console.error(
         "SIGNALWIRE SAFETY STOP: Wrong Subscriber returned:",
         {
-            expectedResourceId:
-                expectedSubscriberId,
-            expectedTokenSubscriberId,
-            returnedSubscriberId:
-                tokenData?.subscriber_id
+            expectedSubscriberId,
+
+            verifiedResourceId,
+
+            verifiedSubscriberId,
+
+            returnedSubscriberId
         }
     );
 
     return res.status(409).json({
-    success: false,
-    error:
-        "SignalWire returned a different Subscriber identity. The token was rejected."
-});
+        success: false,
+        error:
+            "SignalWire returned a different Subscriber identity. The token was rejected."
+    });
+
 }
 
         console.log(
