@@ -13910,12 +13910,13 @@ async function processSafepayWebhookEvent(event) {
                 data?.reference || ""
             ).trim();
 
-        const subscriptionId =
-            String(
-                data?.subscription_id ||
-                data?.sub_id ||
-                ""
-            ).trim();
+       const subscriptionId =
+    String(
+        data?.subscription_id ||
+        data?.sub_id ||
+        data?.id ||
+        ""
+    ).trim();
 
         const transactionId =
             String(
@@ -14392,7 +14393,7 @@ console.log(
             }
 
 
-            const eventId =
+      const eventId =
     String(
         event?.token ||
         event?.id ||
