@@ -3962,7 +3962,7 @@ try {
             "https://dialeaze.com/checkout/?payment=cancelled",
 
         redirectUrl:
-            "https://dialeaze.com/checkout/?payment=success",
+                "https://dialeaze.com/dashboard/?payment=success",
 
         planId:
             SAFEPAY_PLAN_ID,
