@@ -3860,3 +3860,22 @@ border-radius: 22px;
         max-width: none !important;
     }
 }
+
+/* Fix spacing between right-side cards */
+@media (min-width: 801px) {
+
+    .main-content {
+        grid-template-rows: auto auto auto !important;
+        column-gap: 20px !important;
+        row-gap: 10px !important;
+        align-items: start !important;
+    }
+
+    .main-content > .left-column > .messages-card,
+    .main-content > .left-column > .contacts-card,
+    .main-content > .left-column > .recordings-card {
+        align-self: start !important;
+        margin: 0 !important;
+    }
+
+}
