@@ -3769,3 +3769,94 @@ border-radius: 22px;
     flex-direction: column;
     gap: 16px;
 }
+
+/* =========================================================
+   DIALEAZE — 3 COLUMN DESKTOP LAYOUT
+   LEFT: Business Number + Recent Calls
+   CENTER: Dialer
+   RIGHT: Messages + Contacts + Recordings
+========================================================= */
+
+@media (min-width: 801px) {
+
+    .main-content {
+        display: grid !important;
+        grid-template-columns: 1fr 1.15fr 1fr !important;
+        gap: 20px !important;
+        align-items: start !important;
+    }
+
+    /* Make the existing left-column transparent to the grid */
+    .main-content > .left-column {
+        display: contents !important;
+    }
+
+    /* LEFT */
+    .main-content > .left-column > .business-card {
+        grid-column: 1 !important;
+        grid-row: 1 !important;
+        width: 100% !important;
+    }
+
+    .main-content > .left-column > .recent-card {
+        grid-column: 1 !important;
+        grid-row: 2 !important;
+        width: 100% !important;
+    }
+
+    /* CENTER */
+    .main-content > .dialer-card {
+        grid-column: 2 !important;
+        grid-row: 1 / span 3 !important;
+        width: 100% !important;
+        max-width: 430px !important;
+        justify-self: center !important;
+    }
+
+    /* RIGHT */
+    .main-content > .left-column > .messages-card {
+        grid-column: 3 !important;
+        grid-row: 1 !important;
+        width: 100% !important;
+    }
+
+    .main-content > .left-column > .contacts-card {
+        grid-column: 3 !important;
+        grid-row: 2 !important;
+        width: 100% !important;
+    }
+
+    .main-content > .left-column > .recordings-card {
+        grid-column: 3 !important;
+        grid-row: 3 !important;
+        width: 100% !important;
+    }
+}
+
+
+/* =========================================================
+   MOBILE / TABLET — KEEP ORIGINAL STACKED DESIGN
+========================================================= */
+
+@media (max-width: 800px) {
+
+    .main-content > .left-column {
+        display: flex !important;
+    }
+
+    .main-content {
+        grid-template-columns: 1fr !important;
+    }
+
+    .main-content > .dialer-card,
+    .main-content > .left-column > .business-card,
+    .main-content > .left-column > .recent-card,
+    .main-content > .left-column > .messages-card,
+    .main-content > .left-column > .contacts-card,
+    .main-content > .left-column > .recordings-card {
+        grid-column: auto !important;
+        grid-row: auto !important;
+        width: 100% !important;
+        max-width: none !important;
+    }
+}
