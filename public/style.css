@@ -3838,3 +3838,258 @@ border-radius: 22px;
     }
 
 }
+
+/* =========================================================
+   DIALEAZE — PREMIUM ROUND DIALER BUTTONS
+========================================================= */
+
+/* -------------------------
+   DIAL PAD
+------------------------- */
+
+.dialpad button {
+    width: 76px !important;
+    height: 76px !important;
+    min-width: 76px !important;
+    min-height: 76px !important;
+
+    border-radius: 50% !important;
+
+    border: 1px solid rgba(255, 255, 255, 0.9) !important;
+
+    background:
+        radial-gradient(
+            circle at 35% 25%,
+            #ffffff 0%,
+            #f8fafc 45%,
+            #edf3f8 100%
+        ) !important;
+
+    box-shadow:
+        0 7px 18px rgba(15, 23, 42, 0.08),
+        inset 0 1px 2px rgba(255, 255, 255, 0.95) !important;
+
+    color: #0f172a !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    gap: 2px !important;
+
+    transition:
+        transform 0.16s ease,
+        box-shadow 0.16s ease,
+        background 0.16s ease !important;
+}
+
+
+/* Number */
+.dialpad button span {
+    font-size: 18px !important;
+    font-weight: 500 !important;
+    line-height: 1 !important;
+}
+
+
+/* Letters */
+.dialpad button small {
+    font-size: 7px !important;
+    letter-spacing: 0.8px !important;
+    color: #64748b !important;
+    line-height: 1 !important;
+}
+
+
+/* Hover */
+.dialpad button:hover {
+    transform: translateY(-3px) !important;
+
+    box-shadow:
+        0 10px 24px rgba(37, 99, 235, 0.16),
+        0 0 0 3px rgba(96, 165, 250, 0.08),
+        inset 0 1px 2px rgba(255, 255, 255, 1) !important;
+}
+
+
+/* Press */
+.dialpad button:active {
+    transform: scale(0.93) !important;
+
+    box-shadow:
+        0 3px 8px rgba(15, 23, 42, 0.12),
+        inset 0 3px 7px rgba(15, 23, 42, 0.08) !important;
+}
+
+
+/* -------------------------
+   CALL CONTROL BUTTONS
+------------------------- */
+
+.call-controls {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    align-items: center !important;
+}
+
+
+/* Base */
+.call-controls button {
+    height: 52px !important;
+    min-width: 0 !important;
+
+    border-radius: 26px !important;
+
+    border: 1px solid rgba(255, 255, 255, 0.8) !important;
+
+    font-size: 13px !important;
+    font-weight: 700 !important;
+
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    gap: 5px !important;
+
+    transition:
+        transform 0.16s ease,
+        box-shadow 0.16s ease,
+        background 0.16s ease !important;
+}
+
+
+/* -------------------------
+   CALL
+------------------------- */
+
+.call-button {
+    background:
+        linear-gradient(
+            145deg,
+            #7dd3fc 0%,
+            #38bdf8 50%,
+            #0ea5e9 100%
+        ) !important;
+
+    color: #ffffff !important;
+
+    box-shadow:
+        0 7px 18px rgba(14, 165, 233, 0.28),
+        inset 0 1px 2px rgba(255, 255, 255, 0.45) !important;
+}
+
+.call-button:hover:not(:disabled) {
+    transform: translateY(-2px) !important;
+
+    box-shadow:
+        0 10px 24px rgba(14, 165, 233, 0.36),
+        0 0 0 3px rgba(56, 189, 248, 0.10) !important;
+}
+
+
+/* -------------------------
+   MUTE
+------------------------- */
+
+.mute-button {
+    background:
+        linear-gradient(
+            145deg,
+            #f8fafc,
+            #e8eef4
+        ) !important;
+
+    color: #64748b !important;
+
+    box-shadow:
+        0 5px 14px rgba(15, 23, 42, 0.06),
+        inset 0 1px 2px rgba(255, 255, 255, 0.9) !important;
+}
+
+
+/* -------------------------
+   HOLD
+------------------------- */
+
+.hold-button {
+    background:
+        linear-gradient(
+            145deg,
+            #f8fafc,
+            #e8eef4
+        ) !important;
+
+    color: #64748b !important;
+
+    box-shadow:
+        0 5px 14px rgba(15, 23, 42, 0.06),
+        inset 0 1px 2px rgba(255, 255, 255, 0.9) !important;
+}
+
+
+/* -------------------------
+   HANG UP
+------------------------- */
+
+.hangup-button {
+    background:
+        linear-gradient(
+            145deg,
+            #fda4af 0%,
+            #fb7185 50%,
+            #ef4444 100%
+        ) !important;
+
+    color: #ffffff !important;
+
+    border: 1px solid rgba(255, 255, 255, 0.45) !important;
+
+    box-shadow:
+        0 7px 18px rgba(239, 68, 68, 0.28),
+        inset 0 1px 2px rgba(255, 255, 255, 0.45) !important;
+
+    overflow: hidden !important;
+}
+
+
+/* Hang-up hover */
+.hangup-button:hover:not(:disabled) {
+    transform: translateY(-2px) !important;
+
+    box-shadow:
+        0 10px 24px rgba(239, 68, 68, 0.36),
+        0 0 0 3px rgba(248, 113, 113, 0.10) !important;
+}
+
+
+/* All call controls press effect */
+.call-controls button:active:not(:disabled) {
+    transform: scale(0.94) !important;
+}
+
+
+/* -------------------------
+   MOBILE
+------------------------- */
+
+@media (max-width: 500px) {
+
+    .dialpad button {
+        width: 68px !important;
+        height: 68px !important;
+        min-width: 68px !important;
+        min-height: 68px !important;
+    }
+
+    .call-controls {
+        gap: 6px !important;
+    }
+
+    .call-controls button {
+        font-size: 11px !important;
+        padding: 6px !important;
+    }
+
+}
