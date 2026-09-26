@@ -3745,7 +3745,7 @@ border-radius: 22px;
 }
 
 /* =========================================================
-   DIALEAZE — TRUE 3 COLUMN LAYOUT
+   DIALEAZE — TRUE 3 COLUMN DESKTOP LAYOUT
 ========================================================= */
 
 @media (min-width: 801px) {
@@ -3782,6 +3782,7 @@ border-radius: 22px;
         gap: 12px !important;
         grid-column: 3 !important;
         grid-row: 1 !important;
+        width: 100% !important;
     }
 
     .right-column .messages-card,
@@ -3794,7 +3795,10 @@ border-radius: 22px;
 }
 
 
-/* MOBILE */
+/* =========================================================
+   MOBILE — RETURN TO STACKED LAYOUT
+========================================================= */
+
 @media (max-width: 800px) {
 
     .main-content {
@@ -3805,12 +3809,32 @@ border-radius: 22px;
     .right-column {
         display: flex !important;
         flex-direction: column !important;
+        gap: 16px !important;
+        grid-column: auto !important;
+        grid-row: auto !important;
     }
 
     .dialer-card {
         grid-column: auto !important;
         grid-row: auto !important;
         max-width: none !important;
+    }
+
+}
+
+/* Call controls — one row */
+@media (min-width: 801px) {
+
+    .call-controls {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+    }
+
+    .call-controls button {
+        min-width: 0 !important;
+        width: 100% !important;
+        padding-left: 6px !important;
+        padding-right: 6px !important;
     }
 
 }
