@@ -4093,3 +4093,19 @@ border-radius: 22px;
     }
 
 }
+
+/* Smaller premium round dial-pad buttons */
+.dialpad button {
+    width: 64px !important;
+    height: 64px !important;
+    min-width: 64px !important;
+    min-height: 64px !important;
+}
+
+.dialpad button span {
+    font-size: 17px !important;
+}
+
+.dialpad button small {
+    font-size: 6px !important;
+}
