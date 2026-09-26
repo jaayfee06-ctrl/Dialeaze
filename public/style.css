@@ -3743,3 +3743,106 @@ border-radius: 22px;
     font-size: 12px;
     font-weight: 700;
 }
+/* =========================================================
+   DIALEAZE — THREE COLUMN DESKTOP LAYOUT
+   Business Number | Dialer | Recent / Messages / Contacts
+========================================================= */
+
+@media (min-width: 801px) {
+
+    .app-shell {
+        max-width: 1320px !important;
+    }
+
+    .main-content {
+        grid-template-columns: 230px minmax(390px, 1fr) 330px !important;
+        gap: 20px !important;
+        align-items: start !important;
+    }
+
+    .left-column {
+        display: contents !important;
+    }
+
+    .business-card {
+        grid-column: 1 !important;
+        grid-row: 1 !important;
+        width: 100% !important;
+        align-self: start !important;
+    }
+
+    .dialer-card {
+        grid-column: 2 !important;
+        grid-row: 1 / span 3 !important;
+        width: min(100%, 460px) !important;
+        justify-self: center !important;
+        align-self: start !important;
+    }
+
+    .recent-card {
+        grid-column: 3 !important;
+        grid-row: 1 !important;
+        width: 100% !important;
+    }
+
+    .messages-card {
+        grid-column: 3 !important;
+        grid-row: 2 !important;
+        width: 100% !important;
+    }
+
+    .contacts-card {
+        grid-column: 3 !important;
+        grid-row: 3 !important;
+        width: 100% !important;
+    }
+
+    .call-controls {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    }
+
+    .call-button,
+    .mute-button,
+    .hold-button,
+    .hangup-button {
+        min-width: 0 !important;
+        width: 100% !important;
+    }
+
+}
+
+@media (max-width: 1100px) and (min-width: 801px) {
+
+    .main-content {
+        grid-template-columns: 205px minmax(350px, 1fr) 285px !important;
+        gap: 14px !important;
+        padding: 16px !important;
+    }
+
+    .dialer-card {
+        width: 100% !important;
+    }
+
+}
+
+@media (max-width: 800px) {
+
+    .left-column {
+        display: flex !important;
+    }
+
+    .business-card,
+    .recent-card,
+    .messages-card,
+    .contacts-card,
+    .dialer-card {
+        grid-column: auto !important;
+        grid-row: auto !important;
+        width: 100% !important;
+    }
+
+    .call-controls {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+}
