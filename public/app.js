@@ -806,6 +806,125 @@ const saveContactButton =
     document.getElementById(
         "saveContactButton"
     );
+
+    // =========================================================
+// DIALEAZE CALL ENDED SOUND
+// =========================================================
+
+let lastCallEndSoundId = null;
+
+function playCallEndedSound(callId) {
+
+    if (
+        callId &&
+        lastCallEndSoundId === callId
+    ) {
+        return;
+    }
+
+    if (callId) {
+        lastCallEndSoundId = callId;
+    }
+
+    try {
+
+        const AudioContextClass =
+            window.AudioContext ||
+            window.webkitAudioContext;
+
+        if (!AudioContextClass) {
+            return;
+        }
+
+        if (!incomingRingtoneContext) {
+            incomingRingtoneContext =
+                new AudioContextClass();
+        }
+
+        const context =
+            incomingRingtoneContext;
+
+        const playSound = () => {
+
+            const now =
+                context.currentTime;
+
+            const tones = [
+                { frequency: 660, start: 0 },
+                { frequency: 520, start: 0.18 },
+                { frequency: 400, start: 0.36 }
+            ];
+
+            tones.forEach((tone) => {
+
+                const oscillator =
+                    context.createOscillator();
+
+                const gain =
+                    context.createGain();
+
+                oscillator.type =
+                    "sine";
+
+                oscillator.frequency.setValueAtTime(
+                    tone.frequency,
+                    now + tone.start
+                );
+
+                gain.gain.setValueAtTime(
+                    0.0001,
+                    now + tone.start
+                );
+
+                gain.gain.exponentialRampToValueAtTime(
+                    0.18,
+                    now + tone.start + 0.03
+                );
+
+                gain.gain.exponentialRampToValueAtTime(
+                    0.0001,
+                    now + tone.start + 0.14
+                );
+
+                oscillator.connect(gain);
+
+                gain.connect(
+                    context.destination
+                );
+
+                oscillator.start(
+                    now + tone.start
+                );
+
+                oscillator.stop(
+                    now + tone.start + 0.16
+                );
+
+            });
+
+        };
+
+        if (context.state === "suspended") {
+
+            context.resume()
+                .then(playSound)
+                .catch(() => {});
+
+        } else {
+
+            playSound();
+
+        }
+
+    } catch (error) {
+
+        console.warn(
+            "Could not play call-ended sound:",
+            error
+        );
+
+    }
+}
 // =========================================================
 // VARIABLES
 // =========================================================
@@ -2066,6 +2185,9 @@ function renderCallHistory() {
         ? "Inbound"
         : "Outbound";
 
+const isMissedCall =
+    String(call.status || "").toLowerCase() === "missed";
+
 const callIcon =
     callDirection === "Inbound"
         ? "↙"
@@ -2085,7 +2207,10 @@ const callIcon =
 
                 <div class="call-history-left">
 
-    <div class="call-icon">
+   <div
+    class="call-icon"
+    style="${isMissedCall ? "color:#dc2626;font-weight:700;" : ""}"
+>
     ${callIcon}
 </div>
 
@@ -2099,7 +2224,10 @@ const callIcon =
     ${getContactNameForNumber(call.phoneNumber) ? call.phoneNumber : ""}
 </div>
 
-        <div class="call-history-details">
+        <div
+    class="call-history-details"
+    style="${isMissedCall ? "color:#dc2626;font-weight:600;" : ""}"
+>
     ${callDirection} · ${call.status}
 </div>
         <div class="call-history-actions">
@@ -2887,6 +3015,11 @@ console.log("🧪 RAW OUTBOUND STATUS:", JSON.stringify(callStatus));
                 callStatus === "disconnected" ||
                 callStatus === "destroyed"
             ) {
+                playCallEndedSound(
+    ringingCall.id ||
+    ringingCall.callId ||
+    "inbound-call"
+);
                 stopIncomingRingtone();
 
 console.log("📴 Incoming call ended.");
@@ -4760,8 +4893,14 @@ if (currentCall?.answered$) {
 )  {
 
                                 console.log(
+                                    
                                     "📴 SignalWire call ended."
                                 );
+                                playCallEndedSound(
+    currentCall?.id ||
+    currentCall?.callId ||
+    "outbound-call"
+);
                                                                     if (providerStatePollingInterval) {
                                     clearInterval(
                                         providerStatePollingInterval
