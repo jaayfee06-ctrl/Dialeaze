@@ -3744,37 +3744,8 @@ border-radius: 22px;
     font-weight: 700;
 }
 
-/* Call controls — single row */
-.call-controls {
-    display: grid !important;
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    gap: 10px !important;
-}
-
-.call-controls button {
-    width: 100% !important;
-    min-width: 0 !important;
-    padding: 10px 8px !important;
-    font-size: 14px !important;
-}
-.main-content {
-    display: grid;
-    grid-template-columns: 1fr 1fr 260px;
-    gap: 20px;
-    align-items: start;
-}
-
-.right-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
 /* =========================================================
-   DIALEAZE — 3 COLUMN DESKTOP LAYOUT
-   LEFT: Business Number + Recent Calls
-   CENTER: Dialer
-   RIGHT: Messages + Contacts + Recordings
+   DIALEAZE — TRUE 3 COLUMN LAYOUT
 ========================================================= */
 
 @media (min-width: 801px) {
@@ -3786,96 +3757,60 @@ border-radius: 22px;
         align-items: start !important;
     }
 
-    /* Make the existing left-column transparent to the grid */
-    .main-content > .left-column {
-        display: contents !important;
-    }
-
     /* LEFT */
-    .main-content > .left-column > .business-card {
+    .left-column {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 16px !important;
         grid-column: 1 !important;
         grid-row: 1 !important;
-        width: 100% !important;
-    }
-
-    .main-content > .left-column > .recent-card {
-        grid-column: 1 !important;
-        grid-row: 2 !important;
-        width: 100% !important;
     }
 
     /* CENTER */
-    .main-content > .dialer-card {
+    .dialer-card {
         grid-column: 2 !important;
-        grid-row: 1 / span 3 !important;
+        grid-row: 1 !important;
         width: 100% !important;
         max-width: 430px !important;
         justify-self: center !important;
     }
 
     /* RIGHT */
-    .main-content > .left-column > .messages-card {
+    .right-column {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
         grid-column: 3 !important;
         grid-row: 1 !important;
-        width: 100% !important;
     }
 
-    .main-content > .left-column > .contacts-card {
-        grid-column: 3 !important;
-        grid-row: 2 !important;
+    .right-column .messages-card,
+    .right-column .contacts-card,
+    .right-column .recordings-card {
         width: 100% !important;
+        margin: 0 !important;
     }
 
-    .main-content > .left-column > .recordings-card {
-        grid-column: 3 !important;
-        grid-row: 3 !important;
-        width: 100% !important;
-    }
 }
 
 
-/* =========================================================
-   MOBILE / TABLET — KEEP ORIGINAL STACKED DESIGN
-========================================================= */
-
+/* MOBILE */
 @media (max-width: 800px) {
-
-    .main-content > .left-column {
-        display: flex !important;
-    }
 
     .main-content {
         grid-template-columns: 1fr !important;
     }
 
-    .main-content > .dialer-card,
-    .main-content > .left-column > .business-card,
-    .main-content > .left-column > .recent-card,
-    .main-content > .left-column > .messages-card,
-    .main-content > .left-column > .contacts-card,
-    .main-content > .left-column > .recordings-card {
+    .left-column,
+    .right-column {
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    .dialer-card {
         grid-column: auto !important;
         grid-row: auto !important;
-        width: 100% !important;
         max-width: none !important;
-    }
-}
-
-/* Fix spacing between right-side cards */
-@media (min-width: 801px) {
-
-    .main-content {
-        grid-template-rows: auto auto auto !important;
-        column-gap: 20px !important;
-        row-gap: 10px !important;
-        align-items: start !important;
-    }
-
-    .main-content > .left-column > .messages-card,
-    .main-content > .left-column > .contacts-card,
-    .main-content > .left-column > .recordings-card {
-        align-self: start !important;
-        margin: 0 !important;
     }
 
 }
