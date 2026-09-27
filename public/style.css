@@ -7412,3 +7412,110 @@ body {
     }
 
 }
+
+/* =========================================================
+   DIALEAZE — FINAL PROPORTION POLISH
+========================================================= */
+
+@media (min-width: 901px) {
+
+    /* Slightly narrower sidebar */
+    .main-content.dialeaze-v2 {
+        grid-template-columns:
+            165px
+            minmax(440px, 1fr)
+            325px !important;
+
+        min-height: 600px !important;
+    }
+
+
+    /* Center area */
+    .dialer-stage {
+        padding: 15px 20px !important;
+
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+
+    /* Make the phone more prominent */
+    .phone-device {
+        width: 300px !important;
+
+        padding:
+            21px 16px 16px !important;
+
+        transform:
+            translateY(-4px) !important;
+    }
+
+
+    /* Slightly larger display */
+    .phone-device .number-display {
+        height: 52px !important;
+
+        margin-bottom: 16px !important;
+    }
+
+
+    /* Larger keypad */
+    .phone-device .dialpad {
+        gap: 10px !important;
+    }
+
+
+    .phone-device .dialpad button {
+        width: 58px !important;
+        height: 47px !important;
+
+        min-width: 58px !important;
+        min-height: 47px !important;
+    }
+
+
+    .phone-device
+    .dialpad button span {
+        font-size: 13px !important;
+    }
+
+
+    .phone-device
+    .dialpad button.extra-key {
+        height: 41px !important;
+    }
+
+
+    /* Keep bottom controls compact */
+    .phone-device .call-controls {
+        margin-top: 13px !important;
+
+        gap: 5px !important;
+    }
+
+
+    .phone-device
+    .call-controls button {
+        height: 34px !important;
+
+        font-size: 8px !important;
+    }
+
+
+    /* Right side gets slightly more breathing room */
+    .right-panel {
+        padding:
+            17px 14px !important;
+    }
+
+
+    .right-panel .business-card {
+        min-height: 150px !important;
+    }
+
+
+    .right-panel .recent-card {
+        margin-top: 12px !important;
+    }
+
+}
