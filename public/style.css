@@ -7519,3 +7519,59 @@ body {
     }
 
 }
+
+/* =========================================================
+   DIALEAZE — FINAL VISUAL BALANCE
+========================================================= */
+
+@media (min-width: 901px) {
+
+    /* Remove the excessive empty bottom area */
+    .main-content.dialeaze-v2 {
+        min-height: 560px !important;
+        height: 560px !important;
+    }
+
+
+    /* Keep sidebar at the same height */
+    .dialeaze-sidebar {
+        min-height: 560px !important;
+    }
+
+
+    /* Center phone slightly higher */
+    .dialer-stage {
+        align-items: center !important;
+        padding-top: 5px !important;
+        padding-bottom: 25px !important;
+    }
+
+
+    .phone-device {
+        transform: translateY(-8px) !important;
+    }
+
+
+    /* Give the phone bottom controls a little more room */
+    .phone-device .call-controls {
+        margin-top: 15px !important;
+    }
+
+
+    .phone-device .call-controls button {
+        height: 36px !important;
+    }
+
+
+    /* Right panel fills the available area cleanly */
+    .right-panel {
+        min-height: 560px !important;
+    }
+
+
+    /* Recent calls gets a little more breathing room */
+    .right-panel .recent-card {
+        min-height: 285px !important;
+    }
+
+}
