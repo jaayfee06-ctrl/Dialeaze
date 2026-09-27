@@ -4182,3 +4182,8 @@ border-radius: 22px;
     font-size: 6px !important;
 }
 
+/* Missed calls — Recent Calls */
+.recent-details.missed-call {
+    color: #dc2626 !important;
+    font-weight: 600 !important;
+}

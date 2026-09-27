@@ -2122,7 +2122,13 @@ const callIcon =
     ${getContactNameForNumber(call.phoneNumber) ? call.phoneNumber : ""}
 </div>
 
-                        <div class="recent-details">
+                        <div
+    class="recent-details ${
+        String(call.status || "").toLowerCase() === "missed"
+            ? "missed-call"
+            : ""
+    }"
+>
     ${callDirection} · ${call.status}
 </div>
 
