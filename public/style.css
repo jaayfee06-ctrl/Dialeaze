@@ -7114,3 +7114,301 @@ body {
     }
 
 }
+
+/* =========================================================
+   DIALEAZE V2 — PROPORTION / SPACING FIX
+   Makes the layout closer to the selected reference
+========================================================= */
+
+@media (min-width: 901px) {
+
+    /* =========================================
+       MAIN APPLICATION
+    ========================================= */
+
+    .main-content.dialeaze-v2 {
+        grid-template-columns:
+            185px
+            minmax(420px, 1fr)
+            315px !important;
+
+        min-height: 620px !important;
+
+        background:
+            linear-gradient(
+                135deg,
+                #f8fbff 0%,
+                #ffffff 50%,
+                #f4f8fc 100%
+            ) !important;
+    }
+
+
+    /* =========================================
+       LEFT SIDEBAR
+    ========================================= */
+
+    .dialeaze-sidebar {
+        padding:
+            20px 14px !important;
+    }
+
+
+    .sidebar-brand {
+        padding-bottom: 18px !important;
+    }
+
+
+    .sidebar-user {
+        margin:
+            18px 2px 22px !important;
+    }
+
+
+    .sidebar-nav-item {
+        height: 36px !important;
+
+        font-size: 9px !important;
+    }
+
+
+    /* =========================================
+       CENTER AREA
+    ========================================= */
+
+    .dialer-stage {
+
+        padding:
+            20px 25px !important;
+
+        background:
+            radial-gradient(
+                circle at 50% 48%,
+                rgba(45, 132, 220, .10),
+                transparent 42%
+            ),
+            linear-gradient(
+                135deg,
+                #ffffff,
+                #f3f8fc
+            ) !important;
+    }
+
+
+    /* =========================================
+       MAKE PHONE LARGER
+    ========================================= */
+
+    .phone-device {
+
+        width: 285px !important;
+
+        padding:
+            20px 15px 16px !important;
+
+        border-radius: 36px !important;
+
+        box-shadow:
+            0 30px 55px
+            rgba(8, 27, 49, .28),
+            0 8px 18px
+            rgba(8, 27, 49, .18),
+            inset 0 1px 2px
+            rgba(255,255,255,.15) !important;
+    }
+
+
+    /* =========================================
+       PHONE TOP
+    ========================================= */
+
+    .phone-speaker {
+
+        width: 50px !important;
+        height: 5px !important;
+
+        margin-bottom: 11px !important;
+    }
+
+
+    .phone-status {
+
+        margin-bottom: 10px !important;
+
+        font-size: 7px !important;
+    }
+
+
+    /* =========================================
+       NUMBER DISPLAY
+    ========================================= */
+
+    .phone-device .number-display {
+
+        height: 50px !important;
+
+        margin-bottom: 15px !important;
+
+        border-radius: 13px !important;
+    }
+
+
+    .phone-device
+    .number-display input {
+
+        font-size: 13px !important;
+    }
+
+
+    /* =========================================
+       KEYPAD
+    ========================================= */
+
+    .phone-device .dialpad {
+
+        gap: 9px !important;
+    }
+
+
+    .phone-device
+    .dialpad button {
+
+        width: 55px !important;
+        height: 45px !important;
+
+        min-width: 55px !important;
+        min-height: 45px !important;
+
+        border-radius: 50% !important;
+    }
+
+
+    .phone-device
+    .dialpad button span {
+
+        font-size: 13px !important;
+    }
+
+
+    .phone-device
+    .dialpad button small {
+
+        font-size: 5px !important;
+    }
+
+
+    .phone-device
+    .dialpad button.extra-key {
+
+        height: 40px !important;
+
+        border-radius: 10px !important;
+    }
+
+
+    /* =========================================
+       CALL CONTROLS
+       Keep their existing visual style
+    ========================================= */
+
+    .phone-device .call-controls {
+
+        gap: 6px !important;
+
+        margin-top: 14px !important;
+    }
+
+
+    .phone-device
+    .call-controls button {
+
+        height: 34px !important;
+
+        font-size: 8px !important;
+    }
+
+
+    /* =========================================
+       RIGHT PANEL
+    ========================================= */
+
+    .right-panel {
+
+        padding:
+            18px 14px !important;
+    }
+
+
+    /* =========================================
+       BUSINESS CARD
+    ========================================= */
+
+    .right-panel .business-card {
+
+        min-height: 150px !important;
+
+        padding: 17px !important;
+
+        border-radius: 16px !important;
+    }
+
+
+    .right-panel
+    .business-number {
+
+        font-size: 16px !important;
+    }
+
+
+    /* =========================================
+       WAVEFORM
+    ========================================= */
+
+    .business-waveform {
+
+        height: 30px !important;
+
+        margin:
+            8px 0 !important;
+    }
+
+
+    /* =========================================
+       RECENT CALLS
+    ========================================= */
+
+    .right-panel .recent-card {
+
+        margin-top: 12px !important;
+
+        padding: 16px !important;
+
+        border-radius: 16px !important;
+    }
+
+
+    .right-panel
+    .recent-header h2 {
+
+        font-size: 12px !important;
+    }
+
+
+    .right-panel
+    .recent-calls-list {
+
+        margin-top: 9px !important;
+    }
+
+
+    /* =========================================
+       REDUCE UNUSED CENTER SPACE
+    ========================================= */
+
+    .dialer-stage {
+
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+}
