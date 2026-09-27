@@ -6093,3 +6093,1024 @@ body {
         padding: 0 4px !important;
     }
 }
+/* =========================================================
+   DIALEAZE — PHONE UI
+   Reference-inspired layout
+========================================================= */
+
+@media (min-width: 901px) {
+
+    .main-content.dialeaze-v2 {
+        display: grid !important;
+
+        grid-template-columns:
+            178px
+            minmax(340px, 1fr)
+            270px !important;
+
+        min-height: 670px !important;
+
+        padding: 0 !important;
+
+        gap: 0 !important;
+
+        align-items: stretch !important;
+
+        background: #f8fbfe !important;
+
+        overflow: hidden !important;
+    }
+
+
+    /* =====================================
+       SIDEBAR
+    ===================================== */
+
+    .dialeaze-sidebar {
+        grid-column: 1 !important;
+
+        display: flex !important;
+
+        flex-direction: column !important;
+
+        min-width: 0 !important;
+
+        padding: 18px 12px !important;
+
+        background:
+            linear-gradient(
+                180deg,
+                #081a30 0%,
+                #041120 100%
+            ) !important;
+
+        border-right:
+            1px solid
+            rgba(148, 163, 184, 0.12) !important;
+
+        color: #dbeafe !important;
+    }
+
+
+    .sidebar-brand {
+        display: flex !important;
+        align-items: center !important;
+
+        gap: 9px !important;
+
+        padding: 3px 6px 17px !important;
+
+        border-bottom:
+            1px solid
+            rgba(148, 163, 184, 0.10) !important;
+    }
+
+
+    .sidebar-logo {
+        width: 28px !important;
+        height: 28px !important;
+
+        border-radius: 8px !important;
+
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+
+        background:
+            linear-gradient(
+                145deg,
+                #3b9cff,
+                #1264d8
+            ) !important;
+
+        color: white !important;
+
+        font-size: 14px !important;
+        font-weight: 800 !important;
+
+        box-shadow:
+            0 5px 14px
+            rgba(37, 99, 235, .30) !important;
+    }
+
+
+    .sidebar-brand-name {
+        font-size: 12px !important;
+        font-weight: 800 !important;
+
+        color: #f8fafc !important;
+    }
+
+
+    .sidebar-brand-subtitle {
+        margin-top: 1px !important;
+
+        font-size: 7px !important;
+
+        color: #7890ad !important;
+    }
+
+
+    .sidebar-user {
+        display: flex !important;
+        align-items: center !important;
+
+        gap: 8px !important;
+
+        margin: 18px 2px 20px !important;
+
+        padding: 9px !important;
+
+        border-radius: 11px !important;
+
+        background:
+            rgba(255,255,255,.055) !important;
+
+        border:
+            1px solid
+            rgba(148,163,184,.09) !important;
+    }
+
+
+    .sidebar-avatar {
+        width: 29px !important;
+        height: 29px !important;
+
+        flex-shrink: 0 !important;
+
+        border-radius: 50% !important;
+
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+
+        background: #e5eef8 !important;
+
+        color: #183a63 !important;
+
+        font-size: 8px !important;
+        font-weight: 800 !important;
+    }
+
+
+    .sidebar-user-name {
+        overflow: hidden !important;
+
+        white-space: nowrap !important;
+
+        text-overflow: ellipsis !important;
+
+        font-size: 8px !important;
+        font-weight: 700 !important;
+
+        color: #e8f2ff !important;
+    }
+
+
+    .sidebar-user-status {
+        margin-top: 2px !important;
+
+        font-size: 7px !important;
+
+        color: #4ade80 !important;
+    }
+
+
+    .sidebar-section-label {
+        padding: 0 7px 7px !important;
+
+        font-size: 7px !important;
+
+        letter-spacing: 1.4px !important;
+
+        font-weight: 800 !important;
+
+        color: #55708e !important;
+    }
+
+
+    .sidebar-nav {
+        display: flex !important;
+
+        flex-direction: column !important;
+
+        gap: 3px !important;
+    }
+
+
+    .sidebar-nav-item {
+        width: 100% !important;
+
+        height: 34px !important;
+
+        display: flex !important;
+        align-items: center !important;
+
+        gap: 8px !important;
+
+        padding: 0 9px !important;
+
+        border: 0 !important;
+
+        border-radius: 8px !important;
+
+        background: transparent !important;
+
+        color: #91a9c2 !important;
+
+        font-size: 8px !important;
+        font-weight: 600 !important;
+
+        text-align: left !important;
+
+        cursor: pointer !important;
+    }
+
+
+    .sidebar-nav-item:hover {
+        background:
+            rgba(59,130,246,.10) !important;
+
+        color: #e8f2ff !important;
+    }
+
+
+    .sidebar-nav-item.active {
+        background:
+            linear-gradient(
+                90deg,
+                rgba(24,111,220,.34),
+                rgba(24,111,220,.14)
+            ) !important;
+
+        color: #ffffff !important;
+
+        box-shadow:
+            inset 2px 0 0 #38a5ff !important;
+    }
+
+
+    .sidebar-nav-icon {
+        width: 14px !important;
+
+        text-align: center !important;
+
+        color: #6c9ac7 !important;
+    }
+
+
+    .sidebar-nav-item.active
+    .sidebar-nav-icon {
+        color: #4db3ff !important;
+    }
+
+
+    .sidebar-nav-arrow {
+        margin-left: auto !important;
+
+        color: #55708e !important;
+    }
+
+
+    .sidebar-footer {
+        margin-top: auto !important;
+
+        padding: 12px 5px 2px !important;
+
+        border-top:
+            1px solid
+            rgba(148,163,184,.08) !important;
+
+        font-size: 6px !important;
+
+        color: #4d6b87 !important;
+    }
+
+
+    .sidebar-footer-dot {
+        display: inline-block !important;
+
+        width: 5px !important;
+        height: 5px !important;
+
+        margin-right: 4px !important;
+
+        border-radius: 50% !important;
+
+        background: #22c55e !important;
+
+        box-shadow:
+            0 0 7px
+            rgba(34,197,94,.7) !important;
+    }
+
+
+    /* =====================================
+       CENTER STAGE
+    ===================================== */
+
+    .dialer-stage {
+        grid-column: 2 !important;
+
+        display: flex !important;
+
+        align-items: center !important;
+        justify-content: center !important;
+
+        min-width: 0 !important;
+
+        padding: 25px !important;
+
+        background:
+            radial-gradient(
+                circle at 50% 45%,
+                rgba(37,99,235,.10),
+                transparent 35%
+            ),
+            linear-gradient(
+                135deg,
+                #ffffff,
+                #f4f8fc
+            ) !important;
+    }
+
+
+    /* =====================================
+       ACTUAL PHONE
+    ===================================== */
+
+    .phone-device {
+        position: relative !important;
+
+        width: 224px !important;
+
+        padding: 17px 12px 14px !important;
+
+        border-radius: 31px !important;
+
+        background:
+            linear-gradient(
+                145deg,
+                #102b49 0%,
+                #07182c 48%,
+                #030c18 100%
+            ) !important;
+
+        border:
+            3px solid
+            #1d466d !important;
+
+        box-shadow:
+            0 24px 45px
+            rgba(8,27,49,.30),
+            0 5px 12px
+            rgba(8,27,49,.18),
+            inset 0 1px 1px
+            rgba(255,255,255,.13) !important;
+    }
+
+
+    .phone-device::before {
+        content: "";
+
+        position: absolute;
+
+        inset: 4px;
+
+        border-radius: 27px;
+
+        border:
+            1px solid
+            rgba(125,211,252,.16);
+
+        pointer-events: none;
+    }
+
+
+    .phone-speaker {
+        width: 44px !important;
+        height: 4px !important;
+
+        margin: 0 auto 9px !important;
+
+        border-radius: 10px !important;
+
+        background: #020b16 !important;
+
+        box-shadow:
+            inset 0 1px 2px
+            rgba(255,255,255,.10) !important;
+    }
+
+
+    .phone-status {
+        display: flex !important;
+
+        align-items: center !important;
+        justify-content: center !important;
+
+        gap: 5px !important;
+
+        margin-bottom: 8px !important;
+
+        font-size: 6px !important;
+
+        letter-spacing: 1px !important;
+
+        color: #6fa8d7 !important;
+    }
+
+
+    .phone-status-dot {
+        width: 4px !important;
+        height: 4px !important;
+
+        border-radius: 50% !important;
+
+        background: #35d88a !important;
+
+        box-shadow:
+            0 0 7px
+            rgba(53,216,138,.75) !important;
+    }
+
+
+    /* =====================================
+       NUMBER DISPLAY
+    ===================================== */
+
+    .phone-device .number-display {
+        position: relative !important;
+
+        width: 100% !important;
+
+        height: 46px !important;
+
+        margin: 0 0 13px !important;
+
+        display: flex !important;
+        align-items: center !important;
+
+        padding: 0 9px !important;
+
+        border-radius: 11px !important;
+
+        background:
+            linear-gradient(
+                145deg,
+                #ffffff,
+                #edf4fa
+            ) !important;
+
+        border:
+            1px solid
+            rgba(255,255,255,.75) !important;
+
+        box-shadow:
+            0 5px 12px
+            rgba(0,0,0,.16) !important;
+    }
+
+
+    .phone-device
+    .number-display input {
+        width: 100% !important;
+
+        height: 100% !important;
+
+        padding: 0 5px !important;
+
+        border: 0 !important;
+
+        outline: 0 !important;
+
+        background: transparent !important;
+
+        color: #57718d !important;
+
+        text-align: center !important;
+
+        font-size: 12px !important;
+
+        font-weight: 600 !important;
+    }
+
+
+    .phone-device .input-clear {
+        position: absolute !important;
+
+        right: 7px !important;
+
+        top: 50% !important;
+
+        transform: translateY(-50%) !important;
+
+        border: 0 !important;
+
+        background: transparent !important;
+
+        color: #647b92 !important;
+    }
+
+
+    /* =====================================
+       KEYPAD
+    ===================================== */
+
+    .phone-device .dialpad {
+        width: 100% !important;
+
+        display: grid !important;
+
+        grid-template-columns:
+            repeat(3, 1fr) !important;
+
+        gap: 7px !important;
+
+        margin: 0 !important;
+
+        padding: 0 !important;
+    }
+
+
+    .phone-device .dialpad button {
+        width: 47px !important;
+        height: 39px !important;
+
+        min-width: 47px !important;
+        min-height: 39px !important;
+
+        justify-self: center !important;
+
+        border-radius: 50% !important;
+
+        border:
+            1px solid
+            rgba(100,170,220,.30) !important;
+
+        background:
+            radial-gradient(
+                circle at 35% 25%,
+                #184b7c,
+                #0c2b4c 65%,
+                #081d34
+            ) !important;
+
+        color: #ffffff !important;
+
+        box-shadow:
+            0 5px 10px
+            rgba(0,0,0,.24),
+            inset 0 1px 2px
+            rgba(255,255,255,.12) !important;
+
+        display: flex !important;
+
+        flex-direction: column !important;
+
+        align-items: center !important;
+        justify-content: center !important;
+
+        gap: 1px !important;
+
+        transition:
+            .15s ease !important;
+    }
+
+
+    .phone-device
+    .dialpad button:hover {
+        transform: translateY(-2px) !important;
+
+        border-color:
+            rgba(96,165,250,.75) !important;
+
+        box-shadow:
+            0 7px 15px
+            rgba(0,0,0,.28),
+            0 0 12px
+            rgba(37,99,235,.30) !important;
+    }
+
+
+    .phone-device
+    .dialpad button:active {
+        transform: scale(.92) !important;
+    }
+
+
+    .phone-device
+    .dialpad button span {
+        font-size: 12px !important;
+
+        color: #ffffff !important;
+    }
+
+
+    .phone-device
+    .dialpad button small {
+        font-size: 4px !important;
+
+        letter-spacing: .8px !important;
+
+        color: #9fc4e4 !important;
+    }
+
+
+    /* + / backspace / C */
+    .phone-device
+    .dialpad button.extra-key {
+        height: 35px !important;
+
+        border-radius: 8px !important;
+
+        background:
+            linear-gradient(
+                145deg,
+                #123a61,
+                #0a233d
+            ) !important;
+    }
+
+
+    /* =====================================
+       CALL CONTROLS
+    ===================================== */
+
+    .phone-device .call-controls {
+        display: grid !important;
+
+        grid-template-columns:
+            repeat(4, 1fr) !important;
+
+        gap: 5px !important;
+
+        width: 100% !important;
+
+        margin: 12px 0 0 !important;
+    }
+
+
+    .phone-device .call-controls button {
+        height: 32px !important;
+
+        min-width: 0 !important;
+
+        padding: 0 3px !important;
+
+        border-radius: 9px !important;
+
+        font-size: 7px !important;
+
+        border:
+            1px solid
+            rgba(255,255,255,.08) !important;
+    }
+
+
+    .phone-device
+    .call-button {
+        background:
+            linear-gradient(
+                145deg,
+                #42b8ff,
+                #1597e5
+            ) !important;
+
+        box-shadow:
+            0 5px 12px
+            rgba(14,165,233,.30) !important;
+    }
+
+
+    .phone-device
+    .hangup-button {
+        background:
+            linear-gradient(
+                145deg,
+                #f56f80,
+                #dc4357
+            ) !important;
+
+        box-shadow:
+            0 5px 12px
+            rgba(239,68,68,.25) !important;
+    }
+
+
+    /* =====================================
+       RIGHT PANEL
+    ===================================== */
+
+    .right-panel {
+        grid-column: 3 !important;
+
+        min-width: 0 !important;
+
+        padding: 18px 13px !important;
+
+        background: #f8fbfe !important;
+
+        border-left:
+            1px solid
+            #e5edf5 !important;
+
+        overflow: auto !important;
+    }
+
+
+    /* =====================================
+       BUSINESS CARD
+    ===================================== */
+
+    .right-panel .business-card {
+        min-height: 143px !important;
+
+        padding: 15px !important;
+
+        border-radius: 15px !important;
+
+        background:
+            linear-gradient(
+                145deg,
+                #2f6ac1,
+                #173f7e
+            ) !important;
+
+        color: white !important;
+
+        border: 0 !important;
+
+        box-shadow:
+            0 10px 22px
+            rgba(30,76,140,.24) !important;
+    }
+
+
+    .right-panel
+    .business-label {
+        font-size: 7px !important;
+
+        letter-spacing: 1.1px !important;
+
+        color: #cfe4ff !important;
+    }
+
+
+    .right-panel
+    .business-number {
+        margin-top: 7px !important;
+
+        font-size: 15px !important;
+
+        font-weight: 800 !important;
+
+        color: white !important;
+    }
+
+
+    /* =====================================
+       WAVEFORM
+    ===================================== */
+
+    .business-waveform {
+        height: 27px !important;
+
+        margin: 7px 0 !important;
+
+        display: flex !important;
+
+        align-items: center !important;
+
+        justify-content: space-between !important;
+
+        opacity: .75 !important;
+    }
+
+
+    .business-waveform span {
+        width: 2px !important;
+
+        border-radius: 5px !important;
+
+        background: #7bc6ff !important;
+
+        box-shadow:
+            0 0 5px
+            rgba(123,198,255,.30) !important;
+    }
+
+
+    .business-waveform span:nth-child(1),
+    .business-waveform span:nth-child(17) {
+        height: 7px;
+    }
+
+    .business-waveform span:nth-child(2),
+    .business-waveform span:nth-child(16) {
+        height: 13px;
+    }
+
+    .business-waveform span:nth-child(3),
+    .business-waveform span:nth-child(15) {
+        height: 20px;
+    }
+
+    .business-waveform span:nth-child(4),
+    .business-waveform span:nth-child(14) {
+        height: 11px;
+    }
+
+    .business-waveform span:nth-child(5),
+    .business-waveform span:nth-child(13) {
+        height: 23px;
+    }
+
+    .business-waveform span:nth-child(6),
+    .business-waveform span:nth-child(12) {
+        height: 15px;
+    }
+
+    .business-waveform span:nth-child(7),
+    .business-waveform span:nth-child(11) {
+        height: 25px;
+    }
+
+    .business-waveform span:nth-child(8),
+    .business-waveform span:nth-child(10) {
+        height: 14px;
+    }
+
+    .business-waveform span:nth-child(9) {
+        height: 21px;
+    }
+
+
+    .right-panel
+    .business-bottom {
+        display: flex !important;
+
+        align-items: center !important;
+
+        justify-content: space-between !important;
+    }
+
+
+    .right-panel
+    .on-call-status {
+        padding: 6px 9px !important;
+
+        border-radius: 20px !important;
+
+        background:
+            rgba(255,255,255,.13) !important;
+
+        color: #fff !important;
+
+        font-size: 8px !important;
+    }
+
+
+    .right-panel
+    .circle-button {
+        width: 29px !important;
+        height: 29px !important;
+
+        border-radius: 50% !important;
+
+        border: 1px solid
+            rgba(255,255,255,.16) !important;
+
+        background:
+            rgba(7,27,50,.28) !important;
+
+        color: white !important;
+    }
+
+
+    /* =====================================
+       RECENT CALLS
+    ===================================== */
+
+    .right-panel .recent-card {
+        margin-top: 11px !important;
+
+        padding: 14px !important;
+
+        border-radius: 15px !important;
+
+        background: white !important;
+
+        border:
+            1px solid
+            #e2eaf2 !important;
+
+        box-shadow:
+            0 7px 16px
+            rgba(15,23,42,.045) !important;
+    }
+
+
+    .right-panel .recent-header h2 {
+        margin: 0 !important;
+
+        font-size: 11px !important;
+
+        color: #0f1f33 !important;
+    }
+
+
+    .recent-subtitle {
+        margin-top: 2px !important;
+
+        font-size: 6px !important;
+
+        color: #94a3b8 !important;
+    }
+
+
+    .right-panel
+    .recent-header > span {
+        font-size: 7px !important;
+
+        color: #94a3b8 !important;
+    }
+
+
+    .right-panel
+    .recent-calls-list {
+        margin-top: 7px !important;
+    }
+
+
+    .right-panel
+    .recent-call-item {
+        padding: 8px 0 !important;
+
+        border-bottom:
+            1px solid
+            #edf2f7 !important;
+    }
+
+
+    .right-panel
+    .history-button {
+        width: 100% !important;
+
+        height: 30px !important;
+
+        margin-top: 10px !important;
+
+        border: 0 !important;
+
+        border-radius: 8px !important;
+
+        background: #142137 !important;
+
+        color: white !important;
+
+        font-size: 7px !important;
+
+        font-weight: 800 !important;
+    }
+
+
+    .hidden-functional-card {
+        display: none !important;
+    }
+
+}
+
+
+/* =====================================
+   SMALL SCREENS
+===================================== */
+
+@media (max-width: 900px) {
+
+    .main-content.dialeaze-v2 {
+        display: flex !important;
+
+        flex-direction: column !important;
+
+        min-height: auto !important;
+    }
+
+
+    .dialeaze-sidebar {
+        order: 1 !important;
+    }
+
+
+    .dialer-stage {
+        order: 2 !important;
+
+        min-height: 600px !important;
+    }
+
+
+    .right-panel {
+        order: 3 !important;
+    }
+
+}
