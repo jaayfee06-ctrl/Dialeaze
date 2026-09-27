@@ -4187,3 +4187,308 @@ border-radius: 22px;
     color: #dc2626 !important;
     font-weight: 600 !important;
 }
+
+/* =========================================================
+   DIALEAZE — PREMIUM CALL HISTORY
+========================================================= */
+
+/* History panel */
+.call-history-panel {
+    margin-top: 10px !important;
+    padding-top: 4px !important;
+}
+
+
+/* "All call history" heading */
+.call-history-panel > h3,
+.call-history-panel .history-title {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: #172033 !important;
+    letter-spacing: 0.1px !important;
+    margin-bottom: 10px !important;
+}
+
+
+/* Scrollable history area */
+.call-history-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+
+    padding: 2px 4px 4px 0 !important;
+}
+
+
+/* Individual call */
+.call-history-item {
+    position: relative !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+
+    min-height: 72px !important;
+
+    padding: 12px 12px !important;
+
+    border: 1px solid #e6edf3 !important;
+    border-radius: 14px !important;
+
+    background:
+        linear-gradient(
+            145deg,
+            #ffffff 0%,
+            #f8fafc 100%
+        ) !important;
+
+    box-shadow:
+        0 3px 10px rgba(15, 23, 42, 0.045) !important;
+
+    transition:
+        transform 0.15s ease,
+        box-shadow 0.15s ease,
+        border-color 0.15s ease !important;
+}
+
+
+/* Hover */
+.call-history-item:hover {
+    transform: translateY(-1px) !important;
+
+    border-color: #d5e2ed !important;
+
+    box-shadow:
+        0 7px 18px rgba(15, 23, 42, 0.08) !important;
+}
+
+
+/* Left side */
+.call-history-left {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+
+    min-width: 0 !important;
+}
+
+
+/* Direction icon */
+.call-history-left .call-icon {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    border-radius: 50% !important;
+
+    background: #edf7ff !important;
+    color: #1594d0 !important;
+
+    font-size: 14px !important;
+    font-weight: 600 !important;
+
+    border: 1px solid #dceefa !important;
+}
+
+
+/* Phone number */
+.call-history-number {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+
+    color: #172033 !important;
+
+    line-height: 1.3 !important;
+
+    margin-bottom: 2px !important;
+}
+
+
+/* Contact number when a contact name exists */
+.call-history-contact-number {
+    font-size: 10px !important;
+    color: #94a3b8 !important;
+
+    margin-bottom: 2px !important;
+}
+
+
+/* Status */
+.call-history-details {
+    font-size: 10px !important;
+    color: #7b8a9b !important;
+
+    line-height: 1.3 !important;
+}
+
+
+/* Right side */
+.call-history-right {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+
+    gap: 3px !important;
+
+    margin-left: 8px !important;
+}
+
+
+/* Duration */
+.call-history-duration {
+    font-size: 10px !important;
+    font-weight: 600 !important;
+
+    color: #64748b !important;
+}
+
+
+/* Date / time */
+.call-history-time {
+    font-size: 9px !important;
+    color: #94a3b8 !important;
+
+    text-align: right !important;
+}
+
+
+/* =========================================================
+   ACTION BUTTONS
+========================================================= */
+
+.call-history-actions {
+    display: flex !important;
+    align-items: center !important;
+
+    gap: 6px !important;
+
+    margin-top: 8px !important;
+}
+
+
+/* Base action button */
+.call-history-actions button {
+    height: 30px !important;
+
+    padding: 0 10px !important;
+
+    border-radius: 9px !important;
+
+    border: 1px solid #e2e8f0 !important;
+
+    font-size: 10px !important;
+    font-weight: 600 !important;
+
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    cursor: pointer !important;
+
+    transition:
+        background 0.15s ease,
+        border-color 0.15s ease,
+        transform 0.15s ease,
+        box-shadow 0.15s ease !important;
+}
+
+
+/* Call button */
+.history-call-button {
+    background: #f0fdf4 !important;
+    color: #15803d !important;
+
+    border-color: #bbf7d0 !important;
+}
+
+
+.history-call-button:hover {
+    background: #dcfce7 !important;
+    border-color: #86efac !important;
+
+    transform: translateY(-1px) !important;
+
+    box-shadow:
+        0 4px 10px rgba(22, 163, 74, 0.10) !important;
+}
+
+
+/* Message button */
+.history-message-button {
+    background: #eff6ff !important;
+    color: #2563eb !important;
+
+    border-color: #bfdbfe !important;
+}
+
+
+.history-message-button:hover {
+    background: #dbeafe !important;
+    border-color: #93c5fd !important;
+
+    transform: translateY(-1px) !important;
+
+    box-shadow:
+        0 4px 10px rgba(37, 99, 235, 0.10) !important;
+}
+
+
+/* Press */
+.call-history-actions button:active {
+    transform: scale(0.96) !important;
+}
+
+
+/* =========================================================
+   MISSED CALLS
+========================================================= */
+
+.call-history-details.missed-call {
+    color: #dc2626 !important;
+    font-weight: 600 !important;
+}
+
+
+/* =========================================================
+   SCROLLBAR
+========================================================= */
+
+.call-history-list::-webkit-scrollbar {
+    width: 5px !important;
+}
+
+.call-history-list::-webkit-scrollbar-track {
+    background: transparent !important;
+}
+
+.call-history-list::-webkit-scrollbar-thumb {
+    background: #d7e0e8 !important;
+    border-radius: 10px !important;
+}
+
+.call-history-list::-webkit-scrollbar-thumb:hover {
+    background: #b9c7d4 !important;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 500px) {
+
+    .call-history-item {
+        padding: 10px !important;
+    }
+
+    .call-history-actions button {
+        padding: 0 8px !important;
+        font-size: 9px !important;
+    }
+
+}
