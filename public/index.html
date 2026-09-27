@@ -22,280 +22,211 @@
 
 <body>
 
-<div class="app-shell">
-
-
-    <!-- =====================================
-         HEADER
-    ====================================== -->
-
-    <header class="topbar">
-
-        <div class="brand-area">
-
-            <span class="brand-dot"></span>
-
-            <span class="brand-name">
-                Dialeaze Dialer
-            </span>
-
-        </div>
-
-
-        <div class="user-area">
-
-            <div
-                class="connection-status"
-                id="connectionStatus"
-            >
-
-                <span class="status-dot"></span>
-
-                <span id="status">
-                    Connecting...
-                </span>
-
-            </div>
-
-
-            <div class="avatar">
-
-                <span id="userInitials">
-                    MG
-                </span>
-
-            </div>
-
-
-            <span
-                class="user-name"
-                id="userName"
-            >
-                Loading...
-            </span>
-
-        </div>
-
-    </header>
-
-
-
-    <!-- =====================================
-         MAIN APPLICATION
-    ====================================== -->
-
-    <main class="main-content dialeaze-v2">
+    <div class="app-shell">
 
 
         <!-- =====================================
-             LEFT SIDEBAR
+             HEADER
         ====================================== -->
 
-        <aside class="dialeaze-sidebar">
+        <header class="topbar">
 
+            <div class="brand-area">
 
-            <!-- BRAND -->
+                <span class="brand-dot"></span>
 
-            <div class="sidebar-brand">
-
-                <div class="sidebar-logo">
-                    D
-                </div>
-
-                <div>
-
-                    <div class="sidebar-brand-name">
-                        Dialeaze
-                    </div>
-
-                    <div class="sidebar-brand-subtitle">
-                        Business Dialer
-                    </div>
-
-                </div>
+                <span class="brand-name">
+                    Dialeaze Dialer
+                </span>
 
             </div>
 
 
-            <!-- USER -->
+            <div class="user-area">
 
-            <div class="sidebar-user">
+                <div
+                    class="connection-status"
+                    id="connectionStatus"
+                >
 
-                <div class="sidebar-avatar">
+                    <span class="status-dot"></span>
 
-                    <span id="sidebarUserInitials">
-                        MG
+                    <span id="status">
+                        Connecting...
                     </span>
 
                 </div>
 
 
-                <div class="sidebar-user-info">
+                <div class="avatar">
+
+                    <span id="userInitials">
+                        AC
+                    </span>
+
+                </div>
+
+
+                <span
+                    class="user-name"
+                    id="userName"
+                >
+                    Loading...
+                </span>
+
+            </div>
+
+        </header>
+
+
+
+        <!-- =====================================
+             MAIN
+        ====================================== -->
+
+        <main class="main-content">
+
+
+            <!-- =================================
+                 LEFT SIDE
+            ================================== -->
+
+            <section class="left-column">
+
+
+                <!-- BUSINESS NUMBER -->
+
+                <div class="business-card">
+
+                    <div class="business-label">
+                        BUSINESS NUMBER
+                    </div>
 
                     <div
-                        class="sidebar-user-name"
-                        id="sidebarUserName"
+                        class="business-number"
+                        id="businessNumber"
                     >
                         Loading...
                     </div>
 
-                    <div class="sidebar-user-status">
-                        ● Online
+
+                    <div class="business-bottom">
+
+                        <div class="on-call-status">
+
+                            <span
+                                class="small-green-dot"
+                            ></span>
+
+                            <span id="callTimerText">
+                                Ready
+                            </span>
+
+                        </div>
+
+
+                        <div class="audio-buttons">
+
+                            <button
+                                class="circle-button"
+                                type="button"
+                                title="Microphone"
+                            >
+                                🎙
+                            </button>
+
+
+                            <button
+                                class="circle-button mute-button"
+                                type="button"
+                                title="Mute"
+                            >
+                                🎙
+                            </button>
+
+                        </div>
+
                     </div>
 
                 </div>
 
-            </div>
 
 
-            <!-- NAVIGATION -->
+                <!-- =================================
+                     RECENT CALLS
+                ================================== -->
 
-            <div class="sidebar-section-label">
-                WORKSPACE
-            </div>
+                <div class="recent-card">
 
+                    <div class="recent-header">
 
-            <nav class="sidebar-nav">
+                        <h2>
+                            Recent calls
+                        </h2>
 
+                        <span>
+                            Today
+                        </span>
 
-                <button
-                    type="button"
-                    class="sidebar-nav-item active"
-                >
-
-                    <span class="sidebar-nav-icon">
-                        ▣
-                    </span>
-
-                    <span>
-                        Dialer
-                    </span>
-
-                </button>
+                    </div>
 
 
-                <button
-                    type="button"
-                    class="sidebar-nav-item"
-                    onclick="document.getElementById('historyToggleButton')?.click()"
-                >
+                    <div
+                        id="recentCallsList"
+                        class="recent-calls-list"
+                    >
 
-                    <span class="sidebar-nav-icon">
-                        ↗
-                    </span>
+                        <div class="empty-recent">
+                            No recent calls
+                        </div>
 
-                    <span>
-                        Recent Calls
-                    </span>
-
-                </button>
+                    </div>
 
 
-                <button
-                    type="button"
-                    class="sidebar-nav-item"
-                    onclick="document.getElementById('messagesCard')?.click()"
-                >
-
-                    <span class="sidebar-nav-icon">
-                        ▤
-                    </span>
-
-                    <span>
-                        Messages
-                    </span>
-
-                    <span class="sidebar-nav-arrow">
-                        ›
-                    </span>
-
-                </button>
+                    <button
+                        id="historyToggleButton"
+                        class="history-button"
+                        type="button"
+                    >
+                        CALL HISTORY
+                    </button>
 
 
-                <button
-                    type="button"
-                    class="sidebar-nav-item"
-                    onclick="document.getElementById('contactsCard')?.click()"
-                >
+                    <div
+                        id="callHistoryPanel"
+                        class="call-history-panel"
+                    >
 
-                    <span class="sidebar-nav-icon">
-                        ♟
-                    </span>
-
-                    <span>
-                        Contacts
-                    </span>
-
-                    <span class="sidebar-nav-arrow">
-                        ›
-                    </span>
-
-                </button>
+                        <div class="history-title">
+                            All call history
+                        </div>
 
 
-                <button
-                    type="button"
-                    class="sidebar-nav-item"
-                    onclick="document.getElementById('recordingsCard')?.click()"
-                >
+                        <div id="callHistoryList">
 
-                    <span class="sidebar-nav-icon">
-                        ◉
-                    </span>
+                            <p class="empty-history">
+                                No calls yet
+                            </p>
 
-                    <span>
-                        Recordings
-                    </span>
+                        </div>
 
-                    <span class="sidebar-nav-arrow">
-                        ›
-                    </span>
-
-                </button>
-
-            </nav>
-
-
-            <div class="sidebar-footer">
-
-                <span class="sidebar-footer-dot"></span>
-
-                Secure connection
-
-            </div>
-
-        </aside>
-
-
-
-        <!-- =====================================
-             CENTER DIALER
-        ====================================== -->
-
-        <section class="dialer-stage">
-
-
-            <div class="phone-device">
-
-
-                <!-- PHONE SPEAKER -->
-
-                <div class="phone-speaker"></div>
-
-
-                <div class="phone-status">
-
-                    <span>
-                        DIALER
-                    </span>
-
-                    <span class="phone-status-dot"></span>
+                    </div>
 
                 </div>
 
 
+            </section>
 
-                <!-- NUMBER DISPLAY -->
+               
+
+            <!-- =================================
+                 RIGHT SIDE DIALER
+            ================================== -->
+
+            <section class="dialer-card">
+
+
+                <!-- NUMBER INPUT -->
 
                 <div class="number-display">
 
@@ -430,7 +361,6 @@
 
                 <div class="call-controls">
 
-
                     <button
                         id="callButton"
                         class="call-button"
@@ -444,43 +374,24 @@
                         Call
 
                     </button>
-
-
-                    <button
-                        id="muteButton"
-                        class="mute-button"
-                        type="button"
-                        disabled
-                    >
-
-                        <span>
-                            🎙
-                        </span>
-
-                        <span class="mute-button-text">
-                            Mute
-                        </span>
-
-                    </button>
-
-
-                    <button
-                        id="holdButton"
-                        class="hold-button"
-                        type="button"
-                        disabled
-                    >
-
-                        <span>
-                            ⏸
-                        </span>
-
-                        <span class="hold-button-text">
-                            Hold
-                        </span>
-
-                    </button>
-
+<button
+    id="muteButton"
+    class="mute-button"
+    type="button"
+    disabled
+>
+    <span>🎙</span>
+    <span class="mute-button-text">Mute</span>
+</button>
+<button
+    id="holdButton"
+    class="hold-button"
+    type="button"
+    disabled
+>
+    <span>⏸</span>
+    <span class="hold-button-text">Hold</span>
+</button>
 
                     <button
                         id="hangupButton"
@@ -499,656 +410,531 @@
                 </div>
 
 
-            </div>
-
-        </section>
-
-
-
-        <!-- =====================================
-             RIGHT PANEL
-        ====================================== -->
-
-        <aside class="right-panel">
+                 </section>
 
 
             <!-- =================================
-                 BUSINESS NUMBER
+                 RIGHT SIDE
             ================================== -->
 
-            <div class="business-card">
+            <section class="right-column">
 
 
-                <div class="business-label">
-                    BUSINESS NUMBER
+                <!-- =================================
+                     MESSAGES CARD
+                ================================== -->
+
+                <div
+                    class="messages-card"
+                    id="messagesCard"
+                >
+
+                    <div class="messages-card-icon">
+                        💬
+                    </div>
+
+
+                    <div class="messages-card-content">
+
+                        <div class="messages-card-title">
+                            Messages
+                        </div>
+
+                        <div class="messages-card-subtitle">
+                            Send and receive SMS
+                        </div>
+
+                    </div>
+
+
+                    <div class="messages-card-arrow">
+                        ›
+                    </div>
+
                 </div>
 
 
+
+                <!-- =================================
+                     CONTACTS CARD
+                ================================== -->
+
+                <div class="contacts-card" id="contactsCard">
+
+                    <div class="contacts-icon">
+                        👥
+                    </div>
+
+                    <div>
+
+                        <div class="contacts-title">
+                            Business contacts
+                        </div>
+
+                        <div class="contacts-subtitle">
+                            Manage your contacts
+                        </div>
+
+                    </div>
+
+                </div>
+ <!-- =================================
+                     CALL RECORDINGS CARD
+                ================================== -->
+
                 <div
-                    class="business-number"
-                    id="businessNumber"
+    class="messages-card recordings-card"
+    id="recordingsCard"
+                    onclick="window.open('https://dialeaze.com/dialeaze-recordings/', '_blank')"
+                    style="cursor:pointer;"
+                >
+
+                    <div class="messages-card-icon">
+                        🎙️
+                    </div>
+
+
+                    <div class="messages-card-content">
+
+                        <div class="messages-card-title">
+                            Call recordings
+                        </div>
+
+                        <div class="messages-card-subtitle">
+                            Listen to your recorded calls
+                        </div>
+
+                    </div>
+
+
+                    <div class="messages-card-arrow">
+                        ›
+                    </div>
+
+                                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+
+
+   <!-- =====================================
+     MESSAGES INBOX
+====================================== -->
+
+<div
+    id="messagesOverlay"
+    class="messages-overlay"
+>
+
+    <div class="messages-window messages-inbox-window">
+
+        <!-- =================================
+             MESSAGES HEADER
+        ================================== -->
+
+        <div class="messages-header">
+
+            <div>
+
+                <div class="messages-title">
+                    Messages
+                </div>
+
+                <div
+                    class="messages-number"
+                    id="messagesBusinessNumber"
                 >
                     Loading...
                 </div>
 
-
-                <!-- WAVEFORM -->
-
-                <div class="business-waveform">
-
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-
-                </div>
-
-
-                <div class="business-bottom">
-
-
-                    <div class="on-call-status">
-
-                        <span class="small-green-dot"></span>
-
-                        <span id="callTimerText">
-                            Ready
-                        </span>
-
-                    </div>
-
-
-                    <div class="audio-buttons">
-
-                        <button
-                            class="circle-button"
-                            type="button"
-                            title="Microphone"
-                        >
-                            🎙
-                        </button>
-
-
-                        <button
-                            class="circle-button mute-button"
-                            type="button"
-                            title="Mute"
-                        >
-                            🎙
-                        </button>
-
-                    </div>
-
-                </div>
-
             </div>
 
+            <button
+                id="closeMessagesButton"
+                class="messages-close"
+                type="button"
+            >
+                ×
+            </button>
 
+        </div>
+
+
+        <!-- =================================
+             INBOX / CHAT AREA
+        ================================== -->
+
+        <div class="messages-inbox-body">
 
             <!-- =================================
-                 RECENT CALLS
+                 CONVERSATION LIST
             ================================== -->
 
-            <div class="recent-card">
+            <aside class="messages-inbox-list">
 
+                <div class="messages-inbox-list-header">
 
-                <div class="recent-header">
-
-
-                    <div>
-
-                        <h2>
-                            Recent calls
-                        </h2>
-
-                        <div class="recent-subtitle">
-                            Your latest activity
-                        </div>
-
+                    <div class="messages-inbox-heading">
+                        Inbox
                     </div>
 
-
-                    <span>
-                        Today
-                    </span>
-
-                </div>
-
-
-                <div
-                    id="recentCallsList"
-                    class="recent-calls-list"
-                >
-
-                    <div class="empty-recent">
-                        No recent calls
-                    </div>
-
-                </div>
-
-
-                <button
-                    id="historyToggleButton"
-                    class="history-button"
-                    type="button"
-                >
-
-                    CALL HISTORY
-
-                    <span>
-                        →
-                    </span>
-
-                </button>
-
-
-                <!-- FULL CALL HISTORY -->
-
-                <div
-                    id="callHistoryPanel"
-                    class="call-history-panel"
-                >
-
-                    <div class="history-title">
-                        All call history
-                    </div>
-
-
-                    <div id="callHistoryList">
-
-                        <p class="empty-history">
-                            No calls yet
-                        </p>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-
-            <!-- =================================
-                 HIDDEN FUNCTIONAL CARDS
-                 IDs preserved for app.js
-            ================================== -->
-
-            <div
-                id="messagesCard"
-                class="hidden-functional-card"
-            ></div>
-
-
-            <div
-                id="contactsCard"
-                class="hidden-functional-card"
-            ></div>
-
-
-            <div
-                id="recordingsCard"
-                class="hidden-functional-card"
-                onclick="
-                    window.open(
-                        'https://dialeaze.com/dialeaze-recordings/',
-                        '_blank'
-                    )
-                "
-            ></div>
-
-
-        </aside>
-
-    </main>
-
-
-
-    <!-- =====================================
-         MESSAGES INBOX
-    ====================================== -->
-
-    <div
-        id="messagesOverlay"
-        class="messages-overlay"
-    >
-
-        <div class="messages-window messages-inbox-window">
-
-
-            <div class="messages-header">
-
-                <div>
-
-                    <div class="messages-title">
-                        Messages
-                    </div>
-
-                    <div
-                        class="messages-number"
-                        id="messagesBusinessNumber"
+                    <button
+                        id="newMessageButton"
+                        class="new-message-button"
+                        type="button"
+                        title="New message"
                     >
-                        Loading...
-                    </div>
+                        +
+                    </button>
 
                 </div>
 
 
-                <button
-                    id="closeMessagesButton"
-                    class="messages-close"
-                    type="button"
-                >
-                    ×
-                </button>
-
-            </div>
-
-
-
-            <div class="messages-inbox-body">
-
-
-                <!-- CONVERSATION LIST -->
-
-                <aside class="messages-inbox-list">
-
-
-                    <div class="messages-inbox-list-header">
-
-                        <div class="messages-inbox-heading">
-                            Inbox
-                        </div>
-
-
-                        <button
-                            id="newMessageButton"
-                            class="new-message-button"
-                            type="button"
-                            title="New message"
-                        >
-                            +
-                        </button>
-
-                    </div>
-
-
-                    <div class="messages-search-area">
-
-                        <input
-                            id="messagesSearch"
-                            type="text"
-                            placeholder="Search conversations..."
-                            autocomplete="off"
-                        >
-
-                    </div>
-
-
-                    <div
-                        id="messagesConversationList"
-                        class="messages-conversation-list"
-                    >
-
-                        <div class="messages-inbox-empty">
-
-                            <div class="messages-inbox-empty-icon">
-                                💬
-                            </div>
-
-                            <div>
-                                No conversations yet
-                            </div>
-
-                            <small>
-                                Incoming and outgoing messages will appear here.
-                            </small>
-
-                        </div>
-
-                    </div>
-
-                </aside>
-
-
-
-                <!-- CHAT AREA -->
-
-                <section class="messages-chat-panel">
-
-
-                    <div
-                        id="messagesChatHeader"
-                        class="messages-chat-header"
-                    >
-
-                        <button
-                            id="messagesBackButton"
-                            class="messages-back-button"
-                            type="button"
-                            title="Back to inbox"
-                        >
-                            ‹
-                        </button>
-
-
-                        <div class="messages-chat-contact">
-
-                            <div
-                                id="messagesChatContact"
-                                class="messages-chat-contact-number"
-                            >
-                                Select a conversation
-                            </div>
-
-
-                            <div
-                                id="messagesChatStatus"
-                                class="messages-chat-contact-status"
-                            >
-                                Your Dialeaze messages
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-
-                    <!-- HIDDEN RECIPIENT -->
+                <div class="messages-search-area">
 
                     <input
-                        id="messageRecipient"
-                        type="tel"
+                        id="messagesSearch"
+                        type="text"
+                        placeholder="Search conversations..."
                         autocomplete="off"
-                        tabindex="-1"
-                        aria-hidden="true"
                     >
 
-
-
-                    <!-- CONVERSATION -->
-
-                    <div
-                        id="messagesConversation"
-                        class="messages-conversation"
-                    >
-
-                        <div class="messages-empty">
-                            Select a conversation to view messages.
-                        </div>
-
-                    </div>
-
-
-
-                    <!-- COMPOSER -->
-
-                    <div class="message-composer">
-
-
-                        <textarea
-                            id="messageText"
-                            rows="2"
-                            maxlength="1600"
-                            placeholder="Type a message..."
-                        ></textarea>
-
-
-                        <div class="message-composer-bottom">
-
-
-                            <span
-                                id="messageCharacterCount"
-                                class="message-character-count"
-                            >
-                                0 / 1600
-                            </span>
-
-
-                            <button
-                                id="sendMessageButton"
-                                class="send-message-button"
-                                type="button"
-                            >
-
-                                <span>
-                                    ➤
-                                </span>
-
-                                Send
-
-                            </button>
-
-                        </div>
-
-                    </div>
-
-                </section>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-
-    <!-- =====================================
-         BUSINESS CONTACTS MODAL
-    ====================================== -->
-
-    <div
-        id="contactsOverlay"
-        class="contacts-overlay"
-    >
-
-        <div class="contacts-window">
-
-
-            <div class="contacts-header">
-
-                <div>
-
-                    <div class="contacts-window-title">
-                        Business Contacts
-                    </div>
-
-                    <div class="contacts-window-subtitle">
-                        Save and manage your business contacts
-                    </div>
-
                 </div>
-
-
-                <button
-                    id="closeContactsButton"
-                    class="contacts-close"
-                    type="button"
-                >
-                    ×
-                </button>
-
-            </div>
-
-
-
-            <div class="contacts-toolbar">
-
-
-                <input
-                    id="contactsSearch"
-                    type="text"
-                    placeholder="Search contacts..."
-                    autocomplete="off"
-                >
-
-
-                <button
-                    id="addContactButton"
-                    class="contacts-add-button"
-                    type="button"
-                >
-                    + Add Contact
-                </button>
-
-            </div>
-
-
-
-            <div
-                id="contactsList"
-                class="contacts-list"
-            >
-
-                <div class="contacts-empty">
-                    No contacts yet.
-                </div>
-
-            </div>
-
-
-
-            <!-- CONTACT FORM -->
-
-            <div
-                id="contactFormPanel"
-                class="contact-form-panel"
-            >
-
-
-                <div class="contact-form-title">
-                    Add Contact
-                </div>
-
-
-                <div class="contact-form-grid">
-
-
-                    <div class="contact-field">
-
-                        <label for="contactName">
-                            Name
-                        </label>
-
-                        <input
-                            id="contactName"
-                            type="text"
-                            maxlength="150"
-                            placeholder="John Smith"
-                        >
-
-                    </div>
-
-
-                    <div class="contact-field">
-
-                        <label for="contactPhone">
-                            Phone Number
-                        </label>
-
-                        <input
-                            id="contactPhone"
-                            type="tel"
-                            maxlength="30"
-                            placeholder="+1 555 123 4567"
-                        >
-
-                    </div>
-
-
-                    <div class="contact-field">
-
-                        <label for="contactEmail">
-                            Email
-                        </label>
-
-                        <input
-                            id="contactEmail"
-                            type="email"
-                            maxlength="255"
-                            placeholder="john@example.com"
-                        >
-
-                    </div>
-
-
-                    <div class="contact-field">
-
-                        <label for="contactCompany">
-                            Company
-                        </label>
-
-                        <input
-                            id="contactCompany"
-                            type="text"
-                            maxlength="150"
-                            placeholder="ABC Company"
-                        >
-
-                    </div>
-
-
-                    <div class="contact-field contact-field-full">
-
-                        <label for="contactNotes">
-                            Notes
-                        </label>
-
-                        <textarea
-                            id="contactNotes"
-                            rows="3"
-                            maxlength="5000"
-                            placeholder="Additional notes..."
-                        ></textarea>
-
-                    </div>
-
-                </div>
-
 
 
                 <div
-                    id="contactFormNotice"
-                    class="contact-form-notice"
-                ></div>
+                    id="messagesConversationList"
+                    class="messages-conversation-list"
+                >
 
+                    <div class="messages-inbox-empty">
+                        <div class="messages-inbox-empty-icon">
+                            💬
+                        </div>
 
+                        <div>
+                            No conversations yet
+                        </div>
 
-                <div class="contact-form-actions">
-
-
-                    <button
-                        id="cancelContactButton"
-                        class="contact-cancel-button"
-                        type="button"
-                    >
-                        Cancel
-                    </button>
-
-
-                    <button
-                        id="saveContactButton"
-                        class="contact-save-button"
-                        type="button"
-                    >
-                        Save Contact
-                    </button>
+                        <small>
+                            Incoming and outgoing messages will appear here.
+                        </small>
+                    </div>
 
                 </div>
+
+            </aside>
+
+
+            <!-- =================================
+                 CHAT AREA
+            ================================== -->
+
+            <section class="messages-chat-panel">
+
+                <!-- CHAT HEADER -->
+
+                <div
+                    id="messagesChatHeader"
+                    class="messages-chat-header"
+                >
+
+                    <button
+                        id="messagesBackButton"
+                        class="messages-back-button"
+                        type="button"
+                        title="Back to inbox"
+                    >
+                        ‹
+                    </button>
+
+
+                    <div class="messages-chat-contact">
+
+                        <div
+                            id="messagesChatContact"
+                            class="messages-chat-contact-number"
+                        >
+                            Select a conversation
+                        </div>
+
+                        <div
+                            id="messagesChatStatus"
+                            class="messages-chat-contact-status"
+                        >
+                            Your Dialeaze messages
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================
+                     HIDDEN RECIPIENT FIELD
+                     Kept for existing messaging logic
+                ================================== -->
+
+                <input
+                    id="messageRecipient"
+                    type="tel"
+                    autocomplete="off"
+                    tabindex="-1"
+                    aria-hidden="true"
+                >
+
+
+                <!-- CONVERSATION -->
+
+                <div
+                    id="messagesConversation"
+                    class="messages-conversation"
+                >
+
+                    <div class="messages-empty">
+                        Select a conversation to view messages.
+                    </div>
+
+                </div>
+
+
+                <!-- =================================
+                     COMPOSER
+                ================================== -->
+
+                <div class="message-composer">
+
+                    <textarea
+                        id="messageText"
+                        rows="2"
+                        maxlength="1600"
+                        placeholder="Type a message..."
+                    ></textarea>
+
+
+                    <div class="message-composer-bottom">
+
+                        <span
+                            id="messageCharacterCount"
+                            class="message-character-count"
+                        >
+                            0 / 1600
+                        </span>
+
+
+                        <button
+                            id="sendMessageButton"
+                            class="send-message-button"
+                            type="button"
+                        >
+
+                            <span>
+                                ➤
+                            </span>
+
+                            Send
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- =========================================
+     BUSINESS CONTACTS MODAL
+========================================= -->
+
+<div
+    id="contactsOverlay"
+    class="contacts-overlay"
+>
+
+    <div class="contacts-window">
+
+        <div class="contacts-header">
+
+            <div>
+                <div class="contacts-window-title">
+                    Business Contacts
+                </div>
+
+                <div class="contacts-window-subtitle">
+                    Save and manage your business contacts
+                </div>
+            </div>
+
+            <button
+                id="closeContactsButton"
+                class="contacts-close"
+                type="button"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <div class="contacts-toolbar">
+
+            <input
+                id="contactsSearch"
+                type="text"
+                placeholder="Search contacts..."
+                autocomplete="off"
+            >
+
+            <button
+                id="addContactButton"
+                class="contacts-add-button"
+                type="button"
+            >
+                + Add Contact
+            </button>
+
+        </div>
+
+
+        <div
+            id="contactsList"
+            class="contacts-list"
+        >
+            <div class="contacts-empty">
+                No contacts yet.
+            </div>
+        </div>
+
+
+        <!-- ADD / EDIT CONTACT FORM -->
+
+        <div
+            id="contactFormPanel"
+            class="contact-form-panel"
+        >
+
+            <div class="contact-form-title">
+                Add Contact
+            </div>
+
+
+            <div class="contact-form-grid">
+
+                <div class="contact-field">
+
+                    <label for="contactName">
+                        Name
+                    </label>
+
+                    <input
+                        id="contactName"
+                        type="text"
+                        maxlength="150"
+                        placeholder="John Smith"
+                    >
+
+                </div>
+
+
+                <div class="contact-field">
+
+                    <label for="contactPhone">
+                        Phone Number
+                    </label>
+
+                    <input
+                        id="contactPhone"
+                        type="tel"
+                        maxlength="30"
+                        placeholder="+1 555 123 4567"
+                    >
+
+                </div>
+
+
+                <div class="contact-field">
+
+                    <label for="contactEmail">
+                        Email
+                    </label>
+
+                    <input
+                        id="contactEmail"
+                        type="email"
+                        maxlength="255"
+                        placeholder="john@example.com"
+                    >
+
+                </div>
+
+
+                <div class="contact-field">
+
+                    <label for="contactCompany">
+                        Company
+                    </label>
+
+                    <input
+                        id="contactCompany"
+                        type="text"
+                        maxlength="150"
+                        placeholder="ABC Company"
+                    >
+
+                </div>
+
+
+                <div class="contact-field contact-field-full">
+
+                    <label for="contactNotes">
+                        Notes
+                    </label>
+
+                    <textarea
+                        id="contactNotes"
+                        rows="3"
+                        maxlength="5000"
+                        placeholder="Additional notes..."
+                    ></textarea>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="contactFormNotice"
+                class="contact-form-notice"
+            ></div>
+
+
+            <div class="contact-form-actions">
+
+                <button
+                    id="cancelContactButton"
+                    class="contact-cancel-button"
+                    type="button"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    id="saveContactButton"
+                    class="contact-save-button"
+                    type="button"
+                >
+                    Save Contact
+                </button>
 
             </div>
 
@@ -1156,121 +942,67 @@
 
     </div>
 
+</div>
 
-
-    <!-- =====================================
-         REMOTE WEBRTC AUDIO
-    ====================================== -->
+    <!-- Remote WebRTC Audio -->
 
     <audio
         id="remoteMedia"
         autoplay
     ></audio>
+<div id="incomingCallPanel" class="dialeaze-incoming-overlay">
 
+    <div class="dialeaze-incoming-card">
 
+        <div class="dialeaze-incoming-top">
+            <span class="dialeaze-live-dot"></span>
+            <span>INCOMING CALL</span>
+        </div>
 
-    <!-- =====================================
-         INCOMING CALL
-    ====================================== -->
+        <div class="dialeaze-phone-ring">
+            <span>☎</span>
+        </div>
 
-    <div
-        id="incomingCallPanel"
-        class="dialeaze-incoming-overlay"
-    >
+        <div class="dialeaze-incoming-title">
+            Incoming call
+        </div>
 
-        <div class="dialeaze-incoming-card">
+        <div id="incomingCallerText" class="dialeaze-caller-number">
+            Unknown Number
+        </div>
 
+        <div class="dialeaze-caller-label">
+            Calling your business number
+        </div>
 
-            <div class="dialeaze-incoming-top">
+        <div class="dialeaze-incoming-buttons">
 
-                <span class="dialeaze-live-dot"></span>
+            <button
+                id="rejectCallButton"
+                type="button"
+                class="dialeaze-call-btn dialeaze-decline">
+                <span>✕</span>
+                <strong>Decline</strong>
+            </button>
 
-                <span>
-                    INCOMING CALL
-                </span>
-
-            </div>
-
-
-            <div class="dialeaze-phone-ring">
-
-                <span>
-                    ☎
-                </span>
-
-            </div>
-
-
-            <div class="dialeaze-incoming-title">
-                Incoming call
-            </div>
-
-
-            <div
-                id="incomingCallerText"
-                class="dialeaze-caller-number"
-            >
-                Unknown Number
-            </div>
-
-
-            <div class="dialeaze-caller-label">
-                Calling your business number
-            </div>
-
-
-            <div class="dialeaze-incoming-buttons">
-
-
-                <button
-                    id="rejectCallButton"
-                    type="button"
-                    class="dialeaze-call-btn dialeaze-decline"
-                >
-
-                    <span>
-                        ✕
-                    </span>
-
-                    <strong>
-                        Decline
-                    </strong>
-
-                </button>
-
-
-                <button
-                    id="acceptCallButton"
-                    type="button"
-                    class="dialeaze-call-btn dialeaze-answer"
-                >
-
-                    <span>
-                        ✓
-                    </span>
-
-                    <strong>
-                        Answer
-                    </strong>
-
-                </button>
-
-            </div>
+            <button
+                id="acceptCallButton"
+                type="button"
+                class="dialeaze-call-btn dialeaze-answer">
+                <span>✓</span>
+                <strong>Answer</strong>
+            </button>
 
         </div>
 
     </div>
 
+</div>
 
 
 </div>
 
-
-<script
-    type="module"
-    src="app.js"
-></script>
-
+   <script type="module" src="app.js"></script>
 
 </body>
 
