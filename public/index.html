@@ -84,149 +84,93 @@
              MAIN
         ====================================== -->
 
-        <main class="main-content">
+        <main class="main-content dialeaze-dashboard">
 
+    <aside class="dialeaze-sidebar right-column">
 
-            <!-- =================================
-                 LEFT SIDE
-            ================================== -->
+        <div class="sidebar-brand">
+            <div class="sidebar-logo">D</div>
+            <div>
+                <div class="sidebar-brand-name">Dialeaze</div>
+                <div class="sidebar-brand-subtitle">Business Dialer</div>
+            </div>
+        </div>
 
-            <section class="left-column">
-
-
-                <!-- BUSINESS NUMBER -->
-
-                <div class="business-card">
-
-                    <div class="business-label">
-                        BUSINESS NUMBER
-                    </div>
-
-                    <div
-                        class="business-number"
-                        id="businessNumber"
-                    >
-                        Loading...
-                    </div>
-
-
-                    <div class="business-bottom">
-
-                        <div class="on-call-status">
-
-                            <span
-                                class="small-green-dot"
-                            ></span>
-
-                            <span id="callTimerText">
-                                Ready
-                            </span>
-
-                        </div>
-
-
-                        <div class="audio-buttons">
-
-                            <button
-                                class="circle-button"
-                                type="button"
-                                title="Microphone"
-                            >
-                                🎙
-                            </button>
-
-
-                            <button
-                                class="circle-button mute-button"
-                                type="button"
-                                title="Mute"
-                            >
-                                🎙
-                            </button>
-
-                        </div>
-
-                    </div>
-
+        <div class="sidebar-user">
+            <div class="sidebar-avatar">
+                <span>DW</span>
+            </div>
+            <div class="sidebar-user-info">
+                <div class="sidebar-user-name">Your workspace</div>
+                <div class="sidebar-user-status">
+                    <span class="sidebar-online-dot"></span>
+                    Online
                 </div>
+            </div>
+        </div>
+
+        <div class="sidebar-section-label">WORKSPACE</div>
+
+        <nav class="sidebar-nav">
+
+            <div class="sidebar-nav-item is-active">
+                <span class="sidebar-nav-icon">⌕</span>
+                <span>Dialer</span>
+            </div>
+
+            <div class="sidebar-nav-item">
+                <span class="sidebar-nav-icon">↗</span>
+                <span>Recent Calls</span>
+            </div>
+
+            <div class="sidebar-nav-item" id="messagesCard">
+                <span class="sidebar-nav-icon">▣</span>
+                <span>Messages</span>
+                <span class="sidebar-nav-arrow">›</span>
+            </div>
+
+            <div class="sidebar-nav-item" id="contactsCard">
+                <span class="sidebar-nav-icon">♟</span>
+                <span>Contacts</span>
+                <span class="sidebar-nav-arrow">›</span>
+            </div>
+
+            <div
+                class="sidebar-nav-item"
+                id="recordingsCard"
+                onclick="window.open('https://dialeaze.com/dialeaze-recordings/', '_blank')"
+                style="cursor:pointer;"
+            >
+                <span class="sidebar-nav-icon">◉</span>
+                <span>Recordings</span>
+                <span class="sidebar-nav-arrow">›</span>
+            </div>
+
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="sidebar-footer-line"></div>
+            <div class="sidebar-footer-text">
+                <span class="sidebar-footer-dot"></span>
+                Secure connection
+            </div>
+        </div>
+
+    </aside>
 
 
+    <section class="dialer-card">
 
-                <!-- =================================
-                     RECENT CALLS
-                ================================== -->
+        <div class="phone-device">
 
-                <div class="recent-card">
+            <div class="phone-speaker"></div>
 
-                    <div class="recent-header">
+            <div class="phone-screen">
 
-                        <h2>
-                            Recent calls
-                        </h2>
-
-                        <span>
-                            Today
-                        </span>
-
-                    </div>
-
-
-                    <div
-                        id="recentCallsList"
-                        class="recent-calls-list"
-                    >
-
-                        <div class="empty-recent">
-                            No recent calls
-                        </div>
-
-                    </div>
-
-
-                    <button
-                        id="historyToggleButton"
-                        class="history-button"
-                        type="button"
-                    >
-                        CALL HISTORY
-                    </button>
-
-
-                    <div
-                        id="callHistoryPanel"
-                        class="call-history-panel"
-                    >
-
-                        <div class="history-title">
-                            All call history
-                        </div>
-
-
-                        <div id="callHistoryList">
-
-                            <p class="empty-history">
-                                No calls yet
-                            </p>
-
-                        </div>
-
-                    </div>
-
+                <div class="phone-topline">
+                    <span>Dialer</span>
+                    <span class="phone-live-dot"></span>
                 </div>
-
-
-            </section>
-
-               
-
-            <!-- =================================
-                 RIGHT SIDE DIALER
-            ================================== -->
-
-            <section class="dialer-card">
-
-
-                <!-- NUMBER INPUT -->
 
                 <div class="number-display">
 
@@ -236,7 +180,6 @@
                         autocomplete="off"
                         placeholder="+1 555 123 4567"
                     >
-
 
                     <button
                         id="clearButton"
@@ -249,90 +192,24 @@
 
                 </div>
 
-
-
-                <!-- =================================
-                     DIALPAD
-                ================================== -->
-
                 <div class="dialpad">
 
+                    <button type="button"><span>1</span></button>
+                    <button type="button"><span>2</span><small>ABC</small></button>
+                    <button type="button"><span>3</span><small>DEF</small></button>
+                    <button type="button"><span>4</span><small>GHI</small></button>
+                    <button type="button"><span>5</span><small>JKL</small></button>
+                    <button type="button"><span>6</span><small>MNO</small></button>
+                    <button type="button"><span>7</span><small>PQRS</small></button>
+                    <button type="button"><span>8</span><small>TUV</small></button>
+                    <button type="button"><span>9</span><small>WXYZ</small></button>
+                    <button type="button"><span>*</span></button>
+                    <button type="button"><span>0</span></button>
+                    <button type="button"><span>#</span></button>
 
-                    <button type="button">
-                        <span>1</span>
-                    </button>
-
-
-                    <button type="button">
-                        <span>2</span>
-                        <small>ABC</small>
-                    </button>
-
-
-                    <button type="button">
-                        <span>3</span>
-                        <small>DEF</small>
-                    </button>
-
-
-                    <button type="button">
-                        <span>4</span>
-                        <small>GHI</small>
-                    </button>
-
-
-                    <button type="button">
-                        <span>5</span>
-                        <small>JKL</small>
-                    </button>
-
-
-                    <button type="button">
-                        <span>6</span>
-                        <small>MNO</small>
-                    </button>
-
-
-                    <button type="button">
-                        <span>7</span>
-                        <small>PQRS</small>
-                    </button>
-
-
-                    <button type="button">
-                        <span>8</span>
-                        <small>TUV</small>
-                    </button>
-
-
-                    <button type="button">
-                        <span>9</span>
-                        <small>WXYZ</small>
-                    </button>
-
-
-                    <button type="button">
-                        <span>*</span>
-                    </button>
-
-
-                    <button type="button">
-                        <span>0</span>
-                    </button>
-
-
-                    <button type="button">
-                        <span>#</span>
-                    </button>
-
-
-                    <button
-                        type="button"
-                        class="extra-key"
-                    >
+                    <button type="button" class="extra-key">
                         <span>+</span>
                     </button>
-
 
                     <button
                         id="backspaceButton"
@@ -341,7 +218,6 @@
                     >
                         <span>⌫</span>
                     </button>
-
 
                     <button
                         id="clearKeyButton"
@@ -353,12 +229,6 @@
 
                 </div>
 
-
-
-                <!-- =================================
-                     CALL CONTROLS
-                ================================== -->
-
                 <div class="call-controls">
 
                     <button
@@ -366,156 +236,156 @@
                         class="call-button"
                         type="button"
                     >
-
-                        <span class="phone-icon">
-                            ☎
-                        </span>
-
-                        Call
-
+                        <span class="phone-icon">☎</span>
+                        <span>Call</span>
                     </button>
-<button
-    id="muteButton"
-    class="mute-button"
-    type="button"
-    disabled
->
-    <span>🎙</span>
-    <span class="mute-button-text">Mute</span>
-</button>
-<button
-    id="holdButton"
-    class="hold-button"
-    type="button"
-    disabled
->
-    <span>⏸</span>
-    <span class="hold-button-text">Hold</span>
-</button>
+
+                    <button
+                        id="muteButton"
+                        class="mute-button"
+                        type="button"
+                        disabled
+                    >
+                        <span>🎙</span>
+                        <span class="mute-button-text">Mute</span>
+                    </button>
+
+                    <button
+                        id="holdButton"
+                        class="hold-button"
+                        type="button"
+                        disabled
+                    >
+                        <span>⏸</span>
+                        <span class="hold-button-text">Hold</span>
+                    </button>
 
                     <button
                         id="hangupButton"
                         class="hangup-button"
                         type="button"
                     >
-
-                        <span>
-                            ☎
-                        </span>
-
-                        Hang up
-
+                        <span>☎</span>
+                        <span>Hang up</span>
                     </button>
 
                 </div>
 
+            </div>
 
-                 </section>
+        </div>
 
-
-            <!-- =================================
-                 RIGHT SIDE
-            ================================== -->
-
-            <section class="right-column">
+    </section>
 
 
-                <!-- =================================
-                     MESSAGES CARD
-                ================================== -->
+    <section class="left-column right-info-panel">
 
-                <div
-                    class="messages-card"
-                    id="messagesCard"
-                >
+        <div class="business-card">
 
-                    <div class="messages-card-icon">
-                        💬
+            <div class="business-card-top">
+
+                <div>
+                    <div class="business-label">BUSINESS NUMBER</div>
+
+                    <div
+                        class="business-number"
+                        id="businessNumber"
+                    >
+                        Loading...
                     </div>
+                </div>
 
+                <div class="business-phone-badge">☎</div>
 
-                    <div class="messages-card-content">
+            </div>
 
-                        <div class="messages-card-title">
-                            Messages
-                        </div>
+            <div class="business-wave" aria-hidden="true">
+                <i></i><i></i><i></i><i></i><i></i>
+                <i></i><i></i><i></i><i></i><i></i>
+                <i></i><i></i><i></i><i></i><i></i>
+                <i></i><i></i><i></i><i></i><i></i>
+                <i></i><i></i><i></i><i></i><i></i>
+            </div>
 
-                        <div class="messages-card-subtitle">
-                            Send and receive SMS
-                        </div>
+            <div class="business-bottom">
 
-                    </div>
+                <div class="on-call-status">
+                    <span class="small-green-dot"></span>
+                    <span id="callTimerText">Ready</span>
+                </div>
 
+                <div class="audio-buttons">
 
-                    <div class="messages-card-arrow">
-                        ›
-                    </div>
+                    <button
+                        class="circle-button"
+                        type="button"
+                        title="Microphone"
+                    >
+                        🎙
+                    </button>
+
+                    <button
+                        class="circle-button mute-button"
+                        type="button"
+                        title="Mute"
+                    >
+                        🎙
+                    </button>
 
                 </div>
 
+            </div>
+
+        </div>
 
 
-                <!-- =================================
-                     CONTACTS CARD
-                ================================== -->
+        <div class="recent-card">
 
-                <div class="contacts-card" id="contactsCard">
+            <div class="recent-header">
 
-                    <div class="contacts-icon">
-                        👥
-                    </div>
-
-                    <div>
-
-                        <div class="contacts-title">
-                            Business contacts
-                        </div>
-
-                        <div class="contacts-subtitle">
-                            Manage your contacts
-                        </div>
-
-                    </div>
-
+                <div>
+                    <h2>Recent calls</h2>
+                    <div class="recent-subtitle">Your latest activity</div>
                 </div>
- <!-- =================================
-                     CALL RECORDINGS CARD
-                ================================== -->
 
-                <div
-    class="messages-card recordings-card"
-    id="recordingsCard"
-                    onclick="window.open('https://dialeaze.com/dialeaze-recordings/', '_blank')"
-                    style="cursor:pointer;"
-                >
+                <span>Today</span>
 
-                    <div class="messages-card-icon">
-                        🎙️
-                    </div>
+            </div>
 
+            <div
+                id="recentCallsList"
+                class="recent-calls-list"
+            >
+                <div class="empty-recent">No recent calls</div>
+            </div>
 
-                    <div class="messages-card-content">
+            <button
+                id="historyToggleButton"
+                class="history-button"
+                type="button"
+            >
+                CALL HISTORY
+                <span>→</span>
+            </button>
 
-                        <div class="messages-card-title">
-                            Call recordings
-                        </div>
+            <div
+                id="callHistoryPanel"
+                class="call-history-panel"
+            >
 
-                        <div class="messages-card-subtitle">
-                            Listen to your recorded calls
-                        </div>
+                <div class="history-title">All call history</div>
 
-                    </div>
+                <div id="callHistoryList">
+                    <p class="empty-history">No calls yet</p>
+                </div>
 
+            </div>
 
-                    <div class="messages-card-arrow">
-                        ›
-                    </div>
+        </div>
 
-                                </div>
+    </section>
 
-            </section>
-
-        </main>
+</main>
 
     </div>
 
