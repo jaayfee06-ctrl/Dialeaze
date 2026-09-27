@@ -4492,3 +4492,239 @@ border-radius: 22px;
     }
 
 }
+
+/* =========================================================
+   DIALEAZE — PREMIUM DIALER PANEL
+========================================================= */
+
+/* Main dialer shell */
+.dialer-card {
+    position: relative !important;
+    overflow: hidden !important;
+
+    background:
+        radial-gradient(
+            circle at 50% 18%,
+            rgba(59, 130, 246, 0.07),
+            transparent 38%
+        ),
+        linear-gradient(
+            145deg,
+            #fdfefe 0%,
+            #f6f9fc 55%,
+            #eef4f8 100%
+        ) !important;
+
+    border: 1px solid rgba(148, 163, 184, 0.22) !important;
+
+    box-shadow:
+        0 14px 35px rgba(15, 23, 42, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+}
+
+
+/* Soft ambient glow behind keypad */
+.dialer-card::before {
+    content: "";
+    position: absolute;
+
+    width: 220px;
+    height: 220px;
+
+    top: 115px;
+    left: 50%;
+
+    transform: translateX(-50%);
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(56, 189, 248, 0.08) 0%,
+            rgba(56, 189, 248, 0.035) 38%,
+            transparent 72%
+        );
+
+    pointer-events: none;
+
+    z-index: 0;
+}
+
+
+/* Keep actual dialer content above glow */
+.dialer-card > * {
+    position: relative;
+    z-index: 1;
+}
+
+
+/* =========================================================
+   NUMBER DISPLAY
+========================================================= */
+
+.dialer-card input {
+    background:
+        linear-gradient(
+            145deg,
+            #ffffff,
+            #f8fafc
+        ) !important;
+
+    border: 1px solid rgba(148, 163, 184, 0.20) !important;
+
+    box-shadow:
+        0 5px 15px rgba(15, 23, 42, 0.06),
+        inset 0 1px 2px rgba(255, 255, 255, 0.95) !important;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease !important;
+}
+
+
+.dialer-card input:focus {
+    border-color: rgba(56, 189, 248, 0.45) !important;
+
+    box-shadow:
+        0 6px 18px rgba(15, 23, 42, 0.07),
+        0 0 0 3px rgba(56, 189, 248, 0.08) !important;
+
+    outline: none !important;
+}
+
+
+/* =========================================================
+   DIAL PAD AREA
+========================================================= */
+
+.dialpad {
+    position: relative !important;
+    z-index: 2 !important;
+
+    padding: 4px 2px !important;
+}
+
+
+/* =========================================================
+   PREMIUM ROUND BUTTONS
+========================================================= */
+
+.dialpad button {
+    background:
+        radial-gradient(
+            circle at 35% 25%,
+            #ffffff 0%,
+            #f9fbfd 52%,
+            #edf2f6 100%
+        ) !important;
+
+    border: 1px solid rgba(148, 163, 184, 0.30) !important;
+
+    box-shadow:
+        0 6px 14px rgba(15, 23, 42, 0.10),
+        0 0 0 2px rgba(255, 255, 255, 0.55),
+        inset 0 1px 2px rgba(255, 255, 255, 0.95) !important;
+
+    transition:
+        transform 0.16s ease,
+        box-shadow 0.16s ease,
+        border-color 0.16s ease,
+        background 0.16s ease !important;
+}
+
+
+/* Hover */
+.dialpad button:hover {
+    transform: translateY(-2px) !important;
+
+    border-color: rgba(56, 189, 248, 0.50) !important;
+
+    background:
+        radial-gradient(
+            circle at 35% 25%,
+            #ffffff 0%,
+            #f4faff 55%,
+            #e7f3fa 100%
+        ) !important;
+
+    box-shadow:
+        0 9px 20px rgba(15, 23, 42, 0.13),
+        0 0 0 3px rgba(56, 189, 248, 0.07),
+        inset 0 1px 2px rgba(255, 255, 255, 1) !important;
+}
+
+
+/* Press */
+.dialpad button:active {
+    transform: scale(0.94) !important;
+
+    box-shadow:
+        0 3px 7px rgba(15, 23, 42, 0.13),
+        inset 0 2px 5px rgba(15, 23, 42, 0.08) !important;
+}
+
+
+/* =========================================================
+   NUMBER TYPOGRAPHY
+========================================================= */
+
+.dialpad button span {
+    font-weight: 500 !important;
+    color: #0f172a !important;
+}
+
+.dialpad button small {
+    color: #64748b !important;
+    opacity: 0.85 !important;
+}
+
+
+/* =========================================================
+   SUBTLE SPECIAL BUTTONS
+   + / BACKSPACE / C
+========================================================= */
+
+.dialpad button:nth-last-child(-n+3) {
+    background:
+        linear-gradient(
+            145deg,
+            #f8fbfd,
+            #edf3f7
+        ) !important;
+}
+
+
+/* Clear button */
+.dialpad button:last-child {
+    color: #334155 !important;
+}
+
+
+/* =========================================================
+   DIALER CARD — BOTTOM FINISH
+========================================================= */
+
+.dialer-card .call-controls {
+    margin-top: 8px !important;
+}
+
+
+/* Slight separation above controls */
+.dialer-card .call-controls::before {
+    content: "";
+    position: absolute;
+    left: 12%;
+    right: 12%;
+    height: 1px;
+
+    transform: translateY(-9px);
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(148, 163, 184, 0.20),
+            transparent
+        );
+
+    pointer-events: none;
+}
