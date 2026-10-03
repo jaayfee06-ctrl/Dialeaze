@@ -933,6 +933,7 @@ let client = null;
 let signalWireInitializationPromise = null;
 
 let currentCall = null;
+let currentIncomingCall = null;
 // =========================================================
 // DIALEAZE INCOMING CALL RINGTONE
 // =========================================================
@@ -3133,11 +3134,12 @@ if (!inboundHistorySaved) {
                 hangupButton.disabled = true;
                 window.dialeazeOutboundLocked = false;
 
-                if (currentCall === ringingCall) {
+                if (currentIncomingCall === ringingCall) {
 
     resetMuteControl();
     resetHoldControl();
 
+    currentIncomingCall = null;
     currentCall = null;
 }
             }
@@ -3977,18 +3979,28 @@ if (acceptCallButton) {
 
     acceptCallButton.addEventListener("click", async () => {
 
-        if (!currentCall) {
-            console.warn("No incoming call to answer.");
-            return;
-        }
+        if (!currentIncomingCall) {
+    console.warn("No incoming call to answer.");
+    return;
+}
 
-        try {
+try {
 
-            console.log("✅ Accepting incoming call...");
-            currentCall.answer({
-    audio: true,
-    video: false
-});
+    console.log(
+        "✅ Accepting incoming SignalWire call..."
+    );
+
+    currentCall =
+        currentIncomingCall;
+
+    await currentIncomingCall.answer({
+        audio: true,
+        video: false
+    });
+
+    console.log(
+        "✅ Incoming SignalWire call answered."
+    );
 
 console.log("✅ Incoming call answered.");
 
@@ -4078,6 +4090,7 @@ inboundCallRejected = true;
         hangupButton.disabled = true;
 
         currentCall = null;
+        currentIncomingCall = null;
     });
 }
 
