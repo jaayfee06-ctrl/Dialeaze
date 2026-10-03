@@ -933,11 +933,7 @@ let client = null;
 let signalWireInitializationPromise = null;
 
 let currentCall = null;
-let currentIncomingCall = null;
 
-// Prevent the same SignalWire incoming call from being
-// processed more than once by incomingCalls$.
-const handledIncomingCallIds = new Set();
 // =========================================================
 // DIALEAZE INCOMING CALL RINGTONE
 // =========================================================
@@ -2869,25 +2865,16 @@ if (!ringingCall) {
     return;
 }
 
-const ringingCallId =
-    ringingCall.id ||
-    ringingCall.callId ||
-    null;
-
-if (
-    ringingCallId &&
-    handledIncomingCallIds.has(ringingCallId)
-) {
-    console.log(
-        "⏭️ Ignoring already-processed incoming call:",
-        ringingCallId
-    );
+if (ringingCall === currentCall) {
     return;
 }
 
-if (ringingCallId) {
-    handledIncomingCallIds.add(ringingCallId);
-}
+console.log(
+    "📲 INCOMING SIGNALWIRE CALL:",
+    ringingCall
+);
+
+currentCall = ringingCall;
 
 console.log(
     "📲 INCOMING SIGNALWIRE CALL:",
@@ -2980,8 +2967,6 @@ if (
 
 }
 
-
-currentCall = ringingCall;
 
 attachMuteControl(
     currentCall
@@ -3164,12 +3149,10 @@ if (!inboundHistorySaved) {
                 hangupButton.disabled = true;
                 window.dialeazeOutboundLocked = false;
 
-                if (currentIncomingCall === ringingCall) {
-
+               if (currentCall === ringingCall) {
     resetMuteControl();
     resetHoldControl();
 
-    currentIncomingCall = null;
     currentCall = null;
 }
             }
@@ -4022,9 +4005,7 @@ try {
         video: false
     });
 
-    console.log(
-        "✅ Incoming SignalWire call answered."
-    );
+    console.log("✅ Incoming SignalWire call answered.");
 
 console.log("✅ Incoming call answered.");
 
@@ -4114,7 +4095,7 @@ inboundCallRejected = true;
         hangupButton.disabled = true;
 
         currentCall = null;
-        currentIncomingCall = null;
+       
     });
 }
 
@@ -4229,7 +4210,7 @@ if (digits.length === 10) {
                 false;
 
             status.textContent =
-                "Authorizing call...";
+    "Calling...";
 
 
             try {
