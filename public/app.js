@@ -1227,7 +1227,7 @@ function startBrowserCallRecording() {
                 window.webkitAudioContext)();
 
         browserRecordingDestination =
-            browserRecordingAudioContext.browserRecordingDestination();
+            browserRecordingAudioContext.createMediaStreamDestination();
 
         const localSource =
             browserRecordingAudioContext.createMediaStreamSource(
