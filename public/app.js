@@ -3287,12 +3287,20 @@ console.log("🧪 RAW OUTBOUND STATUS:", JSON.stringify(callStatus));
     }
 
     startCallTimer();
-}
 
+    if (
+        browserLocalStream &&
+        browserRemoteStream &&
+        currentCall === ringingCall
+    ) {
+        startBrowserCallRecording();
+    }
+}
             if (
                 callStatus === "disconnected" ||
                 callStatus === "destroyed"
             ) {
+                stopBrowserCallRecording();
                 playCallEndedSound(
     ringingCall.id ||
     ringingCall.callId ||
@@ -3414,15 +3422,43 @@ if (!inboundHistorySaved) {
 }
             }
         });
+// Browser recording: receive inbound local microphone stream
+if (ringingCall.localStream$) {
+    ringingCall.localStream$.subscribe((stream) => {
 
+        console.log(
+            "🎙️ Incoming local WebRTC stream received."
+        );
+
+        browserLocalStream = stream;
+
+        if (
+            inboundAnsweredAt &&
+            browserRemoteStream &&
+            currentCall === ringingCall
+        ) {
+            startBrowserCallRecording();
+        }
+    });
+}
         // Receive the other person's audio
         if (ringingCall.remoteStream$) {
 
-            ringingCall.remoteStream$.subscribe(async (stream) => {
+           ringingCall.remoteStream$.subscribe(async (stream) => {
 
-                console.log(
-                    "🔊 Incoming remote audio stream received."
-                );
+    browserRemoteStream = stream;
+
+    if (
+        inboundAnsweredAt &&
+        browserLocalStream &&
+        currentCall === ringingCall
+    ) {
+        startBrowserCallRecording();
+    }
+
+    console.log(
+        "🔊 Incoming remote audio stream received."
+    );
 
                 let remoteAudio =
                     document.getElementById(
