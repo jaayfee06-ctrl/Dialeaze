@@ -2981,8 +2981,6 @@ if (
 }
 
 
-currentIncomingCall = ringingCall;
-
 currentCall = ringingCall;
 
 attachMuteControl(
@@ -4011,21 +4009,15 @@ if (acceptCallButton) {
 
     acceptCallButton.addEventListener("click", async () => {
 
-        if (!currentIncomingCall) {
+      if (!currentCall) {
     console.warn("No incoming call to answer.");
     return;
 }
 
 try {
+    console.log("✅ Accepting incoming SignalWire call...");
 
-    console.log(
-        "✅ Accepting incoming SignalWire call..."
-    );
-
-    currentCall =
-        currentIncomingCall;
-
-    await currentIncomingCall.answer({
+    currentCall.answer({
         audio: true,
         video: false
     });
