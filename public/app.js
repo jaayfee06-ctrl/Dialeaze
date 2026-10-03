@@ -1179,6 +1179,278 @@ let muteStateSubscription = null;
 let muteOperationInProgress = false;
 let currentHoldCall = null;
 
+// =========================================================
+// BROWSER CALL RECORDING
+// =========================================================
+let browserCallRecorder = null;
+let browserRecordingChunks = [];
+let browserRecordingAudioContext = null;
+let br9yMnTm4NSzvG9rrwjM2ec8xZgh1cafXH8 = null;
+let browserLocalStream = null;
+let browserRemoteStream = null;
+let browserRecordingStarted = false;
+
+// =========================================================
+// START BROWSER CALL RECORDING
+// =========================================================
+function startBrowserCallRecording() {
+    if (browserRecordingStarted) {
+        return;
+    }
+
+    if (!browserLocalStream || !browserRemoteStream) {
+        console.warn(
+            "⚠️ Browser recording waiting for local + remote streams."
+        );
+        return;
+    }
+
+    const localAudioTracks =
+        browserLocalStream.getAudioTracks();
+
+    const remoteAudioTracks =
+        browserRemoteStream.getAudioTracks();
+
+    if (
+        localAudioTracks.length === 0 ||
+        remoteAudioTracks.length === 0
+    ) {
+        console.warn(
+            "⚠️ Browser recording requires both local and remote audio tracks."
+        );
+        return;
+    }
+
+    try {
+        browserRecordingAudioContext =
+            new (window.AudioContext ||
+                window.webkitAudioContext)();
+
+        br9yMnTm4NSzvG9rrwjM2ec8xZgh1cafXH8 =
+            browserRecordingAudioContext.cr9yMnTm4NSzvG9rrwjM2ec8xZgh1cafXH8();
+
+        const localSource =
+            browserRecordingAudioContext.createMediaStreamSource(
+                browserLocalStream
+            );
+
+        const remoteSource =
+            browserRecordingAudioContext.createMediaStreamSource(
+                browserRemoteStream
+            );
+
+        localSource.connect(
+            br9yMnTm4NSzvG9rrwjM2ec8xZgh1cafXH8
+        );
+
+        remoteSource.connect(
+            br9yMnTm4NSzvG9rrwjM2ec8xZgh1cafXH8
+        );
+
+        const recordingStream =
+            br9yMnTm4NSzvG9rrwjM2ec8xZgh1cafXH8.stream;
+
+        const mimeTypes = [
+            "audio/webm;codecs=opus",
+            "audio/webm"
+        ];
+
+        let selectedMimeType = "";
+
+        for (const mimeType of mimeTypes) {
+            if (
+                MediaRecorder.isTypeSupported(
+                    mimeType
+                )
+            ) {
+                selectedMimeType = mimeType;
+                break;
+            }
+        }
+
+        browserCallRecorder = selectedMimeType
+            ? new MediaRecorder(
+                  recordingStream,
+                  {
+                      mimeType: selectedMimeType
+                  }
+              )
+            : new MediaRecorder(
+                  recordingStream
+              );
+
+        browserRecordingChunks = [];
+
+        browserCallRecorder.ondataavailable =
+            (event) => {
+                if (
+                    event.data &&
+                    event.data.size > 0
+                ) {
+                    browserRecordingChunks.push(
+                        event.data
+                    );
+                }
+            };
+
+        browserCallRecorder.onstart = () => {
+            browserRecordingStarted = true;
+
+            console.log(
+                "🎙️ BROWSER RECORDING STARTED"
+            );
+        };
+
+        browserCallRecorder.onerror = (event) => {
+            console.error(
+                "❌ Browser recording error:",
+                event
+            );
+        };
+
+        browserCallRecorder.start(1000);
+
+        console.log(
+            "🎙️ Browser recorder initialized:",
+            {
+                mimeType:
+                    browserCallRecorder.mimeType,
+                localTracks:
+                    localAudioTracks.length,
+                remoteTracks:
+                    remoteAudioTracks.length
+            }
+        );
+
+    } catch (error) {
+        console.error(
+            "❌ Could not start browser recording:",
+            error
+        );
+
+        browserCallRecorder = null;
+        browserRecordingChunks = [];
+        browserRecordingStarted = false;
+
+        if (browserRecordingAudioContext) {
+            browserRecordingAudioContext
+                .close()
+                .catch(() => {});
+        }
+
+        browserRecordingAudioContext = null;
+        br9yMnTm4NSzvG9rrwjM2ec8xZgh1cafXH8 = null;
+    }
+}
+
+
+// =========================================================
+// STOP BROWSER CALL RECORDING
+// =========================================================
+function stopBrowserCallRecording() {
+    if (
+        !browserCallRecorder ||
+        !browserRecordingStarted
+    ) {
+        return;
+    }
+
+    console.log(
+        "🛑 STOPPING BROWSER CALL RECORDING..."
+    );
+
+    browserCallRecorder.onstop = () => {
+        try {
+            const mimeType =
+                browserCallRecorder.mimeType ||
+                "audio/webm";
+
+            const recordingBlob =
+                new Blob(
+                    browserRecordingChunks,
+                    {
+                        type: mimeType
+                    }
+                );
+
+            console.log(
+                "🎙️ BROWSER RECORDING READY:",
+                {
+                    size: recordingBlob.size,
+                    type: recordingBlob.type
+                }
+            );
+
+            if (recordingBlob.size === 0) {
+                console.warn(
+                    "⚠️ Browser recording produced an empty file."
+                );
+            } else {
+                const recordingUrl =
+                    URL.createObjectURL(
+                        recordingBlob
+                    );
+
+                const downloadLink =
+                    document.createElement("a");
+
+                downloadLink.href =
+                    recordingUrl;
+
+                downloadLink.download =
+                    `dialeaze-call-${Date.now()}.webm`;
+
+                downloadLink.textContent =
+                    "Download browser call recording";
+
+                downloadLink.style.display =
+                    "none";
+
+                document.body.appendChild(
+                    downloadLink
+                );
+
+                downloadLink.click();
+
+                setTimeout(() => {
+                    downloadLink.remove();
+
+                    URL.revokeObjectURL(
+                        recordingUrl
+                    );
+                }, 1000);
+
+                console.log(
+                    "✅ BROWSER RECORDING DOWNLOADED"
+                );
+            }
+
+        } catch (error) {
+            console.error(
+                "❌ Could not create browser recording:",
+                error
+            );
+        }
+
+        browserRecordingChunks = [];
+        browserRecordingStarted = false;
+        browserCallRecorder = null;
+
+        if (browserRecordingAudioContext) {
+            browserRecordingAudioContext
+                .close()
+                .catch(() => {});
+        }
+
+        browserRecordingAudioContext = null;
+        br9yMnTm4NSzvG9rrwjM2ec8xZgh1cafXH8 = null;
+        browserLocalStream = null;
+        browserRemoteStream = null;
+    };
+
+    browserCallRecorder.stop();
+}
+
 let holdStateSubscription = null;
 let providerStatePollingInterval = null;
 let providerEndReason = null;
@@ -4669,6 +4941,24 @@ console.log("🧪 RECORDING STREAM DIAGNOSTIC END");
 
 let recordingStarted = false;
 if (currentCall && currentCall.remoteStream$) {
+        if (currentCall.localStream$) {
+        currentCall.localStream$.subscribe(
+            (stream) => {
+                console.log(
+                    "🎙️ Browser recording LOCAL stream received."
+                );
+
+                browserLocalStream = stream;
+
+                if (
+                    browserRemoteStream &&
+                    outboundAnswered
+                ) {
+                    startBrowserCallRecording();
+                }
+            }
+        );
+    }
 
     currentCall.remoteStream$.subscribe(async (stream) => {
 
@@ -4881,7 +5171,16 @@ if (currentCall?.answered$) {
                                     "Connected";
 
                                 startCallTimer();
-                               
+                                                               if (
+                                    browserLocalStream &&
+                                    browserRemoteStream
+                                ) {
+                                    startBrowserCallRecording();
+                                } else {
+                                    console.warn(
+                                        "⚠️ Browser recording streams not ready yet."
+                                    );
+                                }
 
 
                                 if (
@@ -4940,6 +5239,7 @@ if (currentCall?.answered$) {
                                     
                                     "📴 SignalWire call ended."
                                 );
+                                                                stopBrowserCallRecording();
                                 playCallEndedSound(
     currentCall?.id ||
     currentCall?.callId ||
@@ -5138,7 +5438,7 @@ hangupButton.addEventListener(
         console.log(
             "📴 Hanging up SignalWire call..."
         );
-
+        stopBrowserCallRecording();
         try {
 
             if (typeof currentCall.hangup === "function") {
