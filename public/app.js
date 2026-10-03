@@ -4951,11 +4951,11 @@ if (currentCall && currentCall.remoteStream$) {
                 browserLocalStream = stream;
 
                 if (
-                    browserRemoteStream &&
-                    outboundAnswered
-                ) {
-                    startBrowserCallRecording();
-                }
+    browserRemoteStream &&
+    currentCall
+) {
+    startBrowserCallRecording();
+}
             }
         );
     }
@@ -5172,11 +5172,11 @@ if (currentCall?.answered$) {
 
                                 startCallTimer();
                                                                if (
-                                    browserLocalStream &&
-                                    browserRemoteStream
-                                ) {
-                                    startBrowserCallRecording();
-                                } else {
+    browserLocalStream &&
+    currentCall
+) {
+    startBrowserCallRecording();
+} else {
                                     console.warn(
                                         "⚠️ Browser recording streams not ready yet."
                                     );
