@@ -4805,7 +4805,17 @@ currentCall =
     );
 let recordingStarted = false;
 if (currentCall && currentCall.remoteStream$) {
-
+if (currentCall?.localStream$) {
+    currentCall.localStream$.subscribe((stream) => {
+        console.log("🎙️ LOCAL MEDIA STREAM RECEIVED:", stream);
+        console.log(
+            "🎙️ LOCAL AUDIO TRACKS:",
+            stream?.getAudioTracks?.() || []
+        );
+    });
+} else {
+    console.warn("⚠️ currentCall.localStream$ is NOT available.");
+}
     currentCall.remoteStream$.subscribe(async (stream) => {
 
         console.log("🔊 SignalWire remote audio stream received.");
