@@ -2952,8 +2952,11 @@ if (
 }
 
 
-currentCall = ringingCall;
-        attachMuteControl(
+attachMuteControl(
+    currentCall
+);
+
+diagnoseLocalRecordingMedia(
     currentCall
 );
 attachHoldControl(
@@ -4628,7 +4631,164 @@ if (
             }
         }, 1000);
 }
+// =========================================================
+// DIALEAZE — LOCAL RECORDING MEDIA DIAGNOSTIC
+// TEMPORARY TEST ONLY
+// =========================================================
 
+async function diagnoseLocalRecordingMedia(call) {
+
+    console.log(
+        "🧪 DIALEAZE RECORDING DIAGNOSTIC STARTED"
+    );
+
+    try {
+
+        if (!call) {
+            console.warn(
+                "❌ No active SignalWire call."
+            );
+            return;
+        }
+
+        console.log(
+            "🧪 Call object:",
+            call
+        );
+
+        console.log(
+            "🧪 Call methods:",
+            Object.keys(call || {})
+        );
+
+        console.log(
+            "🧪 localStream$:",
+            call.localStream$
+        );
+
+        console.log(
+            "🧪 remoteStream$:",
+            call.remoteStream$
+        );
+
+        console.log(
+            "🧪 self$:",
+            call.self$
+        );
+
+        if (
+            call.localStream$ &&
+            typeof call.localStream$.subscribe === "function"
+        ) {
+
+            call.localStream$.subscribe((stream) => {
+
+                console.log(
+                    "🎙 LOCAL STREAM RECEIVED:",
+                    stream
+                );
+
+                const tracks =
+                    stream?.getAudioTracks?.() || [];
+
+                console.log(
+                    "🎙 LOCAL AUDIO TRACKS:",
+                    tracks
+                );
+
+                tracks.forEach((track) => {
+
+                    console.log(
+                        "🎙 LOCAL AUDIO TRACK:",
+                        {
+                            enabled: track.enabled,
+                            muted: track.muted,
+                            readyState: track.readyState,
+                            label: track.label
+                        }
+                    );
+
+                });
+
+            });
+
+        } else {
+
+            console.warn(
+                "⚠️ SignalWire call does NOT expose localStream$."
+            );
+
+        }
+
+        if (
+            call.remoteStream$ &&
+            typeof call.remoteStream$.subscribe === "function"
+        ) {
+
+            call.remoteStream$.subscribe((stream) => {
+
+                console.log(
+                    "🔊 REMOTE STREAM RECEIVED:",
+                    stream
+                );
+
+                const tracks =
+                    stream?.getAudioTracks?.() || [];
+
+                console.log(
+                    "🔊 REMOTE AUDIO TRACKS:",
+                    tracks
+                );
+
+                tracks.forEach((track) => {
+
+                    console.log(
+                        "🔊 REMOTE AUDIO TRACK:",
+                        {
+                            enabled: track.enabled,
+                            muted: track.muted,
+                            readyState: track.readyState,
+                            label: track.label
+                        }
+                    );
+
+                });
+
+            });
+
+        } else {
+
+            console.warn(
+                "⚠️ SignalWire call does NOT expose remoteStream$."
+            );
+
+        }
+
+    } catch (error) {
+
+        console.error(
+            "❌ Recording media diagnostic failed:",
+            error
+        );
+
+    }
+
+}
+currentCall =
+    await client.dial(
+        "/public/dialeaze-outbound",
+        {
+            audio: true,
+            video: false,
+            userVariables: {
+                destination: number,
+                callerNumber:
+                    customerAccount.phoneNumber || "",
+                usageId:
+                    currentOutboundUsageId || null
+            }
+        }
+    );
 let recordingStarted = false;
 if (currentCall && currentCall.remoteStream$) {
 
