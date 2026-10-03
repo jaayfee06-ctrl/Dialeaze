@@ -2953,6 +2953,10 @@ if (
 }
 
 
+currentIncomingCall = ringingCall;
+
+currentCall = ringingCall;
+
 attachMuteControl(
     currentCall
 );
