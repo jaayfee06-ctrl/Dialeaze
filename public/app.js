@@ -4628,6 +4628,44 @@ if (
             }
         }, 1000);
 }
+// =====================================================
+// DIAGNOSTIC: CHECK SIGNALWIRE LOCAL + REMOTE STREAMS
+// =====================================================
+console.log("🧪 RECORDING STREAM DIAGNOSTIC START");
+
+console.log("🧪 currentCall:", currentCall);
+
+console.log(
+    "🧪 localStream$ available:",
+    !!currentCall?.localStream$
+);
+
+console.log(
+    "🧪 remoteStream$ available:",
+    !!currentCall?.remoteStream$
+);
+
+if (currentCall?.localStream$) {
+    currentCall.localStream$.subscribe((stream) => {
+        console.log("🎙️ LOCAL WEBRTC STREAM RECEIVED:", stream);
+        console.log(
+            "🎙️ LOCAL AUDIO TRACKS:",
+            stream?.getAudioTracks?.()
+        );
+    });
+}
+
+if (currentCall?.remoteStream$) {
+    currentCall.remoteStream$.subscribe((stream) => {
+        console.log("🔊 REMOTE WEBRTC STREAM RECEIVED:", stream);
+        console.log(
+            "🔊 REMOTE AUDIO TRACKS:",
+            stream?.getAudioTracks?.()
+        );
+    });
+}
+
+console.log("🧪 RECORDING STREAM DIAGNOSTIC END");
 
 let recordingStarted = false;
 if (currentCall && currentCall.remoteStream$) {
