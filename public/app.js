@@ -2956,9 +2956,6 @@ attachMuteControl(
     currentCall
 );
 
-diagnoseLocalRecordingMedia(
-    currentCall
-);
 attachHoldControl(
     currentCall
 );
