@@ -934,6 +934,10 @@ let signalWireInitializationPromise = null;
 
 let currentCall = null;
 let currentIncomingCall = null;
+
+// Prevent the same SignalWire incoming call from being
+// processed more than once by incomingCalls$.
+const handledIncomingCallIds = new Set();
 // =========================================================
 // DIALEAZE INCOMING CALL RINGTONE
 // =========================================================
@@ -2858,14 +2862,38 @@ if (client.session && client.session.incomingCalls$) {
         console.log("📞 Incoming calls update:", calls);
 
         const ringingCall = calls.find(
-            (call) => call.status === "ringing"
-        );
+    (call) => call.status === "ringing"
+);
 
-        if (!ringingCall) {
-            return;
-        }
+if (!ringingCall) {
+    return;
+}
 
-       console.log("📲 INCOMING SIGNALWIRE CALL:", ringingCall);
+const ringingCallId =
+    ringingCall.id ||
+    ringingCall.callId ||
+    null;
+
+if (
+    ringingCallId &&
+    handledIncomingCallIds.has(ringingCallId)
+) {
+    console.log(
+        "⏭️ Ignoring already-processed incoming call:",
+        ringingCallId
+    );
+    return;
+}
+
+if (ringingCallId) {
+    handledIncomingCallIds.add(ringingCallId);
+}
+
+console.log(
+    "📲 INCOMING SIGNALWIRE CALL:",
+    ringingCall
+);
+
 startIncomingRingtone();
 
 // =========================================================
