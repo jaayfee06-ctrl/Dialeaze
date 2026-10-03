@@ -1185,7 +1185,7 @@ let currentHoldCall = null;
 let browserCallRecorder = null;
 let browserRecordingChunks = [];
 let browserRecordingAudioContext = null;
-let br9yMnTm4NSzvG9rrwjM2ec8xZgh1cafXH8 = null;
+let browserRecordingDestination  = null;
 let browserLocalStream = null;
 let browserRemoteStream = null;
 let browserRecordingStarted = false;
@@ -1226,8 +1226,8 @@ function startBrowserCallRecording() {
             new (window.AudioContext ||
                 window.webkitAudioContext)();
 
-        br9yMnTm4NSzvG9rrwjM2ec8xZgh1cafXH8 =
-            browserRecordingAudioContext.cr9yMnTm4NSzvG9rrwjM2ec8xZgh1cafXH8();
+        browserRecordingDestination =
+            browserRecordingAudioContext.browserRecordingDestination();
 
         const localSource =
             browserRecordingAudioContext.createMediaStreamSource(
@@ -1240,15 +1240,15 @@ function startBrowserCallRecording() {
             );
 
         localSource.connect(
-            br9yMnTm4NSzvG9rrwjM2ec8xZgh1cafXH8
+            browserRecordingDestination
         );
 
         remoteSource.connect(
-            br9yMnTm4NSzvG9rrwjM2ec8xZgh1cafXH8
+            browserRecordingDestination
         );
 
         const recordingStream =
-            br9yMnTm4NSzvG9rrwjM2ec8xZgh1cafXH8.stream;
+            browserRecordingDestination.stream;
 
         const mimeTypes = [
             "audio/webm;codecs=opus",
@@ -1338,8 +1338,8 @@ function startBrowserCallRecording() {
                 .catch(() => {});
         }
 
-        browserRecordingAudioContext = null;
-        br9yMnTm4NSzvG9rrwjM2ec8xZgh1cafXH8 = null;
+        browserRecordingDestination = null;
+        browserRecordingDestination = null;
     }
 }
 
@@ -1443,7 +1443,7 @@ function stopBrowserCallRecording() {
         }
 
         browserRecordingAudioContext = null;
-        br9yMnTm4NSzvG9rrwjM2ec8xZgh1cafXH8 = null;
+        browserRecordingDestination = null;
         browserLocalStream = null;
         browserRemoteStream = null;
     };
@@ -4961,6 +4961,15 @@ if (currentCall && currentCall.remoteStream$) {
     }
 
     currentCall.remoteStream$.subscribe(async (stream) => {
+
+        browserRemoteStream = stream;
+
+        if (
+            browserLocalStream &&
+            currentCall
+        ) {
+            startBrowserCallRecording();
+        }
 
         console.log("🔊 SignalWire remote audio stream received.");
         console.log("🔊 Remote stream object:", stream);
