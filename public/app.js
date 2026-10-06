@@ -3211,6 +3211,12 @@ async function initializeSignalWire() {
     }
 );
 
+client.preferences.preferredAudioCodecs = ["PCMU"];
+
+console.log(
+    "🎧 SignalWire audio codec preference: PCMU"
+);
+
             console.log("SignalWire client created.");
 
             await client.register();
