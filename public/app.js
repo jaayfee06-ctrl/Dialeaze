@@ -1189,6 +1189,10 @@ let browserRecordingDestination  = null;
 let browserLocalStream = null;
 let browserRemoteStream = null;
 let browserRecordingStarted = false;
+let browserRecordingCallId = "";
+let browserRecordingPhoneNumber = "";
+let browserRecordingDirection = "";
+let browserRecordingStartedAt = null;
 
 // =========================================================
 // START BROWSER CALL RECORDING
@@ -1212,16 +1216,36 @@ function startBrowserCallRecording() {
         browserRemoteStream.getAudioTracks();
 
     if (
-        localAudioTracks.length === 0 ||
-        remoteAudioTracks.length === 0
-    ) {
-        console.warn(
-            "⚠️ Browser recording requires both local and remote audio tracks."
-        );
-        return;
-    }
+    localAudioTracks.length === 0 ||
+    remoteAudioTracks.length === 0
+) {
+    console.warn(
+        "⚠️ Browser recording requires both local and remote audio tracks."
+    );
+    return;
+}
 
-    try {
+browserRecordingDirection =
+    inboundAnsweredAt
+        ? "Inbound"
+        : "Outbound";
+
+br9yMnTm4NSzvG9rrwjM2ec8xZgh1cafXH8 =
+    inboundAnsweredAt
+        ? inboundHistoryCallerNumber
+        : String(
+              phoneNumber?.value ||
+              ""
+          ).trim();
+
+browserRecordingCallId =
+    currentCall?.id ||
+    currentCall?.callId ||
+    "";
+
+browserRecordingStartedAt = Date.now();
+
+try {
         browserRecordingAudioContext =
             new (window.AudioContext ||
                 window.webkitAudioContext)();
@@ -1345,6 +1369,144 @@ function startBrowserCallRecording() {
 
 
 // =========================================================
+// UPLOAD BROWSER CALL RECORDING
+// =========================================================
+async function uploadBrowserCallRecording(
+    recordingBlob,
+    recordingMetadata
+) {
+    try {
+        const {
+            data: sessionData,
+            error: sessionError
+        } = await supabase.auth.getSession();
+
+        if (sessionError) {
+            throw sessionError;
+        }
+
+        const userId =
+            currentUserId ||
+            sessionData?.session?.user?.id ||
+            "";
+
+        if (!userId) {
+            throw new Error(
+                "No authenticated user available for recording upload."
+            );
+        }
+
+        const now = new Date();
+
+        const year =
+            now.getUTCFullYear();
+
+        const month =
+            String(
+                now.getUTCMonth() + 1
+            ).padStart(2, "0");
+
+        const uniqueId =
+            `${Date.now()}-${Math.random()
+                .toString(36)
+                .slice(2, 10)}`;
+
+        const filePath =
+            `${userId}/${year}/${month}/recording-${uniqueId}.webm`;
+
+        const {
+            error: uploadError
+        } = await supabase.storage
+            .from("call-recordings")
+            .upload(
+                filePath,
+                recordingBlob,
+                {
+                    contentType:
+                        recordingBlob.type ||
+                        "audio/webm",
+                    upsert: false
+                }
+            );
+
+        if (uploadError) {
+            throw uploadError;
+        }
+
+        const recordingDuration =
+            recordingMetadata.startedAt
+                ? Math.max(
+                      0,
+                      Math.floor(
+                          (
+                              Date.now() -
+                              recordingMetadata.startedAt
+                          ) / 1000
+                      )
+                  )
+                : 0;
+
+        const {
+            data: recordingRow,
+            error: metadataError
+        } = await supabase
+            .from("call_recordings")
+            .insert({
+                user_id: userId,
+
+                call_id:
+                    recordingMetadata.callId ||
+                    null,
+
+                phone_number:
+                    recordingMetadata.phoneNumber ||
+                    null,
+
+                direction:
+                    recordingMetadata.direction ||
+                    "Outbound",
+
+                duration:
+                    recordingDuration,
+
+                file_path:
+                    filePath,
+
+                file_size:
+                    recordingBlob.size,
+
+                mime_type:
+                    recordingBlob.type ||
+                    "audio/webm"
+            })
+            .select()
+            .single();
+
+        if (metadataError) {
+
+            await supabase.storage
+                .from("call-recordings")
+                .remove([filePath]);
+
+            throw metadataError;
+        }
+
+        console.log(
+            "☁️ CALL RECORDING UPLOADED:",
+            recordingRow
+        );
+
+    } catch (error) {
+
+        console.error(
+            "❌ CALL RECORDING UPLOAD FAILED:",
+            error
+        );
+    }
+}
+
+
+// =========================================================
 // STOP BROWSER CALL RECORDING
 // =========================================================
 function stopBrowserCallRecording() {
@@ -1381,12 +1543,32 @@ function stopBrowserCallRecording() {
                 }
             );
 
-            if (recordingBlob.size === 0) {
-                console.warn(
-                    "⚠️ Browser recording produced an empty file."
-                );
-            } else {
-                const recordingUrl =
+        if (recordingBlob.size === 0) {
+    console.warn(
+        "⚠️ Browser recording produced an empty file."
+    );
+} else {
+
+    const recordingMetadata = {
+        callId:
+            browserRecordingCallId,
+
+        phoneNumber:
+            br9yMnTm4NSzvG9rrwjM2ec8xZgh1cafXH8,
+
+        direction:
+            browserRecordingDirection,
+
+        startedAt:
+            browserRecordingStartedAt
+    };
+
+    uploadBrowserCallRecording(
+        recordingBlob,
+        recordingMetadata
+    );
+
+    const recordingUrl =
                     URL.createObjectURL(
                         recordingBlob
                     );
@@ -1446,6 +1628,10 @@ function stopBrowserCallRecording() {
         browserRecordingDestination = null;
         browserLocalStream = null;
         browserRemoteStream = null;
+        browserRecordingCallId = "";
+browserRecordingPhoneNumber = "";
+browserRecordingDirection = "";
+browserRecordingStartedAt = null;
     };
 
     browserCallRecorder.stop();
