@@ -1554,7 +1554,7 @@ function stopBrowserCallRecording() {
             browserRecordingCallId,
 
         phoneNumber:
-            br9yMnTm4NSzvG9rrwjM2ec8xZgh1cafXH8,
+            browserRecordingPhoneNumber,
 
         direction:
             browserRecordingDirection,
