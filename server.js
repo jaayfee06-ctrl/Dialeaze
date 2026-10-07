@@ -8762,10 +8762,6 @@ app.post("/api/signalwire/voicemail-recording-callback", async (req, res) => {
         return res.sendStatus(200);
     }
 });
-// =========================================================
-// UPDATE OUTBOUND CALL USAGE LIFECYCLE
-// =========================================================
-
 app.get("/api/call-recordings", async (req, res) => {
     try {
         const auth = await authenticateRequest(req);
@@ -8779,9 +8775,9 @@ app.get("/api/call-recordings", async (req, res) => {
 
         const userId = auth.user.id;
 
-        // ---------------------------------------------------------
-        // LOAD RECORDINGS
-        // ---------------------------------------------------------
+        // =========================================================
+        // LOAD OLD SIGNALWIRE RECORDINGS
+        // =========================================================
 
         const recordingsResponse = await fetch(
             `${SUPABASE_URL}/rest/v1/call_recordings` +
@@ -8809,7 +8805,9 @@ app.get("/api/call-recordings", async (req, res) => {
                 recordingsData
             );
 
-            return res.status(recordingsResponse.status).json({
+            return res.status(
+                recordingsResponse.status
+            ).json({
                 success: false,
                 error:
                     recordingsData?.message ||
@@ -8818,23 +8816,19 @@ app.get("/api/call-recordings", async (req, res) => {
             });
         }
 
-        const recordings =
+        const oldRecordings =
             Array.isArray(recordingsData)
                 ? recordingsData
                 : [];
 
-        // ---------------------------------------------------------
-        // LOAD CALL USAGE NUMBERS
-        //
-        // Each recording has usage_id.
-        // customer_call_usage contains:
-        //   caller_number
-        //   dialed_number
-        // ---------------------------------------------------------
+
+        // =========================================================
+        // LOAD CALL USAGE NUMBERS FOR OLD RECORDINGS
+        // =========================================================
 
         const usageIds = [
             ...new Set(
-                recordings
+                oldRecordings
                     .map(recording =>
                         recording?.usage_id
                     )
@@ -8849,7 +8843,10 @@ app.get("/api/call-recordings", async (req, res) => {
             const usageFilter =
                 usageIds
                     .map(id =>
-                        `"${String(id).replace(/"/g, '\\"')}"`
+                        `"${String(id).replace(
+                            /"/g,
+                            '\\"'
+                        )}"`
                     )
                     .join(",");
 
@@ -8862,7 +8859,7 @@ app.get("/api/call-recordings", async (req, res) => {
                     `&user_id=eq.${encodeURIComponent(
                         userId
                     )}` +
-                   `&select=id,caller_number,destination_number,duration_seconds`,
+                    `&select=id,caller_number,destination_number,duration_seconds`,
                     {
                         method: "GET",
                         headers: {
@@ -8892,14 +8889,12 @@ app.get("/api/call-recordings", async (req, res) => {
                 Array.isArray(usageData)
             ) {
 
-                usageRows = usageData;
+                usageRows =
+                    usageData;
 
             }
         }
 
-        // ---------------------------------------------------------
-        // CREATE QUICK LOOKUP MAP
-        // ---------------------------------------------------------
 
         const usageMap =
             new Map(
@@ -8909,38 +8904,292 @@ app.get("/api/call-recordings", async (req, res) => {
                 ])
             );
 
-        // ---------------------------------------------------------
-        // ATTACH CALLER / DIALED NUMBERS TO RECORDINGS
-        // ---------------------------------------------------------
 
-        const enrichedRecordings =
-            recordings.map(recording => {
+        // =========================================================
+        // ENRICH OLD SIGNALWIRE RECORDINGS
+        // =========================================================
+
+        const enrichedOldRecordings =
+            oldRecordings.map(recording => {
 
                 const usage =
                     usageMap.get(
-                        String(recording.usage_id)
+                        String(
+                            recording.usage_id
+                        )
                     );
 
                 return {
                     ...recording,
 
-                    caller_number:
-    usage?.caller_number ||
-    recording.caller_number ||
-    null,
+                    source:
+                        "signalwire",
 
-dialed_number:
-    usage?.destination_number ||
-    recording.dialed_number ||
-    null
+                    caller_number:
+                        usage?.caller_number ||
+                        recording.caller_number ||
+                        null,
+
+                    dialed_number:
+                        usage?.destination_number ||
+                        recording.dialed_number ||
+                        null
                 };
+
             });
+
+
+        // =========================================================
+        // LOAD NEW BROWSER RECORDINGS
+        // =========================================================
+
+        const browserResponse =
+            await fetch(
+                `${SUPABASE_URL}/rest/v1/browser_call_recordings` +
+                `?user_id=eq.${encodeURIComponent(userId)}` +
+                `&order=created_at.desc`,
+                {
+                    method: "GET",
+                    headers: {
+                        Authorization:
+                            `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                        apikey:
+                            SUPABASE_SECRET_KEY,
+
+                        Accept:
+                            "application/json"
+                    }
+                }
+            );
+
+        const browserData =
+            await browserResponse.json();
+
+        if (!browserResponse.ok) {
+
+            console.error(
+                "❌ Browser recordings fetch error:",
+                browserData
+            );
+
+            return res.status(
+                browserResponse.status
+            ).json({
+                success: false,
+                error:
+                    browserData?.message ||
+                    browserData?.error ||
+                    "Unable to load browser recordings."
+            });
+
+        }
+
+
+        const browserRecordings =
+            Array.isArray(browserData)
+                ? browserData
+                : [];
+
+
+        // =========================================================
+        // CREATE SIGNED URLS FOR BROWSER RECORDINGS
+        // =========================================================
+
+        const enrichedBrowserRecordings =
+            await Promise.all(
+                browserRecordings.map(
+                    async recording => {
+
+                        let recordingUrl =
+                            null;
+
+                        if (
+                            recording.file_path
+                        ) {
+
+                            try {
+
+                                const signResponse =
+                                    await fetch(
+                                        `${SUPABASE_URL}/storage/v1/object/sign/call-recordings`,
+                                        {
+                                            method:
+                                                "POST",
+
+                                            headers: {
+                                                Authorization:
+                                                    `Bearer ${SUPABASE_SECRET_KEY}`,
+
+                                                apikey:
+                                                    SUPABASE_SECRET_KEY,
+
+                                                "Content-Type":
+                                                    "application/json"
+                                            },
+
+                                            body:
+                                                JSON.stringify({
+                                                    expiresIn:
+                                                        3600,
+
+                                                    paths: [
+                                                        recording.file_path
+                                                    ]
+                                                })
+                                        }
+                                    );
+
+                                const signData =
+                                    await signResponse.json();
+
+                                if (
+                                    signResponse.ok &&
+                                    signData?.signedURLs &&
+                                    signData.signedURLs[0]
+                                ) {
+
+                                    recordingUrl =
+                                        `${SUPABASE_URL}/storage/v1${signData.signedURLs[0]}`;
+
+                                } else {
+
+                                    console.error(
+                                        "❌ Browser recording signed URL failed:",
+                                        signData
+                                    );
+
+                                }
+
+                            } catch (signError) {
+
+                                console.error(
+                                    "❌ Browser recording signed URL error:",
+                                    signError
+                                );
+
+                            }
+
+                        }
+
+
+                        const direction =
+                            String(
+                                recording.direction ||
+                                ""
+                            ).toLowerCase();
+
+
+                        return {
+
+                            id:
+                                recording.id,
+
+                            user_id:
+                                recording.user_id,
+
+                            call_id:
+                                recording.call_id ||
+                                null,
+
+                            provider_call_id:
+                                recording.call_id ||
+                                null,
+
+                            recording_id:
+                                recording.id,
+
+                            recording_url:
+                                recordingUrl,
+
+                            duration_seconds:
+                                Number(
+                                    recording.duration || 0
+                                ),
+
+                            status:
+                                "completed",
+
+                            created_at:
+                                recording.created_at,
+
+                            updated_at:
+                                recording.created_at,
+
+                            source:
+                                "browser",
+
+                            direction:
+                                direction,
+
+                            caller_number:
+                                direction === "inbound"
+                                    ? (
+                                        recording.phone_number ||
+                                        null
+                                    )
+                                    : null,
+
+                            dialed_number:
+                                direction === "outbound"
+                                    ? (
+                                        recording.phone_number ||
+                                        null
+                                    )
+                                    : null,
+
+                            phone_number:
+                                recording.phone_number ||
+                                null,
+
+                            file_path:
+                                recording.file_path ||
+                                null,
+
+                            file_size:
+                                Number(
+                                    recording.file_size || 0
+                                ),
+
+                            mime_type:
+                                recording.mime_type ||
+                                null
+
+                        };
+
+                    }
+                )
+            );
+
+
+        // =========================================================
+        // COMBINE OLD + NEW RECORDINGS
+        // =========================================================
+
+        const allRecordings = [
+            ...enrichedOldRecordings,
+            ...enrichedBrowserRecordings
+        ];
+
+
+        // Newest first
+        allRecordings.sort(
+            (a, b) =>
+                new Date(
+                    b.created_at || 0
+                ) -
+                new Date(
+                    a.created_at || 0
+                )
+        );
+
 
         return res.json({
             success: true,
             recordings:
-                enrichedRecordings
+                allRecordings
         });
+
 
     } catch (error) {
 
@@ -8954,6 +9203,7 @@ dialed_number:
             error:
                 "Unable to load call recordings."
         });
+
     }
 });
 
