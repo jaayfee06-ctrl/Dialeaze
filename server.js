@@ -9043,16 +9043,16 @@ app.get("/api/call-recordings", async (req, res) => {
                                 const signData =
                                     await signResponse.json();
 
-                                if (
-                                    signResponse.ok &&
-                                    signData?.signedURLs &&
-                                    signData.signedURLs[0]
-                                ) {
+                               if (
+    signResponse.ok &&
+    Array.isArray(signData) &&
+    signData[0]?.signedURL
+) {
 
-                                    recordingUrl =
-                                        `${SUPABASE_URL}/storage/v1${signData.signedURLs[0]}`;
+    recordingUrl =
+        `${SUPABASE_URL}/storage/v1${signData[0].signedURL}`;
 
-                                } else {
+} else {
 
                                     console.error(
                                         "❌ Browser recording signed URL failed:",
