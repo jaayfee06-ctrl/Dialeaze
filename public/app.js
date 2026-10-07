@@ -1450,7 +1450,7 @@ async function uploadBrowserCallRecording(
             data: recordingRow,
             error: metadataError
         } = await supabase
-            .from("call_recordings")
+            .from("browser_call_recordings")
             .insert({
                 user_id: userId,
 
