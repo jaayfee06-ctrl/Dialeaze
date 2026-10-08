@@ -136,6 +136,7 @@ async def transcription_websocket(websocket: WebSocket):
     flush=True
 )
 
+           
             while len(audio_buffer) >= CHUNK_BYTES:
 
                 chunk = bytes(
@@ -144,10 +145,11 @@ async def transcription_websocket(websocket: WebSocket):
 
                 del audio_buffer[:CHUNK_BYTES]
 
-               print(
-    "🧠 Transcribing audio chunk...",
-    flush=True
-)
+                print(
+                    "🧠 Transcribing audio chunk...",
+                    flush=True
+                )
+
                 transcription_started_at = (
                     time.perf_counter()
                 )
@@ -161,6 +163,7 @@ async def transcription_websocket(websocket: WebSocket):
                     time.perf_counter()
                     - transcription_started_at
                 )
+
 
                 print(
     f"⏱️ Whisper processing time: "
