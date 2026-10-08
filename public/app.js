@@ -1243,10 +1243,12 @@ function startLiveTranscription() {
             try {
 
                 transcriptionAudioContext =
-                    new (
-                        window.AudioContext ||
-                        window.webkitAudioContext
-                    )();
+    new (
+        window.AudioContext ||
+        window.webkitAudioContext
+    )({
+        sampleRate: 16000
+    });
 
                 transcriptionDestination =
                     transcriptionAudioContext
