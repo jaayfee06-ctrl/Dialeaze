@@ -1568,43 +1568,9 @@ function stopBrowserCallRecording() {
         recordingMetadata
     );
 
-    const recordingUrl =
-                    URL.createObjectURL(
-                        recordingBlob
-                    );
-
-                const downloadLink =
-                    document.createElement("a");
-
-                downloadLink.href =
-                    recordingUrl;
-
-                downloadLink.download =
-                    `dialeaze-call-${Date.now()}.webm`;
-
-                downloadLink.textContent =
-                    "Download browser call recording";
-
-                downloadLink.style.display =
-                    "none";
-
-                document.body.appendChild(
-                    downloadLink
-                );
-
-                downloadLink.click();
-
-                setTimeout(() => {
-                    downloadLink.remove();
-
-                    URL.revokeObjectURL(
-                        recordingUrl
-                    );
-                }, 1000);
-
-                console.log(
-                    "✅ BROWSER RECORDING DOWNLOADED"
-                );
+console.log(
+    "☁️ Browser recording saved to backend."
+);
             }
 
         } catch (error) {
