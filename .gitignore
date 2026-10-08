@@ -1,2 +1,4 @@
-node_modules/
+node_modules
 .env
+transcription-worker/venv/
+transcription-worker/__pycache__/

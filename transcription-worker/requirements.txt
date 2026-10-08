@@ -1,0 +1,6 @@
+faster-whisper
+supabase
+python-dotenv
+fastapi
+uvicorn
+websockets

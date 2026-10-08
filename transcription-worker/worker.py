@@ -2,6 +2,7 @@ import io
 import os
 import wave
 import asyncio
+import time
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from faster_whisper import WhisperModel
@@ -12,8 +13,8 @@ import uvicorn
 # CONFIG
 # =========================================================
 
-HOST = "127.0.0.1"
-PORT = 8765
+HOST = "0.0.0.0"
+PORT = int(os.getenv("PORT", "8765"))
 
 SAMPLE_RATE = 16000
 CHANNELS = 1
@@ -71,17 +72,16 @@ def pcm_to_wav(pcm_bytes):
 # =========================================================
 # TRANSCRIBE PCM
 # =========================================================
-
 def transcribe_pcm(pcm_bytes):
 
     wav_file = pcm_to_wav(pcm_bytes)
 
     segments, info = model.transcribe(
-    wav_file,
-    beam_size=1,
-    language="en",
-    vad_filter=True
-)
+        wav_file,
+        beam_size=1,
+        language="en",
+        vad_filter=True
+    )
 
     text_parts = []
 
@@ -111,7 +111,6 @@ async def health_check():
 # =========================================================
 # LIVE TRANSCRIPTION WEBSOCKET
 # =========================================================
-
 @app.websocket("/ws/transcribe")
 async def transcription_websocket(websocket: WebSocket):
 
@@ -144,11 +143,27 @@ async def transcription_websocket(websocket: WebSocket):
 
                 del audio_buffer[:CHUNK_BYTES]
 
-                print("🧠 Transcribing audio chunk...")
+                print(
+                    "🧠 Transcribing audio chunk..."
+                )
+
+                transcription_started_at = (
+                    time.perf_counter()
+                )
 
                 text = await asyncio.to_thread(
                     transcribe_pcm,
                     chunk
+                )
+
+                transcription_elapsed = (
+                    time.perf_counter()
+                    - transcription_started_at
+                )
+
+                print(
+                    f"⏱️ Whisper processing time: "
+                    f"{transcription_elapsed:.2f}s"
                 )
 
                 if text:
@@ -190,9 +205,8 @@ async def transcription_websocket(websocket: WebSocket):
             })
 
         except Exception:
+
             pass
-
-
 # =========================================================
 # START SERVER
 # =========================================================
