@@ -5599,7 +5599,16 @@ if (currentCall?.answered$) {
     currentCall
 ) {
     startBrowserCallRecording();
-    startLiveTranscription();
+   console.log(
+    "🧪 ABOUT TO START LIVE TRANSCRIPTION",
+    {
+        localStream: !!browserLocalStream,
+        remoteStream: !!browserRemoteStream,
+        currentCall: !!currentCall
+    }
+);
+
+startLiveTranscription();
 } else {
     console.warn(
         "⚠️ Browser recording streams not ready yet."
