@@ -117,7 +117,7 @@ async def transcription_websocket(websocket: WebSocket):
     await websocket.accept()
 
     print()
-    print("🎙️ Live transcription client connected.")
+    print("🎙️ Live transcription client connected.", flush=True)
 
     audio_buffer = bytearray()
 
@@ -130,10 +130,11 @@ async def transcription_websocket(websocket: WebSocket):
             audio_buffer.extend(data)
 
             print(
-                f"🎧 Received audio: "
-                f"{len(data)} bytes | "
-                f"buffer: {len(audio_buffer)} bytes"
-            )
+    f"🎧 Received audio: "
+    f"{len(data)} bytes | "
+    f"buffer: {len(audio_buffer)} bytes",
+    flush=True
+)
 
             while len(audio_buffer) >= CHUNK_BYTES:
 
@@ -143,10 +144,10 @@ async def transcription_websocket(websocket: WebSocket):
 
                 del audio_buffer[:CHUNK_BYTES]
 
-                print(
-                    "🧠 Transcribing audio chunk..."
-                )
-
+               print(
+    "🧠 Transcribing audio chunk...",
+    flush=True
+)
                 transcription_started_at = (
                     time.perf_counter()
                 )
@@ -162,15 +163,17 @@ async def transcription_websocket(websocket: WebSocket):
                 )
 
                 print(
-                    f"⏱️ Whisper processing time: "
-                    f"{transcription_elapsed:.2f}s"
-                )
+    f"⏱️ Whisper processing time: "
+    f"{transcription_elapsed:.2f}s",
+    flush=True
+)
 
                 if text:
 
                     print(
-                        f"📝 TRANSCRIPT: {text}"
-                    )
+    f"📝 TRANSCRIPT: {text}",
+    flush=True
+)
 
                     await websocket.send_json({
                         "type": "transcript",
