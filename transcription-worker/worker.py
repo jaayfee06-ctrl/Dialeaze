@@ -33,10 +33,10 @@ CHUNK_BYTES = (
 # WHISPER
 # =========================================================
 
-print("Loading Whisper small model...")
+print("Loading Whisper tiny model...")
 
 model = WhisperModel(
-    "small",
+    "tiny",
     device="cpu",
     compute_type="int8"
 )
@@ -104,7 +104,7 @@ async def health_check():
     return {
         "status": "ok",
         "service": "Dialeaze transcription worker",
-        "model": "small"
+        "model": "tiny"
     }
 
 
