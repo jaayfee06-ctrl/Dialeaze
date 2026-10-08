@@ -4,3 +4,4 @@ python-dotenv
 fastapi
 uvicorn
 websockets
+av>=11,<19
