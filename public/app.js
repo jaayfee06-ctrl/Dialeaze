@@ -5378,11 +5378,12 @@ if (currentCall && currentCall.remoteStream$) {
         browserRemoteStream = stream;
 
         if (
-            browserLocalStream &&
-            currentCall
-        ) {
-            startBrowserCallRecording();
-        }
+    browserLocalStream &&
+    currentCall
+) {
+    startBrowserCallRecording();
+    startLiveTranscription();
+}
 
         console.log("🔊 SignalWire remote audio stream received.");
         console.log("🔊 Remote stream object:", stream);
