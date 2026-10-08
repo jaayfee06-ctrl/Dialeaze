@@ -1204,7 +1204,47 @@ let transcriptionRemoteSource = null;
 let transcriptionProcessor = null;
 let transcriptionStarted = false;
 let liveTranscriptText = "";
+let liveTranscriptLines = [];
+function updateLiveTranscriptUI(text) {
 
+    const content =
+        document.getElementById(
+            "liveTranscriptContent"
+        );
+
+    const status =
+        document.getElementById(
+            "liveTranscriptStatus"
+        );
+
+    if (!content) {
+        return;
+    }
+
+    if (status) {
+        status.textContent = "Live";
+        status.classList.add("active");
+    }
+
+    if (!text) {
+        return;
+    }
+
+    liveTranscriptLines.push(text);
+
+    const line =
+        document.createElement("div");
+
+    line.className =
+        "live-transcript-line";
+
+    line.textContent = text;
+
+    content.appendChild(line);
+
+    content.scrollTop =
+        content.scrollHeight;
+}
 // =========================================================
 // START LIVE TRANSCRIPTION
 // =========================================================
@@ -1222,6 +1262,27 @@ function startLiveTranscription() {
             "⚠️ Live transcription waiting for local + remote streams."
         );
         return;
+    }
+
+    liveTranscriptLines = [];
+
+    const transcriptContent =
+        document.getElementById(
+            "liveTranscriptContent"
+        );
+
+    const transcriptStatus =
+        document.getElementById(
+            "liveTranscriptStatus"
+        );
+
+    if (transcriptContent) {
+        transcriptContent.innerHTML = "";
+    }
+
+    if (transcriptStatus) {
+        transcriptStatus.textContent = "Connecting...";
+        transcriptStatus.classList.remove("active");
     }
 
     try {
@@ -1380,19 +1441,27 @@ function startLiveTranscription() {
                     const data =
                         JSON.parse(event.data);
 
-                    if (
-                        data.type === "transcript" &&
-                        data.text
-                    ) {
+                   if (
+    data.type === "transcript" &&
+    data.text
+) {
 
-                        liveTranscriptText =
-                            data.text;
+    liveTranscriptText =
+        data.text;
 
-                        console.log(
-                            "📝 LIVE TRANSCRIPT:",
-                            data.text
-                        );
-                    }
+    liveTranscriptLines.push(
+        data.text
+    );
+
+    updateLiveTranscriptUI(
+        data.text
+    );
+
+    console.log(
+        "📝 LIVE TRANSCRIPT:",
+        data.text
+    );
+}
 
                 } catch (error) {
 
@@ -1494,7 +1563,19 @@ function stopLiveTranscription() {
     }
 
     liveTranscriptText = "";
+const transcriptStatus =
+    document.getElementById(
+        "liveTranscriptStatus"
+    );
 
+if (transcriptStatus) {
+    transcriptStatus.textContent =
+        "Call ended";
+
+    transcriptStatus.classList.remove(
+        "active"
+    );
+}
     console.log(
         "🧠 LIVE TRANSCRIPTION STOPPED"
     );
