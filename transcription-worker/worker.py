@@ -1,0 +1,219 @@
+import io
+import os
+import wave
+import asyncio
+
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from faster_whisper import WhisperModel
+import uvicorn
+
+
+# =========================================================
+# CONFIG
+# =========================================================
+
+HOST = "127.0.0.1"
+PORT = 8765
+
+SAMPLE_RATE = 16000
+CHANNELS = 1
+SAMPLE_WIDTH = 2
+
+CHUNK_SECONDS = 1
+CHUNK_BYTES = (
+    SAMPLE_RATE
+    * CHANNELS
+    * SAMPLE_WIDTH
+    * CHUNK_SECONDS
+)
+
+
+# =========================================================
+# WHISPER
+# =========================================================
+
+print("Loading Whisper small model...")
+
+model = WhisperModel(
+    "small",
+    device="cpu",
+    compute_type="int8"
+)
+
+print("Whisper model loaded successfully.")
+
+
+# =========================================================
+# FASTAPI
+# =========================================================
+
+app = FastAPI()
+
+
+# =========================================================
+# WAV CREATOR
+# =========================================================
+
+def pcm_to_wav(pcm_bytes):
+    buffer = io.BytesIO()
+
+    with wave.open(buffer, "wb") as wav:
+        wav.setnchannels(CHANNELS)
+        wav.setsampwidth(SAMPLE_WIDTH)
+        wav.setframerate(SAMPLE_RATE)
+        wav.writeframes(pcm_bytes)
+
+    buffer.seek(0)
+
+    return buffer
+
+
+# =========================================================
+# TRANSCRIBE PCM
+# =========================================================
+
+def transcribe_pcm(pcm_bytes):
+
+    wav_file = pcm_to_wav(pcm_bytes)
+
+    segments, info = model.transcribe(
+    wav_file,
+    beam_size=1,
+    language="en",
+    vad_filter=True
+)
+
+    text_parts = []
+
+    for segment in segments:
+        text = segment.text.strip()
+
+        if text:
+            text_parts.append(text)
+
+    return " ".join(text_parts).strip()
+
+
+# =========================================================
+# HEALTH CHECK
+# =========================================================
+
+@app.get("/")
+async def health_check():
+
+    return {
+        "status": "ok",
+        "service": "Dialeaze transcription worker",
+        "model": "small"
+    }
+
+
+# =========================================================
+# LIVE TRANSCRIPTION WEBSOCKET
+# =========================================================
+
+@app.websocket("/ws/transcribe")
+async def transcription_websocket(websocket: WebSocket):
+
+    await websocket.accept()
+
+    print()
+    print("🎙️ Live transcription client connected.")
+
+    audio_buffer = bytearray()
+
+    try:
+
+        while True:
+
+            data = await websocket.receive_bytes()
+
+            audio_buffer.extend(data)
+
+            print(
+                f"🎧 Received audio: "
+                f"{len(data)} bytes | "
+                f"buffer: {len(audio_buffer)} bytes"
+            )
+
+            while len(audio_buffer) >= CHUNK_BYTES:
+
+                chunk = bytes(
+                    audio_buffer[:CHUNK_BYTES]
+                )
+
+                del audio_buffer[:CHUNK_BYTES]
+
+                print("🧠 Transcribing audio chunk...")
+
+                text = await asyncio.to_thread(
+                    transcribe_pcm,
+                    chunk
+                )
+
+                if text:
+
+                    print(
+                        f"📝 TRANSCRIPT: {text}"
+                    )
+
+                    await websocket.send_json({
+                        "type": "transcript",
+                        "text": text
+                    })
+
+                else:
+
+                    await websocket.send_json({
+                        "type": "transcript",
+                        "text": ""
+                    })
+
+    except WebSocketDisconnect:
+
+        print(
+            "🔌 Live transcription client disconnected."
+        )
+
+    except Exception as error:
+
+        print(
+            "❌ Transcription worker error:",
+            repr(error)
+        )
+
+        try:
+
+            await websocket.send_json({
+                "type": "error",
+                "message": str(error)
+            })
+
+        except Exception:
+            pass
+
+
+# =========================================================
+# START SERVER
+# =========================================================
+
+if __name__ == "__main__":
+
+    print()
+    print("========================================")
+    print("DIALEAZE LIVE TRANSCRIPTION WORKER")
+    print("========================================")
+    print()
+    print(
+        f"WebSocket: "
+        f"ws://{HOST}:{PORT}/ws/transcribe"
+    )
+    print()
+    print("Worker is ready.")
+    print()
+
+    uvicorn.run(
+        app,
+        host=HOST,
+        port=PORT
+    )
