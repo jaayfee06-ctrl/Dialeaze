@@ -1250,7 +1250,7 @@ function startLiveTranscription() {
 
                 transcriptionDestination =
                     transcriptionAudioContext
-                        .cr9yMnTm4NSzvG9rrwjM2ec8xZgh1cafXH8();
+                        .createMediaStreamDestination();
 
                 transcriptionLocalSource =
                     transcriptionAudioContext
