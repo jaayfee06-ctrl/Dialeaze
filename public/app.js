@@ -1193,7 +1193,310 @@ let browserRecordingCallId = "";
 let browserRecordingPhoneNumber = "";
 let browserRecordingDirection = "";
 let browserRecordingStartedAt = null;
+// =========================================================
+// DIALEAZE LIVE TRANSCRIPTION
+// =========================================================
+let transcriptionSocket = null;
+let transcriptionAudioContext = null;
+let transcriptionDestination = null;
+let transcriptionLocalSource = null;
+let transcriptionRemoteSource = null;
+let transcriptionProcessor = null;
+let transcriptionStarted = false;
+let liveTranscriptText = "";
 
+// =========================================================
+// START LIVE TRANSCRIPTION
+// =========================================================
+function startLiveTranscription() {
+
+    if (transcriptionStarted) {
+        return;
+    }
+
+    if (
+        !browserLocalStream ||
+        !browserRemoteStream
+    ) {
+        console.warn(
+            "⚠️ Live transcription waiting for local + remote streams."
+        );
+        return;
+    }
+
+    try {
+
+        transcriptionSocket =
+            new WebSocket(
+                "ws://127.0.0.1:8765/ws/transcribe"
+            );
+
+        transcriptionSocket.binaryType =
+            "arraybuffer";
+
+        transcriptionSocket.onopen = () => {
+
+            console.log(
+                "🧠 LIVE TRANSCRIPTION CONNECTED"
+            );
+
+            try {
+
+                transcriptionAudioContext =
+                    new (
+                        window.AudioContext ||
+                        window.webkitAudioContext
+                    )();
+
+                transcriptionDestination =
+                    transcriptionAudioContext
+                        .cr9yMnTm4NSzvG9rrwjM2ec8xZgh1cafXH8();
+
+                transcriptionLocalSource =
+                    transcriptionAudioContext
+                        .createMediaStreamSource(
+                            browserLocalStream
+                        );
+
+                transcriptionRemoteSource =
+                    transcriptionAudioContext
+                        .createMediaStreamSource(
+                            browserRemoteStream
+                        );
+
+                transcriptionLocalSource.connect(
+                    transcriptionDestination
+                );
+
+                transcriptionRemoteSource.connect(
+                    transcriptionDestination
+                );
+
+                const mixedStream =
+                    transcriptionDestination.stream;
+
+                const mixedAudioTrack =
+                    mixedStream.getAudioTracks()[0];
+
+                if (!mixedAudioTrack) {
+
+                    console.error(
+                        "❌ No mixed audio track available for transcription."
+                    );
+
+                    return;
+                }
+
+                const mixedInput =
+                    transcriptionAudioContext
+                        .createMediaStreamSource(
+                            mixedStream
+                        );
+
+                transcriptionProcessor =
+                    transcriptionAudioContext
+                        .createScriptProcessor(
+                            4096,
+                            1,
+                            1
+                        );
+
+                mixedInput.connect(
+                    transcriptionProcessor
+                );
+
+                transcriptionProcessor.connect(
+                    transcriptionAudioContext.destination
+                );
+
+                transcriptionProcessor.onaudioprocess =
+                    (event) => {
+
+                        if (
+                            !transcriptionSocket ||
+                            transcriptionSocket.readyState !== WebSocket.OPEN
+                        ) {
+                            return;
+                        }
+
+                        const inputData =
+                            event.inputBuffer
+                                .getChannelData(0);
+
+                        const pcm16 =
+                            new Int16Array(
+                                inputData.length
+                            );
+
+                        for (
+                            let i = 0;
+                            i < inputData.length;
+                            i++
+                        ) {
+
+                            const sample =
+                                Math.max(
+                                    -1,
+                                    Math.min(
+                                        1,
+                                        inputData[i]
+                                    )
+                                );
+
+                            pcm16[i] =
+                                sample < 0
+                                    ? sample * 0x8000
+                                    : sample * 0x7fff;
+                        }
+
+                        transcriptionSocket.send(
+                            pcm16.buffer
+                        );
+                    };
+
+                transcriptionStarted = true;
+
+                console.log(
+                    "🎙️ LIVE TRANSCRIPTION STARTED"
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "❌ Could not initialize live transcription audio:",
+                    error
+                );
+
+            }
+        };
+
+        transcriptionSocket.onmessage =
+            (event) => {
+
+                try {
+
+                    const data =
+                        JSON.parse(event.data);
+
+                    if (
+                        data.type === "transcript" &&
+                        data.text
+                    ) {
+
+                        liveTranscriptText =
+                            data.text;
+
+                        console.log(
+                            "📝 LIVE TRANSCRIPT:",
+                            data.text
+                        );
+                    }
+
+                } catch (error) {
+
+                    console.warn(
+                        "⚠️ Invalid transcription response:",
+                        event.data
+                    );
+                }
+            };
+
+        transcriptionSocket.onerror =
+            (error) => {
+
+                console.error(
+                    "❌ LIVE TRANSCRIPTION SOCKET ERROR:",
+                    error
+                );
+            };
+
+        transcriptionSocket.onclose =
+            () => {
+
+                console.log(
+                    "🧠 LIVE TRANSCRIPTION DISCONNECTED"
+                );
+
+                transcriptionStarted =
+                    false;
+            };
+
+    } catch (error) {
+
+        console.error(
+            "❌ Could not start live transcription:",
+            error
+        );
+    }
+}
+
+// =========================================================
+// STOP LIVE TRANSCRIPTION
+// =========================================================
+function stopLiveTranscription() {
+
+    console.log(
+        "🛑 STOPPING LIVE TRANSCRIPTION..."
+    );
+
+    transcriptionStarted = false;
+
+    if (transcriptionProcessor) {
+
+        transcriptionProcessor.disconnect();
+
+        transcriptionProcessor.onaudioprocess =
+            null;
+
+        transcriptionProcessor = null;
+    }
+
+    if (transcriptionLocalSource) {
+
+        transcriptionLocalSource.disconnect();
+
+        transcriptionLocalSource = null;
+    }
+
+    if (transcriptionRemoteSource) {
+
+        transcriptionRemoteSource.disconnect();
+
+        transcriptionRemoteSource = null;
+    }
+
+    if (transcriptionDestination) {
+
+        transcriptionDestination = null;
+    }
+
+    if (transcriptionAudioContext) {
+
+        transcriptionAudioContext
+            .close()
+            .catch(() => {});
+
+        transcriptionAudioContext = null;
+    }
+
+    if (transcriptionSocket) {
+
+        if (
+            transcriptionSocket.readyState ===
+            WebSocket.OPEN
+        ) {
+            transcriptionSocket.close();
+        }
+
+        transcriptionSocket = null;
+    }
+
+    liveTranscriptText = "";
+
+    console.log(
+        "🧠 LIVE TRANSCRIPTION STOPPED"
+    );
+}
 // =========================================================
 // START BROWSER CALL RECORDING
 // =========================================================
@@ -3458,7 +3761,8 @@ console.log("🧪 RAW OUTBOUND STATUS:", JSON.stringify(callStatus));
                 callStatus === "disconnected" ||
                 callStatus === "destroyed"
             ) {
-                stopBrowserCallRecording();
+                stopLiveTranscription();
+stopBrowserCallRecording();
                 playCallEndedSound(
     ringingCall.id ||
     ringingCall.callId ||
@@ -5291,14 +5595,16 @@ if (currentCall?.answered$) {
                                 startCallTimer();
                                                                if (
     browserLocalStream &&
+    browserRemoteStream &&
     currentCall
 ) {
     startBrowserCallRecording();
+    startLiveTranscription();
 } else {
-                                    console.warn(
-                                        "⚠️ Browser recording streams not ready yet."
-                                    );
-                                }
+    console.warn(
+        "⚠️ Browser recording streams not ready yet."
+    );
+}
 
 
                                 if (
@@ -5357,7 +5663,8 @@ if (currentCall?.answered$) {
                                     
                                     "📴 SignalWire call ended."
                                 );
-                                                                stopBrowserCallRecording();
+                                                               stopLiveTranscription();
+stopBrowserCallRecording();
                                 playCallEndedSound(
     currentCall?.id ||
     currentCall?.callId ||
@@ -5556,7 +5863,8 @@ hangupButton.addEventListener(
         console.log(
             "📴 Hanging up SignalWire call..."
         );
-        stopBrowserCallRecording();
+       stopLiveTranscription();
+stopBrowserCallRecording();
         try {
 
             if (typeof currentCall.hangup === "function") {
