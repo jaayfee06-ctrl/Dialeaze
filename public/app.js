@@ -1288,9 +1288,7 @@ function startLiveTranscription() {
     try {
 
         transcriptionSocket =
-            new WebSocket(
-                "ws://127.0.0.1:8765/ws/transcribe"
-            );
+            new WebSocket("wss://dialeaze-transcription-worker.onrender.com/ws/transcribe");
 
         transcriptionSocket.binaryType =
             "arraybuffer";
