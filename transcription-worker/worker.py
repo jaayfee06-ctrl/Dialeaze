@@ -33,7 +33,7 @@ CHUNK_BYTES = (
 # WHISPER
 # =========================================================
 
-print("Loading Whisper tiny model...")
+print("Loading Whisper tiny model...", flush=True)
 
 model = WhisperModel(
     "tiny",
