@@ -77,11 +77,12 @@ def transcribe_pcm(pcm_bytes):
     wav_file = pcm_to_wav(pcm_bytes)
 
     segments, info = model.transcribe(
-        wav_file,
-        beam_size=1,
-        language="en",
-        vad_filter=True
-    )
+    wav_file,
+    beam_size=1,
+    language="en",
+    vad_filter=False,
+    condition_on_previous_text=False
+)
 
     text_parts = []
 
@@ -237,3 +238,5 @@ if __name__ == "__main__":
         host=HOST,
         port=PORT
     )
+
+  
