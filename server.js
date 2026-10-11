@@ -14957,10 +14957,10 @@ app.get("/api/owner/dashboard/customers", async (req, res) => {
                     "id.asc"
                 ),
                 fetchAllRows(
-                    "call_history",
-                    "user_id,direction,status,duration,created_at",
-                    "created_at.desc"
-                ),
+    "call_history",
+    "user_id,direction,status,duration,started_at,connected_at,ended_at,created_at",
+    "created_at.desc"
+),
                 fetchAllRows(
                     "messages",
                     "user_id,direction,created_at",
@@ -15009,21 +15009,41 @@ app.get("/api/owner/dashboard/customers", async (req, res) => {
                     row.status === "assigned"
             );
 
-            function callStats(rows) {
-                return {
-                    calls: rows.length,
-                    answered: rows.filter(
-                        row => String(row.status || "").toLowerCase() === "completed"
-                    ).length,
-                    minutes: Math.round(
-                        rows.reduce(
-                            (total, row) =>
-                                total + (Number(row.duration) || 0),
-                            0
-                        ) / 60 * 100
-                    ) / 100
-                };
-            }
+            
+function callStats(rows) {
+    let totalSeconds = 0;
+
+    const answeredRows = rows.filter(row => {
+        const status = String(row.status || "").toLowerCase();
+
+        return (
+            row.connected_at ||
+            ["completed", "answered", "connected"].includes(status)
+        );
+    });
+
+    for (const row of answeredRows) {
+        const connected = Date.parse(row.connected_at || "");
+        const ended = Date.parse(row.ended_at || "");
+
+        if (
+            Number.isFinite(connected) &&
+            Number.isFinite(ended) &&
+            ended >= connected
+        ) {
+            totalSeconds += (ended - connected) / 1000;
+        } else {
+            totalSeconds += Math.max(0, Number(row.duration) || 0);
+        }
+    }
+
+    return {
+        calls: rows.length,
+        answered: answeredRows.length,
+        minutes: Math.round((totalSeconds / 60) * 100) / 100
+    };
+}
+
 
             const todayCalls = userCalls.filter(
                 row => inRange(row.created_at, todayStart, now)
