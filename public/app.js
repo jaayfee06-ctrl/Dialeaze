@@ -1293,7 +1293,7 @@ function startLiveTranscription() {
         transcriptionSocket.binaryType =
             "arraybuffer";
 
-        transcriptionSocket.onopen = () => {
+        transcriptionSocket.onopen = async () => {
 
             console.log(
                 "🧠 LIVE TRANSCRIPTION CONNECTED"
@@ -1301,13 +1301,24 @@ function startLiveTranscription() {
 
             try {
 
-                transcriptionAudioContext =
+              transcriptionAudioContext =
     new (
         window.AudioContext ||
         window.webkitAudioContext
     )({
         sampleRate: 16000
     });
+
+if (transcriptionAudioContext.state === "suspended") {
+    await transcriptionAudioContext.resume();
+}
+
+console.log(
+    "🎚️ Transcription AudioContext:",
+    transcriptionAudioContext.state,
+    "| Sample rate:",
+    transcriptionAudioContext.sampleRate
+);
 
                 transcriptionDestination =
                     transcriptionAudioContext
