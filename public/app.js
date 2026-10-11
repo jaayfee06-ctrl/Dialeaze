@@ -1248,7 +1248,7 @@ function updateLiveTranscriptUI(text) {
 // =========================================================
 // START LIVE TRANSCRIPTION
 // =========================================================
-function startLiveTranscription() {
+function startLiveTranscription() {     return; // Live transcription disabled until future release
 
     if (transcriptionStarted) {
         return;
