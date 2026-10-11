@@ -14891,6 +14891,208 @@ app.use((req, res) => {
         )
     );
 });
+
+
+/* =========================================================
+   DIALEAZE OWNER DASHBOARD — CUSTOMER USAGE
+   Platform owner only; read-only endpoint.
+   ========================================================= */
+
+app.get("/api/owner/dashboard/customers", async (req, res) => {
+    try {
+        const access = await requirePlatformOwner(req);
+
+        if (!access.success) {
+            return res.status(access.status).json({
+                success: false,
+                error: access.error
+            });
+        }
+
+        // Read customer profiles using the server-side key.
+        const headers = {
+            Authorization: `Bearer ${SUPABASE_SECRET_KEY}`,
+            apikey: SUPABASE_SECRET_KEY,
+            Accept: "application/json"
+        };
+
+        async function fetchAllRows(table, select, orderBy) {
+            const rows = [];
+            const pageSize = 1000;
+            let offset = 0;
+
+            while (true) {
+                let url =
+                    `${SUPABASE_URL}/rest/v1/${table}` +
+                    `?select=${encodeURIComponent(select)}`;
+
+                if (orderBy) {
+                    url += `&order=${encodeURIComponent(orderBy)}`;
+                }
+
+                url += `&limit=${pageSize}&offset=${offset}`;
+
+                const response = await fetch(url, {
+                    method: "GET",
+                    headers
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(
+                        `Unable to read ${table}: ` +
+                        (data?.message || response.status)
+                    );
+                }
+
+                if (!Array.isArray(data)) {
+                    throw new Error(`Unexpected ${table} response.`);
+                }
+
+                rows.push(...data);
+
+                if (data.length < pageSize) {
+                    break;
+                }
+
+                offset += pageSize;
+            }
+
+            return rows;
+        }
+
+        const [profiles, calls, messages, phoneNumbers] =
+            await Promise.all([
+                fetchAllRows(
+                    "profiles",
+                    "id,full_name,email,subscription_plan,subscription_status",
+                    "id.asc"
+                ),
+                fetchAllRows(
+                    "call_history",
+                    "user_id,direction,status,duration,created_at",
+                    "created_at.desc"
+                ),
+                fetchAllRows(
+                    "messages",
+                    "user_id,direction,created_at",
+                    "created_at.desc"
+                ),
+                fetchAllRows(
+                    "phone_numbers",
+                    "user_id,phone_number,status",
+                    "phone_number.asc"
+                )
+            ]);
+
+        // Use UTC consistently for this initial API version.
+        const now = new Date();
+        const todayStart = new Date(Date.UTC(
+            now.getUTCFullYear(),
+            now.getUTCMonth(),
+            now.getUTCDate()
+        ));
+        const yesterdayStart = new Date(
+            todayStart.getTime() - 24 * 60 * 60 * 1000
+        );
+        const monthStart = new Date(Date.UTC(
+            now.getUTCFullYear(),
+            now.getUTCMonth(),
+            1
+        ));
+
+        function inRange(value, start, end) {
+            const time = Date.parse(value || "");
+            return Number.isFinite(time) &&
+                time >= start.getTime() &&
+                time < end.getTime();
+        }
+
+        const customers = profiles.map(profile => {
+            const userCalls = calls.filter(
+                row => row.user_id === profile.id
+            );
+            const userMessages = messages.filter(
+                row => row.user_id === profile.id
+            );
+            const assignedNumbers = phoneNumbers.filter(
+                row =>
+                    row.user_id === profile.id &&
+                    row.status === "assigned"
+            );
+
+            function callStats(rows) {
+                return {
+                    calls: rows.length,
+                    answered: rows.filter(
+                        row => String(row.status || "").toLowerCase() === "completed"
+                    ).length,
+                    minutes: Math.round(
+                        rows.reduce(
+                            (total, row) =>
+                                total + (Number(row.duration) || 0),
+                            0
+                        ) / 60 * 100
+                    ) / 100
+                };
+            }
+
+            const todayCalls = userCalls.filter(
+                row => inRange(row.created_at, todayStart, now)
+            );
+            const yesterdayCalls = userCalls.filter(
+                row => inRange(row.created_at, yesterdayStart, todayStart)
+            );
+            const monthCalls = userCalls.filter(
+                row => inRange(row.created_at, monthStart, now)
+            );
+
+            return {
+                id: profile.id,
+                name: profile.full_name || "",
+                email: profile.email || "",
+                plan: profile.subscription_plan || "",
+                subscriptionStatus: profile.subscription_status || "",
+                phoneNumbers: assignedNumbers.map(
+                    row => row.phone_number
+                ),
+                calls: {
+                    today: callStats(todayCalls),
+                    yesterday: callStats(yesterdayCalls),
+                    thisMonth: callStats(monthCalls),
+                    allTime: callStats(userCalls)
+                },
+                messages: {
+                    sent: userMessages.filter(
+                        row => String(row.direction || "").toLowerCase() === "outbound"
+                    ).length,
+                    received: userMessages.filter(
+                        row => String(row.direction || "").toLowerCase() === "inbound"
+                    ).length,
+                    allTime: userMessages.length
+                }
+            };
+        });
+
+        return res.json({
+            success: true,
+            generatedAt: now.toISOString(),
+            timezone: "UTC",
+            customerCount: customers.length,
+            customers
+        });
+
+    } catch (error) {
+        console.error("Owner dashboard customers error:", error);
+
+        return res.status(500).json({
+            success: false,
+            error: "Unable to load owner dashboard customer data."
+        });
+    }
+});
+
 // =========================================================
 // START SERVER
 // =========================================================
