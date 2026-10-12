@@ -5231,12 +5231,63 @@ if (state === "ringing") {
 
 }
 
+
 if (state === "answered") {
 
     status.textContent =
         "🟢 Connected";
 
+    // Start the timer only after provider confirms answer.
+    if (!outboundAnswered) {
+
+        outboundAnswered = true;
+        outboundAnsweredAt = Date.now();
+
+        console.log(
+            "💰 PSTN ANSWER CONFIRMED:",
+            new Date(outboundAnsweredAt).toISOString()
+        );
+
+        startCallTimer();
+
+        // Update the existing usage record once.
+        if (currentOutboundUsageId) {
+            try {
+                await authFetch(
+                    "/api/outbound-call/update",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            usageId: currentOutboundUsageId,
+                            callStatus: "answered",
+                            answered: true,
+                            answeredAt: new Date(
+                                outboundAnsweredAt
+                            ).toISOString()
+                        })
+                    }
+                );
+            } catch (error) {
+                console.error(
+                    "Failed to update answered call usage:",
+                    error
+                );
+            }
+        }
+
+        if (
+            browserLocalStream &&
+            browserRemoteStream &&
+            currentCall
+        ) {
+            startBrowserCallRecording();
+        }
+    }
 }
+
 
 if (state === "ended") {
 
