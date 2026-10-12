@@ -5666,10 +5666,11 @@ if (currentCall?.answered$) {
                             // -----------------------------
 
                 
+
 else if (
-    statusValue === "answered" ||
-    statusValue === "connected"
+    statusValue === "answered"
 ) {
+
 
 
                                 console.log(
