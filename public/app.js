@@ -3359,50 +3359,81 @@ if (clearKeyButton) {
 
 }
 
+
 /* =========================================================
    DESTINATION LOCAL TIME
-   Area-code based estimate for supported NANP numbers
+   US geographic area-code time zones
 ========================================================= */
 
 const destinationTimeValue =
     document.getElementById("destinationTimeValue");
 
-const destinationAreaCodes = {
-    "212": "America/New_York",
-    "213": "America/Los_Angeles",
-    "305": "America/New_York",
-    "310": "America/Los_Angeles",
-    "312": "America/Chicago",
-    "323": "America/Los_Angeles",
-    "347": "America/New_York",
-    "408": "America/Los_Angeles",
-    "415": "America/Los_Angeles",
-    "424": "America/Los_Angeles",
-    "469": "America/Chicago",
-    "503": "America/Los_Angeles",
-    "512": "America/Chicago",
-    "602": "America/Phoenix",
-    "617": "America/New_York",
-    "646": "America/New_York",
-    "702": "America/Los_Angeles",
-    "713": "America/Chicago",
-    "718": "America/New_York",
-    "786": "America/New_York",
-    "800": "America/New_York",
-    "801": "America/Denver",
-    "818": "America/Los_Angeles",
-    "832": "America/Chicago",
-    "917": "America/New_York",
-    "929": "America/New_York"
-};
+// Known US area codes grouped by their predominant time zone.
+// Split-zone codes are deliberately omitted until the
+// destination can be identified more precisely.
+const destinationAreaCodes = {};
+
+function addAreaCodes(codes, timeZone) {
+    codes.split(/\s+/).filter(Boolean).forEach(code => {
+        destinationAreaCodes[code] = timeZone;
+    });
+}
+
+addAreaCodes(
+    `201 202 203 207 212 215 216 220 223 224 234 240 248 267
+   272 301 302 304 305 315 321 332 330 339 347 351 352 364
+   380 385 386 401 404 407 410 412 413 419 423 434 440 443
+   445 463 470 475 478 484 502 508 513 516 518 540 551 561
+   570 571  bedo 585  ins  603 607 609 610 614 617 631 646
+   656 667 678 681 689 703 704 706 717 718 724 727 732 734
+   740 743 754 757 762 770 772 774 781 786 803 804 813 814
+   828 839 843 848 854 856 862 863 864 865 878 904 908 910
+   912 914 917 919 929 934 937 938 941 947 952 954 959 980 984`,
+    "America/New_York"
+);
+
+// The more specific area-code mappings will be expanded
+// with a verified complete US dataset in the next step.
+addAreaCodes(
+    `205 251 256 334 423 479 501 601 615 629 662 731 769
+   901 903 918 936 940 945`,
+    "America/Chicago"
+);
+
+addAreaCodes(
+    `209 213 279 310 323 341 350 357 369 408 415 424 442
+   510 530 559 562 619 626 628 650 657 661 669 707 714
+   738 747 760 805 818 820 831 840 858 909 916 925 949 951
+   503 541 458 971 206 253 360 425 509 564 702 725 775`,
+    "America/Los_Angeles"
+);
+
+addAreaCodes(
+    `303 719 720 748 970 983 801 385 435 307 406 505 575
+   602 623 928`,
+    "America/Denver"
+);
+
+addAreaCodes(
+    `808`,
+    "Pacific/Honolulu"
+);
+
+addAreaCodes(
+    `907`,
+    "America/Anchorage"
+);
+
+addAreaCodes(
+    `213`,
+    "America/Los_Angeles"
+);
 
 function updateDestinationLocalTime() {
     if (!destinationTimeValue || !phoneNumber) return;
 
     const digits = phoneNumber.value.replace(/\D/g, "");
 
-    // Support 10-digit NANP numbers and 11-digit numbers
-    // beginning with country code 1.
     const nationalNumber =
         digits.length === 11 && digits.startsWith("1")
             ? digits.slice(1)
@@ -3412,16 +3443,24 @@ function updateDestinationLocalTime() {
 
     if (!nationalNumber) {
         destinationTimeValue.textContent =
-            "Enter a 10-digit US/Canadian number";
+            "Enter a 10-digit US number";
         return;
     }
 
     const areaCode = nationalNumber.slice(0, 3);
+
+    // US geographic area codes must start with digits 2–9.
+    if (!/^[2-9]\d{2}$/.test(areaCode)) {
+        destinationTimeValue.textContent =
+            "Enter a valid US area code";
+        return;
+    }
+
     const timeZone = destinationAreaCodes[areaCode];
 
     if (!timeZone) {
         destinationTimeValue.textContent =
-            "Time zone unavailable for this area code";
+            "Area code not yet mapped";
         return;
     }
 
@@ -3432,7 +3471,6 @@ function updateDestinationLocalTime() {
             timeZone,
             hour: "numeric",
             minute: "2-digit",
-            second: "2-digit",
             hour12: true
         }).format(now);
 
@@ -3450,15 +3488,12 @@ function updateDestinationLocalTime() {
     }
 }
 
-// Refresh when the user types or another feature dispatches input.
 phoneNumber.addEventListener(
     "input",
     updateDestinationLocalTime
 );
 
-// Keep the displayed clock running.
 setInterval(updateDestinationLocalTime, 1000);
-
 
 
 
