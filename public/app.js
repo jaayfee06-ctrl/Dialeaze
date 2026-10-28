@@ -3168,6 +3168,7 @@ console.trace("🧪 HISTORY CALL STACK");
 
                 phoneNumber.value =
                     call.phoneNumber || "";
+                    updateDestinationLocalTime();
 
                 if (
                     !callButton.disabled
@@ -3183,7 +3184,7 @@ console.trace("🧪 HISTORY CALL STACK");
 
                 return;
             }
-updateDestinationLocalTime();
+
             // -----------------------------------------
             // MESSAGE PREVIOUS NUMBER
             // -----------------------------------------
@@ -3289,7 +3290,7 @@ dialButtons.forEach(
                         "span"
                     )?.textContent ||
                     button.textContent;
-
+updateDestinationLocalTime();
 
                 phoneNumber.focus();
 
@@ -3299,7 +3300,7 @@ dialButtons.forEach(
     }
 );
 
-updateDestinationLocalTime();
+
 // =========================================================
 // BACKSPACE
 // =========================================================
@@ -3315,7 +3316,7 @@ if (backspaceButton) {
                     0,
                     -1
                 );
-
+updateDestinationLocalTime();
 
             phoneNumber.focus();
 
@@ -3324,7 +3325,7 @@ if (backspaceButton) {
 
 }
 
-updateDestinationLocalTime();
+
 // =========================================================
 // CLEAR INPUT
 // =========================================================
@@ -3333,7 +3334,7 @@ function clearPhoneNumber() {
 
     phoneNumber.value =
         "";
-
+updateDestinationLocalTime();
     phoneNumber.focus();
 
 }
@@ -3458,7 +3459,7 @@ phoneNumber.addEventListener(
 // Keep the displayed clock running.
 setInterval(updateDestinationLocalTime, 1000);
 
-updateDestinationLocalTime();
+
 
 
 // =========================================================
