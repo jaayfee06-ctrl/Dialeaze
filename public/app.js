@@ -3183,7 +3183,7 @@ console.trace("🧪 HISTORY CALL STACK");
 
                 return;
             }
-
+updateDestinationLocalTime();
             // -----------------------------------------
             // MESSAGE PREVIOUS NUMBER
             // -----------------------------------------
@@ -3299,7 +3299,7 @@ dialButtons.forEach(
     }
 );
 
-
+updateDestinationLocalTime();
 // =========================================================
 // BACKSPACE
 // =========================================================
@@ -3324,7 +3324,7 @@ if (backspaceButton) {
 
 }
 
-
+updateDestinationLocalTime();
 // =========================================================
 // CLEAR INPUT
 // =========================================================
@@ -3357,6 +3357,108 @@ if (clearKeyButton) {
     );
 
 }
+
+/* =========================================================
+   DESTINATION LOCAL TIME
+   Area-code based estimate for supported NANP numbers
+========================================================= */
+
+const destinationTimeValue =
+    document.getElementById("destinationTimeValue");
+
+const destinationAreaCodes = {
+    "212": "America/New_York",
+    "213": "America/Los_Angeles",
+    "305": "America/New_York",
+    "310": "America/Los_Angeles",
+    "312": "America/Chicago",
+    "323": "America/Los_Angeles",
+    "347": "America/New_York",
+    "408": "America/Los_Angeles",
+    "415": "America/Los_Angeles",
+    "424": "America/Los_Angeles",
+    "469": "America/Chicago",
+    "503": "America/Los_Angeles",
+    "512": "America/Chicago",
+    "602": "America/Phoenix",
+    "617": "America/New_York",
+    "646": "America/New_York",
+    "702": "America/Los_Angeles",
+    "713": "America/Chicago",
+    "718": "America/New_York",
+    "786": "America/New_York",
+    "800": "America/New_York",
+    "801": "America/Denver",
+    "818": "America/Los_Angeles",
+    "832": "America/Chicago",
+    "917": "America/New_York",
+    "929": "America/New_York"
+};
+
+function updateDestinationLocalTime() {
+    if (!destinationTimeValue || !phoneNumber) return;
+
+    const digits = phoneNumber.value.replace(/\D/g, "");
+
+    // Support 10-digit NANP numbers and 11-digit numbers
+    // beginning with country code 1.
+    const nationalNumber =
+        digits.length === 11 && digits.startsWith("1")
+            ? digits.slice(1)
+            : digits.length === 10
+                ? digits
+                : "";
+
+    if (!nationalNumber) {
+        destinationTimeValue.textContent =
+            "Enter a 10-digit US/Canadian number";
+        return;
+    }
+
+    const areaCode = nationalNumber.slice(0, 3);
+    const timeZone = destinationAreaCodes[areaCode];
+
+    if (!timeZone) {
+        destinationTimeValue.textContent =
+            "Time zone unavailable for this area code";
+        return;
+    }
+
+    try {
+        const now = new Date();
+
+        const time = new Intl.DateTimeFormat("en-US", {
+            timeZone,
+            hour: "numeric",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true
+        }).format(now);
+
+        const zoneName = new Intl.DateTimeFormat("en-US", {
+            timeZone,
+            timeZoneName: "short"
+        }).formatToParts(now)
+          .find(part => part.type === "timeZoneName")?.value || "";
+
+        destinationTimeValue.textContent =
+            `${time} ${zoneName}`;
+    } catch (error) {
+        destinationTimeValue.textContent =
+            "Unable to determine local time";
+    }
+}
+
+// Refresh when the user types or another feature dispatches input.
+phoneNumber.addEventListener(
+    "input",
+    updateDestinationLocalTime
+);
+
+// Keep the displayed clock running.
+setInterval(updateDestinationLocalTime, 1000);
+
+updateDestinationLocalTime();
 
 
 // =========================================================

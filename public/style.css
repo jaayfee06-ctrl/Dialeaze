@@ -5393,3 +5393,25 @@ border-radius: 22px;
     }
 
 }
+
+/* Destination local time */
+.dialer-card .destination-local-time {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 3px 0;
+    min-height: 18px;
+    font-size: 11px;
+    color: #64748b;
+}
+
+.dialer-card #destinationTimeValue {
+    font-weight: 600;
+    color: #24518a;
+    text-align: right;
+}
+
+.dialer-card .destination-time-label {
+    flex-shrink: 0;
+}
