@@ -3620,7 +3620,7 @@ const SAFEPAY_HOST =
 
 const SAFEPAY_CHECKOUT_HOST =
     process.env.SAFEPAY_CHECKOUT_HOST ||
-    "https://sandbox.api.getsafepay.com";
+    "https://sandbox.api.getsafepay.com/checkout/auth/login";
 
 const SAFEPAY_ENV =
     process.env.SAFEPAY_ENV ||
@@ -4022,28 +4022,24 @@ let checkoutUrl;
 
 try {
 
-   checkoutUrl =
-    await safepay.checkout.createSubscription({
-        cancelUrl:
-            "https://dialeaze.com/checkout/?payment=cancelled",
-
-        redirectUrl:
-                "https://dialeaze.com/dashboard/?payment=success",
-
-        planId:
-            SAFEPAY_PLAN_ID,
-
-        reference,
-
-        authToken:
-            safepayAuthToken
+    const checkoutParams = new URLSearchParams({
+        plan_id: SAFEPAY_PLAN_ID,
+        auth_token: safepayAuthToken,
+        env: SAFEPAY_ENV,
+        cancel_url: "https://dialeaze.com/checkout/?payment=cancelled",
+        redirect_url: "https://dialeaze.com/dashboard/?payment=success",
+        reference
     });
+
+    const checkoutHost = SAFEPAY_CHECKOUT_HOST.replace(/\/+$/, "");
+
+    checkoutUrl = `${checkoutHost}?${checkoutParams.toString()}`;
 
     console.log(
         "Safepay subscription checkout URL created successfully."
     );
 
-} catch (safepayError) {
+}  catch (safepayError) {
 
     console.error(
         "Safepay subscription checkout error:",
@@ -4054,14 +4050,11 @@ try {
 
     return res.status(500).json({
         success: false,
-        error:
-            "Unable to create Safepay subscription checkout."
+        error: "Unable to create Safepay subscription checkout."
     });
-
 }
 
-
-        console.log(
+console.log(
             "Safepay checkout URL created successfully.",
             {
                 reference,
@@ -4300,7 +4293,45 @@ app.post("/api/billing/provision", async (req, res) => {
                 "SignalWire purchased the number but did not return a phone number ID."
             );
         }
+// ================================================
+// SAVE PHONE NUMBER ID FOR CRASH RECOVERY
+// ================================================
 
+const saveNumberIdResponse = await fetch(
+    `${SUPABASE_URL}/rest/v1/safepay_checkout_sessions` +
+    `?reference=eq.${encodeURIComponent(reference)}` +
+    `&status=eq.provisioning`,
+    {
+        method: "PATCH",
+        headers: {
+            Authorization: `Bearer ${SUPABASE_SECRET_KEY}`,
+            apikey: SUPABASE_SECRET_KEY,
+            "Content-Type": "application/json",
+            Prefer: "return=representation"
+        },
+        body: JSON.stringify({
+            signalwire_number_id: purchasedSignalWireNumberId,
+            provisioning_step: "phone_number_purchased",
+            provisioning_started_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        })
+    }
+);
+
+if (!saveNumberIdResponse.ok) {
+    throw new Error(
+        "Could not save SignalWire phone number ID: " +
+        await saveNumberIdResponse.text()
+    );
+}
+
+const savedNumberRows = await saveNumberIdResponse.json();
+
+if (!Array.isArray(savedNumberRows) || savedNumberRows.length !== 1) {
+    throw new Error(
+        "SignalWire phone number ID was not saved to exactly one checkout session."
+    );
+}
         console.log(
             "âœ… SignalWire phone number purchased:",
             {
@@ -4364,7 +4395,47 @@ app.post("/api/billing/provision", async (req, res) => {
                 "SignalWire created the Subscriber but did not return its ID."
             );
         }
+// ================================================
+// SAVE SUBSCRIBER ID FOR CRASH RECOVERY
+// ================================================
 
+const saveSubscriberResponse = await fetch(
+    `${SUPABASE_URL}/rest/v1/safepay_checkout_sessions` +
+    `?reference=eq.${encodeURIComponent(reference)}` +
+    `&status=eq.provisioning`,
+    {
+        method: "PATCH",
+        headers: {
+            Authorization: `Bearer ${SUPABASE_SECRET_KEY}`,
+            apikey: SUPABASE_SECRET_KEY,
+            "Content-Type": "application/json",
+            Prefer: "return=representation"
+        },
+        body: JSON.stringify({
+            signalwire_subscriber_id: createdSignalWireSubscriberId,
+            provisioning_step: "subscriber_created",
+            updated_at: new Date().toISOString()
+        })
+    }
+);
+
+if (!saveSubscriberResponse.ok) {
+    throw new Error(
+        "Could not save SignalWire subscriber ID: " +
+        await saveSubscriberResponse.text()
+    );
+}
+
+const savedSubscriberRows = await saveSubscriberResponse.json();
+
+if (
+    !Array.isArray(savedSubscriberRows) ||
+    savedSubscriberRows.length !== 1
+) {
+    throw new Error(
+        "SignalWire subscriber ID was not saved to exactly one checkout session."
+    );
+}
         console.log(
             "âœ… SignalWire Subscriber created:",
             {
@@ -13509,14 +13580,16 @@ async function processSafepayWebhookEvent(event) {
                 ""
             ).trim();
 
-        if (!reference) {
+               if (!reference) {
 
-            console.warn(
+            console.error(
                 "Safepay webhook has no reference:",
                 event
             );
 
-            return;
+            throw new Error(
+                "Safepay webhook is missing its checkout reference."
+            );
         }
 
         console.log(
@@ -13600,7 +13673,6 @@ async function processSafepayWebhookEvent(event) {
     const claimedSessions =
         await claimResponse.json();
 
-
     if (!claimResponse.ok) {
 
         console.error(
@@ -13608,11 +13680,13 @@ async function processSafepayWebhookEvent(event) {
             claimedSessions
         );
 
-        return;
+        throw new Error(
+            "Could not claim Safepay checkout session."
+        );
     }
 
 
-    // -------------------------------------------------
+       // -------------------------------------------------
     // DUPLICATE WEBHOOK PROTECTION
     // -------------------------------------------------
 
@@ -13621,12 +13695,57 @@ async function processSafepayWebhookEvent(event) {
         claimedSessions.length === 0
     ) {
 
-        console.log(
-            "ℹ️ Safepay session was not claimable. It may already be provisioning or provisioned:",
-            reference
+        const existingSessionResponse = await fetch(
+            `${SUPABASE_URL}/rest/v1/safepay_checkout_sessions` +
+            `?reference=eq.${encodeURIComponent(reference)}` +
+            `&select=status`,
+            {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${SUPABASE_SECRET_KEY}`,
+                    apikey: SUPABASE_SECRET_KEY
+                }
+            }
         );
 
-        return;
+        const existingSessions =
+            await existingSessionResponse.json();
+
+        if (!existingSessionResponse.ok) {
+            throw new Error(
+                "Could not verify existing Safepay checkout session status."
+            );
+        }
+
+        if (
+            !Array.isArray(existingSessions) ||
+            existingSessions.length === 0
+        ) {
+            throw new Error(
+                "Safepay checkout session was not found: " + reference
+            );
+        }
+
+        const existingStatus =
+            String(existingSessions[0]?.status || "").trim();
+
+        if (
+            existingStatus === "provisioned" ||
+            existingStatus === "provisioning"
+        ) {
+            console.log(
+                "Safepay duplicate safely ignored. Session status:",
+                existingStatus,
+                reference
+            );
+
+            return;
+        }
+
+        throw new Error(
+            "Safepay checkout session is not claimable. Current status: " +
+            (existingStatus || "unknown")
+        );
     }
 
 
@@ -13744,14 +13863,14 @@ async function processSafepayWebhookEvent(event) {
             );
         }
 
-    } catch (emailError) {
+        } catch (emailError) {
 
         console.error(
             "❌ Customer email lookup failed:",
             emailError
         );
 
-        return;
+        throw emailError;
     }
 
 
@@ -13826,49 +13945,40 @@ async function processSafepayWebhookEvent(event) {
             phoneRows[0];
 
 
-    } catch (phoneError) {
+        } catch (phoneError) {
 
         console.error(
             "❌ Reserved phone verification failed:",
             phoneError
         );
 
-
-        await fetch(
+        const failureStateResponse = await fetch(
             `${SUPABASE_URL}/rest/v1/safepay_checkout_sessions` +
             `?reference=eq.${encodeURIComponent(reference)}`,
             {
                 method: "PATCH",
-
                 headers: {
-                    Authorization:
-                        `Bearer ${SUPABASE_SECRET_KEY}`,
-
-                    apikey:
-                        SUPABASE_SECRET_KEY,
-
-                    "Content-Type":
-                        "application/json"
+                    Authorization: `Bearer ${SUPABASE_SECRET_KEY}`,
+                    apikey: SUPABASE_SECRET_KEY,
+                    "Content-Type": "application/json"
                 },
-
-                body:
-                    JSON.stringify({
-                        status:
-                            "provisioning_failed",
-
-                        last_event_type:
-                            eventType,
-
-                        updated_at:
-                            new Date().toISOString()
-                    })
+                body: JSON.stringify({
+                    status: "provisioning_failed",
+                    last_event_type: eventType,
+                    updated_at: new Date().toISOString()
+                })
             }
         );
 
-        return;
+        if (!failureStateResponse.ok) {
+            console.error(
+                "Could not save phone verification failure state:",
+                await failureStateResponse.text()
+            );
+        }
+
+        throw phoneError;
     }
-
-
     // -------------------------------------------------
     // SIGNALWIRE VARIABLES
     // -------------------------------------------------
@@ -13971,7 +14081,48 @@ async function processSafepayWebhookEvent(event) {
                     reservedPhoneNumber
             }
         );
+        // =================================================
+        // SAVE SIGNALWIRE PHONE NUMBER ID TO DATABASE
+        // =================================================
 
+        const saveNumberIdResponse = await fetch(
+            `${SUPABASE_URL}/rest/v1/safepay_checkout_sessions` +
+            `?reference=eq.${encodeURIComponent(reference)}` +
+            `&status=eq.provisioning`,
+            {
+                method: "PATCH",
+                headers: {
+                    Authorization: `Bearer ${SUPABASE_SECRET_KEY}`,
+                    apikey: SUPABASE_SECRET_KEY,
+                    "Content-Type": "application/json",
+                    Prefer: "return=representation"
+                },
+                body: JSON.stringify({
+                    signalwire_number_id: purchasedSignalWireNumberId,
+                    provisioning_step: "phone_number_purchased",
+                    provisioning_started_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                })
+            }
+        );
+
+        if (!saveNumberIdResponse.ok) {
+            throw new Error(
+                "Could not save SignalWire phone number ID: " +
+                await saveNumberIdResponse.text()
+            );
+        }
+
+        const savedNumberRows = await saveNumberIdResponse.json();
+
+        if (
+            !Array.isArray(savedNumberRows) ||
+            savedNumberRows.length !== 1
+        ) {
+            throw new Error(
+                "SignalWire phone number ID was not saved to exactly one checkout session."
+            );
+        }
 // =====================================================
 // STEP 4B: AUTOMATICALLY ASSIGN INBOUND CALL HANDLER
 // =====================================================
@@ -14123,7 +14274,48 @@ console.log(
             }
         );
 
+        // =================================================
+        // SAVE SIGNALWIRE SUBSCRIBER ID TO DATABASE
+        // =================================================
 
+        const saveSubscriberResponse = await fetch(
+            `${SUPABASE_URL}/rest/v1/safepay_checkout_sessions` +
+            `?reference=eq.${encodeURIComponent(reference)}` +
+            `&status=eq.provisioning`,
+            {
+                method: "PATCH",
+                headers: {
+                    Authorization: `Bearer ${SUPABASE_SECRET_KEY}`,
+                    apikey: SUPABASE_SECRET_KEY,
+                    "Content-Type": "application/json",
+                    Prefer: "return=representation"
+                },
+                body: JSON.stringify({
+                    signalwire_subscriber_id: createdSignalWireSubscriberId,
+                    provisioning_step: "subscriber_created",
+                    updated_at: new Date().toISOString()
+                })
+            }
+        );
+
+        if (!saveSubscriberResponse.ok) {
+            throw new Error(
+                "Could not save SignalWire subscriber ID: " +
+                await saveSubscriberResponse.text()
+            );
+        }
+
+        const savedSubscriberRows =
+            await saveSubscriberResponse.json();
+
+        if (
+            !Array.isArray(savedSubscriberRows) ||
+            savedSubscriberRows.length !== 1
+        ) {
+            throw new Error(
+                "SignalWire subscriber ID was not saved to exactly one checkout session."
+            );
+        }
         // =================================================
         // STEP 6: FINALIZE SAFEPAY PROVISIONING
         // =================================================
@@ -14216,14 +14408,100 @@ console.log(
         return;
 
 
-    } catch (provisioningError) {
+        } catch (provisioningError) {
 
         console.error(
             "❌ Dialeaze Safepay provisioning failed:",
             provisioningError
         );
 
+        let rollbackComplete = true;
+        // =================================================
+        // VERIFY DATABASE STATE BEFORE SIGNALWIRE ROLLBACK
+        // =================================================
 
+        let currentSessionStatus = null;
+let currentSessionRow = null;
+
+        try {
+            const verificationResponse = await fetch(
+                `${SUPABASE_URL}/rest/v1/safepay_checkout_sessions` +
+                `?reference=eq.${encodeURIComponent(reference)}` +
+                `&select=status,signalwire_number_id,signalwire_subscriber_id`,
+                {
+                    method: "GET",
+                    headers: {
+                        Authorization: `Bearer ${SUPABASE_SECRET_KEY}`,
+                        apikey: SUPABASE_SECRET_KEY
+                    }
+                }
+            );
+
+            if (!verificationResponse.ok) {
+                throw new Error(
+                    "Could not verify Safepay session before rollback: " +
+                    await verificationResponse.text()
+                );
+            }
+
+            const verificationRows =
+                await verificationResponse.json();
+
+            if (
+                !Array.isArray(verificationRows) ||
+                verificationRows.length !== 1
+            ) {
+                throw new Error(
+                    "Safepay session is missing or ambiguous. Manual review required."
+                );
+            }
+
+            currentSessionRow = verificationRows[0];
+
+currentSessionStatus =
+    String(currentSessionRow.status || "").trim();
+
+        } catch (verificationError) {
+
+            console.error(
+                "⚠️ Database state verification failed. SignalWire rollback skipped:",
+                reference,
+                verificationError
+            );
+
+            throw verificationError;
+        }
+
+        if (currentSessionStatus === "provisioned") {
+
+            console.warn(
+                "⚠️ Database confirms provisioning already completed. SignalWire rollback skipped:",
+                reference
+            );
+
+            return;
+        }
+// =================================================
+// RESTORE SIGNALWIRE IDS FROM DATABASE
+// =================================================
+
+createdSignalWireSubscriberId =
+    currentSessionRow.signalwire_subscriber_id ||
+    createdSignalWireSubscriberId ||
+    null;
+
+purchasedSignalWireNumberId =
+    currentSessionRow.signalwire_number_id ||
+    purchasedSignalWireNumberId ||
+    null;
+
+console.log(
+    "SignalWire rollback resource IDs:",
+    {
+        subscriberId: createdSignalWireSubscriberId,
+        phoneNumberId: purchasedSignalWireNumberId
+    }
+);
         // =================================================
         // ROLLBACK SIGNALWIRE SUBSCRIBER
         // =================================================
@@ -14272,6 +14550,7 @@ console.log(
                         "❌ Failed to roll back SignalWire Subscriber:",
                         rollbackData
                     );
+                                        rollbackComplete = false;
                 }
 
             } catch (rollbackError) {
@@ -14280,6 +14559,7 @@ console.log(
                     "❌ Subscriber rollback exception:",
                     rollbackError
                 );
+                rollbackComplete = false;
             }
         }
 
@@ -14332,6 +14612,7 @@ console.log(
                         "❌ Failed to release SignalWire phone number:",
                         rollbackData
                     );
+                                        rollbackComplete = false;
                 }
 
             } catch (rollbackError) {
@@ -14340,17 +14621,18 @@ console.log(
                     "❌ Phone number rollback exception:",
                     rollbackError
                 );
+                 rollbackComplete = false;
             }
         }
 
 
-        // -------------------------------------------------
+                // -------------------------------------------------
         // MARK THE SAFEPAY SESSION AS FAILED
         // -------------------------------------------------
 
         try {
 
-            await fetch(
+            const failureStateResponse = await fetch(
                 `${SUPABASE_URL}/rest/v1/safepay_checkout_sessions` +
                 `?reference=eq.${encodeURIComponent(reference)}`,
                 {
@@ -14364,22 +14646,44 @@ console.log(
                             SUPABASE_SECRET_KEY,
 
                         "Content-Type":
-                            "application/json"
+                            "application/json",
+
+                        Prefer:
+                            "return=minimal"
                     },
 
-                    body:
-                        JSON.stringify({
-                            status:
-                                "provisioning_failed",
+                   body: JSON.stringify({
+    status: "provisioning_failed",
 
-                            last_event_type:
-                                eventType,
+    provisioning_step: rollbackComplete
+        ? "rollback_complete"
+        : "rollback_incomplete",
 
-                            updated_at:
-                                new Date().toISOString()
-                        })
+    provisioning_error: String(
+        provisioningError?.message || provisioningError
+    ),
+
+    last_event_type: eventType,
+
+    signalwire_number_id: rollbackComplete
+        ? null
+        : purchasedSignalWireNumberId,
+
+    signalwire_subscriber_id: rollbackComplete
+        ? null
+        : createdSignalWireSubscriberId,
+
+    updated_at: new Date().toISOString()
+})
                 }
             );
+
+            if (!failureStateResponse.ok) {
+                throw new Error(
+                    "Could not save provisioning failure state: " +
+                    await failureStateResponse.text()
+                );
+            }
 
         } catch (stateError) {
 
@@ -14387,11 +14691,26 @@ console.log(
                 "❌ Failed to save provisioning failure state:",
                 stateError
             );
+
+            throw new Error(
+                "Provisioning failed and its failure state could not be saved. " +
+                String(stateError?.message || stateError)
+            );
         }
 
-        return;
+        if (!rollbackComplete) {
+            console.error(
+                "⚠️ SignalWire rollback was incomplete. Manual review is required:",
+                reference
+            );
+        }
+
+                throw provisioningError;
+
     }
+
 }
+
         // =====================================================
         // PAYMENT FAILED
         // =====================================================
@@ -14436,14 +14755,11 @@ console.log(
                     }
                 );
 
-            if (!response.ok) {
-
-                console.error(
-                    "Failed to save Safepay payment failure:",
+                       if (!response.ok) {
+                throw new Error(
+                    "Failed to save Safepay payment failure: " +
                     await response.text()
                 );
-
-                return;
             }
 
             console.log(
@@ -14499,14 +14815,11 @@ console.log(
                     }
                 );
 
-            if (!response.ok) {
-
-                console.error(
-                    "Failed to save Safepay cancellation:",
+                     if (!response.ok) {
+                throw new Error(
+                    "Failed to save Safepay cancellation: " +
                     await response.text()
                 );
-
-                return;
             }
 
             console.log(
@@ -14518,17 +14831,24 @@ console.log(
         }
 
 
-        console.log(
-            "Unhandled Safepay event:",
+                console.warn(
+            "Unhandled Safepay event received:",
             eventType
         );
 
-    } catch (error) {
+        throw new Error(
+            "Unsupported Safepay webhook event type: " +
+            String(eventType || "missing")
+        );
+
+        } catch (error) {
 
         console.error(
             "Safepay webhook processing error:",
             error
         );
+
+        throw error;
 
     }
 }
@@ -14757,21 +15077,101 @@ console.log(
                 );
 
 
-            // Duplicate webhook event.
-            if (
-                eventInsertResponse.status ===
-                409
-            ) {
+            // =================================================
+// DUPLICATE WEBHOOK EVENT — CHECK EXISTING STATE
+// =================================================
 
-                console.log(
-                    "Safepay duplicate webhook ignored:",
-                    eventId
-                );
+if (eventInsertResponse.status === 409) {
 
-                return res
-                    .status(200)
-                    .send("Duplicate");
+    try {
+
+        const existingEventResponse = await fetch(
+            `${SUPABASE_URL}/rest/v1/safepay_webhook_events` +
+            `?event_id=eq.${encodeURIComponent(eventId)}` +
+            `&select=event_id,processed,processing_status,attempts`,
+            {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${SUPABASE_SECRET_KEY}`,
+                    apikey: SUPABASE_SECRET_KEY
+                }
             }
+        );
+
+        if (!existingEventResponse.ok) {
+            throw new Error(
+                "Could not inspect existing webhook event: " +
+                await existingEventResponse.text()
+            );
+        }
+
+        const existingEvents =
+            await existingEventResponse.json();
+
+        if (
+            !Array.isArray(existingEvents) ||
+            existingEvents.length !== 1
+        ) {
+            throw new Error(
+                "Existing webhook event is missing or ambiguous."
+            );
+        }
+
+        const existingEvent = existingEvents[0];
+
+        const existingStatus = String(
+            existingEvent.processing_status || ""
+        ).trim();
+
+        if (
+            existingEvent.processed === true ||
+            existingStatus === "completed"
+        ) {
+
+            console.log(
+                "Safepay duplicate already completed:",
+                eventId
+            );
+
+            return res.status(200).send("Already processed");
+        }
+
+        if (existingStatus === "processing") {
+
+            console.log(
+                "Safepay duplicate currently processing:",
+                eventId
+            );
+
+            return res.status(200).send("Processing");
+        }
+
+        console.warn(
+            "Safepay duplicate requires recovery:",
+            {
+                eventId,
+                status: existingStatus,
+                attempts: existingEvent.attempts
+            }
+        );
+
+        return res
+            .status(503)
+            .send("Webhook requires recovery");
+
+    } catch (duplicateError) {
+
+        console.error(
+            "Safepay duplicate event verification failed:",
+            eventId,
+            duplicateError
+        );
+
+        return res
+            .status(500)
+            .send("Could not verify duplicate event");
+    }
+}
 
 
             if (
@@ -14805,57 +15205,156 @@ console.log(
             // 5. PROCESS AFTER ACK
             // =================================================
 
-            setImmediate(
-                async () => {
+                       setImmediate(async () => {
 
-                    await processSafepayWebhookEvent(
-                        event
-                    );
+    const eventUrl =
+        `${SUPABASE_URL}/rest/v1/safepay_webhook_events` +
+        `?event_id=eq.${encodeURIComponent(eventId)}`;
 
-                    try {
+    const headers = {
+        Authorization: `Bearer ${SUPABASE_SECRET_KEY}`,
+        apikey: SUPABASE_SECRET_KEY,
+        "Content-Type": "application/json",
+        Prefer: "return=representation"
+    };
 
-                        await fetch(
-                            `${SUPABASE_URL}/rest/v1/safepay_webhook_events` +
-                            `?event_id=eq.${encodeURIComponent(eventId)}`,
-                            {
-                                method: "PATCH",
+    try {
 
-                                headers: {
-                                    Authorization:
-                                        `Bearer ${SUPABASE_SECRET_KEY}`,
+        // =========================================
+        // 1. ATOMICALLY CLAIM THE WEBHOOK EVENT
+        // =========================================
 
-                                    apikey:
-                                        SUPABASE_SECRET_KEY,
+        const claimResponse = await fetch(
+            `${SUPABASE_URL}/rest/v1/rpc/claim_safepay_webhook_event`,
+            {
+                method: "POST",
+                headers,
+                body: JSON.stringify({
+                    p_event_id: eventId
+                })
+            }
+        );
 
-                                    "Content-Type":
-                                        "application/json",
+        if (!claimResponse.ok) {
+            throw new Error(
+                "Webhook claim failed: " +
+                await claimResponse.text()
+            );
+        }
 
-                                    Prefer:
-                                        "return=minimal"
-                                },
+        const claimedEvents = await claimResponse.json();
 
-                                body:
-                                    JSON.stringify({
-                                        processed:
-                                            true,
+        if (
+            !Array.isArray(claimedEvents) ||
+            claimedEvents.length !== 1
+        ) {
+            console.log(
+                "Safepay event was not claimed; skipping:",
+                eventId
+            );
 
-                                        processed_at:
-                                            new Date().toISOString()
-                                    })
-                            }
-                        );
+            return;
+        }
 
-                    } catch (error) {
+        const claimedEvent = claimedEvents[0];
 
-                        console.error(
-                            "Could not mark Safepay webhook processed:",
-                            error
-                        );
+        console.log(
+            "Safepay event claimed:",
+            eventId,
+            "Attempt:",
+            claimedEvent.attempts
+        );
 
-                    }
+        // =========================================
+        // 2. PROCESS THE CLAIMED EVENT
+        // =========================================
 
+        await processSafepayWebhookEvent(
+            claimedEvent.payload
+        );
+
+        // =========================================
+        // 3. MARK EVENT COMPLETED
+        // =========================================
+
+        const successResponse = await fetch(
+            eventUrl,
+            {
+                method: "PATCH",
+                headers,
+                body: JSON.stringify({
+                    processed: true,
+                    processing_status: "completed",
+                    processed_at: new Date().toISOString(),
+                    last_error: null,
+                    next_retry_at: null,
+                    updated_at: new Date().toISOString()
+                })
+            }
+        );
+
+        if (!successResponse.ok) {
+            throw new Error(
+                "Could not mark webhook completed: " +
+                await successResponse.text()
+            );
+        }
+
+        console.log(
+            "Safepay webhook completed:",
+            eventId
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Safepay webhook processing failed:",
+            eventId,
+            error
+        );
+
+        // =========================================
+        // 4. SAVE FAILURE STATE
+        // =========================================
+
+        try {
+
+            const failureResponse = await fetch(
+                eventUrl +
+                "&processing_status=eq.processing&processed=eq.false",
+                {
+                    method: "PATCH",
+                    headers,
+                    body: JSON.stringify({
+                        processing_status: "failed",
+                        last_error: String(
+                            error?.message || error
+                        ).slice(0, 2000),
+                        next_retry_at: null,
+                        updated_at: new Date().toISOString()
+                    })
                 }
             );
+
+            if (!failureResponse.ok) {
+                console.error(
+                    "Could not save Safepay failure state:",
+                    await failureResponse.text()
+                );
+            }
+
+        } catch (stateError) {
+
+            console.error(
+                "Could not update Safepay event failure state:",
+                stateError
+            );
+
+        }
+
+    }
+
+});
 
         } catch (error) {
 
@@ -15113,6 +15612,7 @@ app.use((req, res) => {
         )
     );
 });
+
 // =========================================================
 // START SERVER
 // =========================================================
