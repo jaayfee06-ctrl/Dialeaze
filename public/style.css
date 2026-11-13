@@ -5412,6 +5412,12 @@ border-radius: 22px;
     text-align: right;
 }
 
+.dialer-card #destinationTimeValue .destination-place {
+    display: block;
+    font-weight: 500;
+    color: #64748b;
+}
+
 .dialer-card .destination-time-label {
     flex-shrink: 0;
 }

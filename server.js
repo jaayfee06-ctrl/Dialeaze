@@ -9746,9 +9746,20 @@ app.post("/api/signalwire/outbound-swml", async (req, res) => {
 
         main: [
 
+    // Answer the browser (WebRTC) leg with G.711 only, so SignalWire
+    // does not transcode OPUS 48kHz (billed as "Audio (OPUS 48kHz)").
+    {
+        answer: {
+            codecs: "PCMU,PCMA"
+        }
+    },
+
     {
 
         connect: {
+
+            codecs:
+                "PCMU,PCMA",
 
             from:
                 callerNumber,
@@ -10512,6 +10523,10 @@ app.post(
     privateAddress
 ) => ({
     connect: {
+        // Ask for G.711 on the browser leg to avoid OPUS 48kHz transcoding.
+        codecs:
+            "PCMU,PCMA",
+
         to:
             privateAddress ||
             "/private/junaid-sabir",

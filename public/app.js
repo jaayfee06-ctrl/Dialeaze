@@ -2,6 +2,7 @@ import {
     SignalWire
 } from "https://esm.sh/@signalwire/js@4.0.0-rc.2";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { lookupAreaCode } from "./area-codes.js";
 
 // =========================================================
 // DIALEAZE BROWSER NOTIFICATION PERMISSION
@@ -3368,66 +3369,17 @@ if (clearKeyButton) {
 const destinationTimeValue =
     document.getElementById("destinationTimeValue");
 
-// Known US area codes grouped by their predominant time zone.
-// Split-zone codes are deliberately omitted until the
-// destination can be identified more precisely.
-const destinationAreaCodes = {};
+// Area code -> city, state and time zone (see area-codes.js).
+function showDestinationText(timeText, placeText) {
+    destinationTimeValue.textContent = timeText;
 
-function addAreaCodes(codes, timeZone) {
-    codes.split(/\s+/).filter(Boolean).forEach(code => {
-        destinationAreaCodes[code] = timeZone;
-    });
+    if (placeText) {
+        const place = document.createElement("span");
+        place.className = "destination-place";
+        place.textContent = placeText;
+        destinationTimeValue.appendChild(place);
+    }
 }
-
-addAreaCodes(
-    `201 202 203 207 212 215 216 220 223 224 234 240 248 267
-   272 301 302 304 305 315 321 332 330 339 347 351 352 364
-   380 385 386 401 404 407 410 412 413 419 423 434 440 443
-   445 463 470 475 478 484 502 508 513 516 518 540 551 561
-   570 571  bedo 585  ins  603 607 609 610 614 617 631 646
-   656 667 678 681 689 703 704 706 717 718 724 727 732 734
-   740 743 754 757 762 770 772 774 781 786 803 804 813 814
-   828 839 843 848 854 856 862 863 864 865 878 904 908 910
-   912 914 917 919 929 934 937 938 941 947 952 954 959 980 984`,
-    "America/New_York"
-);
-
-// The more specific area-code mappings will be expanded
-// with a verified complete US dataset in the next step.
-addAreaCodes(
-    `205 251 256 334 423 479 501 601 615 629 662 731 769
-   901 903 918 936 940 945`,
-    "America/Chicago"
-);
-
-addAreaCodes(
-    `209 213 279 310 323 341 350 357 369 408 415 424 442
-   510 530 559 562 619 626 628 650 657 661 669 707 714
-   738 747 760 805 818 820 831 840 858 909 916 925 949 951
-   503 541 458 971 206 253 360 425 509 564 702 725 775`,
-    "America/Los_Angeles"
-);
-
-addAreaCodes(
-    `303 719 720 748 970 983 801 385 435 307 406 505 575
-   602 623 928`,
-    "America/Denver"
-);
-
-addAreaCodes(
-    `808`,
-    "Pacific/Honolulu"
-);
-
-addAreaCodes(
-    `907`,
-    "America/Anchorage"
-);
-
-addAreaCodes(
-    `213`,
-    "America/Los_Angeles"
-);
 
 function updateDestinationLocalTime() {
     if (!destinationTimeValue || !phoneNumber) return;
@@ -3442,8 +3394,7 @@ function updateDestinationLocalTime() {
                 : "";
 
     if (!nationalNumber) {
-        destinationTimeValue.textContent =
-            "Enter a 10-digit US number";
+        showDestinationText("Enter a 10-digit US number");
         return;
     }
 
@@ -3451,40 +3402,44 @@ function updateDestinationLocalTime() {
 
     // US geographic area codes must start with digits 2–9.
     if (!/^[2-9]\d{2}$/.test(areaCode)) {
-        destinationTimeValue.textContent =
-            "Enter a valid US area code";
+        showDestinationText("Enter a valid US area code");
         return;
     }
 
-    const timeZone = destinationAreaCodes[areaCode];
+    const place = lookupAreaCode(areaCode);
 
-    if (!timeZone) {
-        destinationTimeValue.textContent =
-            "Area code not yet mapped";
+    if (!place) {
+        // Toll-free (800, 888...) and other non-geographic codes.
+        showDestinationText(`Area code ${areaCode} is not a US city`);
         return;
     }
+
+    const placeText =
+        `${place.city}, ${place.stateName} (${areaCode})`;
 
     try {
         const now = new Date();
 
         const time = new Intl.DateTimeFormat("en-US", {
-            timeZone,
+            timeZone: place.timeZone,
             hour: "numeric",
             minute: "2-digit",
             hour12: true
         }).format(now);
 
         const zoneName = new Intl.DateTimeFormat("en-US", {
-            timeZone,
+            timeZone: place.timeZone,
             timeZoneName: "short"
         }).formatToParts(now)
           .find(part => part.type === "timeZoneName")?.value || "";
 
-        destinationTimeValue.textContent =
-            `${time} ${zoneName}`;
+        showDestinationText(
+            `${time} ${zoneName}` +
+                (place.splitZone ? " (may vary)" : ""),
+            placeText
+        );
     } catch (error) {
-        destinationTimeValue.textContent =
-            "Unable to determine local time";
+        showDestinationText("Unable to determine local time", placeText);
     }
 }
 
@@ -3710,10 +3665,10 @@ async function initializeSignalWire() {
     }
 );
 
-client.preferences.preferredAudioCodecs = ["PCMU"];
+client.preferences.preferredAudioCodecs = ["PCMU", "PCMA"];
 
 console.log(
-    "🎧 SignalWire audio codec preference: PCMU"
+    "🎧 SignalWire audio codec preference: PCMU, PCMA"
 );
 
             console.log("SignalWire client created.");
